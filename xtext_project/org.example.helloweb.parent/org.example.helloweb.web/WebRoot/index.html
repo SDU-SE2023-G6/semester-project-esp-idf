@@ -1,0 +1,68 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="Content-Language" content="en-us">
+	<title>Example Web Editor</title>
+	<link rel="stylesheet" type="text/css" href="xtext/2.33.0/xtext-ace.css"/>
+	<link rel="stylesheet" type="text/css" href="style.css"/>
+	<script src="webjars/requirejs/2.3.6/require.min.js"></script>
+	<script type="text/javascript">
+		var baseUrl = window.location.pathname;
+		var fileIndex = baseUrl.indexOf("index.html");
+		if (fileIndex > 0)
+			baseUrl = baseUrl.slice(0, fileIndex);
+		require.config({
+			baseUrl: baseUrl,
+			paths: {
+				"jquery": "webjars/jquery/3.6.0/jquery.min",
+				"ace/ext/language_tools": "webjars/ace/1.3.3/src/ext-language_tools",
+				"ace/theme/monokai": "webjars/ace/1.3.3/src/theme-monokai", // Adding theme path
+				"xtext/xtext-ace": "xtext/2.33.0/xtext-ace"
+			}
+		});
+	
+		require(["webjars/ace/1.3.3/src/ace"], function(ace) {
+			require(["xtext/xtext-ace"], function(xtext) {
+				var editor = xtext.createEditor({
+					baseUrl: baseUrl,
+					syntaxDefinition: "xtext-resources/generated/mode-helloweb"
+				});
+				
+				//some editor settings
+				editor.setTheme("ace/theme/monokai"); // Set theme, for example, to 'monokai'
+				editor.getSession().setMode("ace/mode/javascript"); // Set mode, if different from default
+				editor.setFontSize(14); // Change font size
+				editor.setShowPrintMargin(false); // Hide the print margin
+				editor.setOptions({
+					enableBasicAutocompletion: true,
+					enableSnippets: true,
+					enableLiveAutocompletion: false
+				});
+			});
+		});
+
+	</script>
+</head>
+<body>
+
+<style>
+	/* some random styling */
+	#xtext-editor {
+		width: 800px;   /* Set the width of the editor */
+		height: 500px;  /* Set the height of the editor */
+		border: 3px solid #888; /* Add a border around the editor */
+	}
+
+</style>
+
+<div class="container">
+	<div class="header">
+		<h1>Example HelloWeb123 Web Editor</h1>
+	</div>
+	<div class="content">
+		<div id="xtext-editor" data-editor-xtext-lang="helloweb"></div>
+	</div>
+</div>
+
+</body>
+</html>
