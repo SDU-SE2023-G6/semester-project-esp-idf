@@ -10,6 +10,11 @@ const router = createRouter({
       component: HomeView
     },
     {
+      path: '/editor',
+      name: 'XtextEditor',
+      component: () => import('../views/DslView.vue')
+    },
+    {
       path: '/about',
       name: 'about',
       // route level code-splitting
