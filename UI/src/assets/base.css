@@ -7,6 +7,12 @@
   --vt-c-black: #181818;
   --vt-c-black-soft: #222222;
   --vt-c-black-mute: #282828;
+  --vt-c-green: #00BD1E;
+  --vt-c-red: #C10000;
+  --vt-c-orange: #FF8C00;
+  --vt-c-blue: #007AFF;
+  --vt-c-grey: #8E8E93;
+
 
   --vt-c-indigo: #2c3e50;
 
@@ -15,23 +21,33 @@
   --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
   --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
 
+  --vt-c-layer-dark: rgba(255, 255, 255, 0.02);
+  --vt-c-layer-light: rgba(0, 0, 0, 0.02);
+
   --vt-c-text-light-1: var(--vt-c-indigo);
   --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
   --vt-c-text-dark-1: var(--vt-c-white);
   --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
 }
 
-/* semantic color variables for this project */
 :root {
   --color-background: var(--vt-c-white);
   --color-background-soft: var(--vt-c-white-soft);
   --color-background-mute: var(--vt-c-white-mute);
+
+  --color-layer: var(--vt-c-layer-light);
 
   --color-border: var(--vt-c-divider-light-2);
   --color-border-hover: var(--vt-c-divider-light-1);
 
   --color-heading: var(--vt-c-text-light-1);
   --color-text: var(--vt-c-text-light-1);
+
+  --color-enabled: var(--vt-c-green);
+  --color-disabled: var(--vt-c-red);
+  --color-unknown: var(--vt-c-grey);
+  --color-warning: var(--vt-c-orange);
+  --color-pending: var(--vt-c-blue);
 
   --section-gap: 160px;
 }
@@ -41,6 +57,8 @@
     --color-background: var(--vt-c-black);
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);
+
+    --color-layer: var(--vt-c-layer-dark);
 
     --color-border: var(--vt-c-divider-dark-2);
     --color-border-hover: var(--vt-c-divider-dark-1);
