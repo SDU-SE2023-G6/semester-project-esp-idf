@@ -15,20 +15,24 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@anu-vue/preset-theme-default": "^0.15.2",
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
     "@fortawesome/free-regular-svg-icons": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/vue-fontawesome": "^3.0.6",
     "ace-builds": "^1.33.1",
+    "anu-vue": "^0.15.2",
     "esp-web-tools": "^10.0.1",
     "file-loader": "^6.2.0",
     "jquery": "^3.7.1",
     "pinia": "^2.1.7",
+    "primevue": "^3.52.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
+    "@iconify-json/bx": "^1.1.10",
     "@playwright/test": "^1.43.0",
     "@rushstack/eslint-patch": "^1.8.0",
     "@tsconfig/node20": "^20.1.4",
@@ -47,6 +51,7 @@
     "npm-run-all2": "^6.1.2",
     "prettier": "^3.2.5",
     "typescript": "~5.4.0",
+    "unocss": "^0.59.4",
     "vite": "^5.2.8",
     "vitest": "^1.4.0",
     "vue-tsc": "^2.0.11"
