@@ -502,5 +502,4 @@ const Data = {
 }
 
 
-// Export the object
 export default Data
