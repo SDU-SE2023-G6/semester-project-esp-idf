@@ -1,10 +1,22 @@
 <script setup lang="ts">
-    import XtextEditor from '@/components/XtextEditor.vue'
+    //import XtextEditor from '@/components/XtextEditor.vue'
 </script>
 
 <template>
-    <main>
+    <div class="wrapper">
         <h1>DSL Editor</h1>
-        <XtextEditor />
-    </main>
+        <iframe src="http://localhost:8080/index.html"></iframe>
+        <!--<XtextEditor />-->
+    </div>
 </template>
+
+<style scoped>
+    .wrapper {
+        height: calc(100% - 2em);
+    }
+    iframe {
+        border: 2px solid pink;
+        width: 100%;
+        height: 100%;
+    }
+</style>

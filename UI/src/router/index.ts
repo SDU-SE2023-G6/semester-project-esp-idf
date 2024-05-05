@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+// src/router/index.ts
+import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '../views/HomeView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,19 +11,42 @@ const router = createRouter({
       component: HomeView
     },
     {
+      path: '/logs',
+      name: 'logs',
+      component: () => import('../views/LogsView.vue')
+    },
+    {
+      path: '/areas',
+      name: 'areas',
+      component: () => import('../views/AreasView.vue')
+    },
+    {
+      path: '/devices',
+      component: () => import('../views/DevicesView.vue'),
+      children: [
+        {
+          path: '',
+          name: 'deviceList',
+          component: () => import('../components/DeviceList.vue')
+        },
+        {
+          path: ':id',
+          name: 'deviceDetail',
+          component: () => import('../components/DeviceDetail.vue')
+        }
+      ]
+    },
+    {
       path: '/editor',
       name: 'XtextEditor',
       component: () => import('../views/DslView.vue')
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue')
+      path: '/data-monitoring',
+      name: 'dataMonitoring',
+      component: () => import('../views/DataMonitoringView.vue')
     }
   ]
-})
+});
 
-export default router
+export default router;
