@@ -18,23 +18,23 @@ const router = createRouter({
     {
       path: '/areas',
       name: 'areas',
-      component: () => import('../views/AreasView.vue')
-    },
-    {
-      path: '/devices',
-      component: () => import('../views/DevicesView.vue'),
+      component: () => import('../views/AreasView.vue'),
       children: [
         {
           path: '',
-          name: 'deviceList',
-          component: () => import('../components/DeviceList.vue')
+          name: 'areaList',
+          component: () => import('../components/AreaList.vue')
         },
         {
           path: ':id',
-          name: 'deviceDetail',
-          component: () => import('../components/DeviceDetail.vue')
+          name: 'areaDetail',
+          component: () => import('../components/AreaDetail.vue')
         }
       ]
+    },
+    {
+      path: '/satellites/:id',
+      component: () => import('../components/SatelliteDetail.vue'),
     },
     {
       path: '/editor',

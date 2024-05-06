@@ -23,12 +23,14 @@
     "@fortawesome/vue-fontawesome": "^3.0.6",
     "ace-builds": "^1.33.1",
     "anu-vue": "^0.15.2",
+    "chart.js": "^4.4.2",
     "esp-web-tools": "^10.0.1",
     "file-loader": "^6.2.0",
     "jquery": "^3.7.1",
     "pinia": "^2.1.7",
     "primevue": "^3.52.0",
     "vue": "^3.4.21",
+    "vue-chartjs": "^5.3.1",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
