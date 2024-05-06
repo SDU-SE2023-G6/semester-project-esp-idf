@@ -7,5 +7,10 @@
 
     "lib": [],
     "types": ["node", "jsdom"]
-  }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "tests/**/*.ts"
+  ]
 }
