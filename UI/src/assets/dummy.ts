@@ -23,7 +23,8 @@ const statuses: SatelliteStatus[] = ['online', 'offline', 'error', 'pending'];
 const currentTimestamp = Math.floor(Date.now() / 1000);
 
 const randomTimestampWithinLast24Hours = () => {
-    return (currentTimestamp - 86400) + Math.floor(Math.random() * 86400);
+    const timestamp = (currentTimestamp - 86400) + Math.floor(Math.random() * 86400);
+    return timestamp.toString();
 }
 
 const satellites: Satellite[] = [
