@@ -1,7 +1,7 @@
 import type { Area } from "@/types/Area";
 import type { DataPoint } from "@/types/DataPoint";
 import type { Log } from "@/types/Log";
-import type { Satellite } from "@/types/Satellite";
+import type { Satellite, SatelliteStatus } from "@/types/Satellite";
 
 const areas : Area[] = [
     {
@@ -18,230 +18,270 @@ const areas : Area[] = [
     }
 ];
 
-const satellites : Satellite[] = [
+const statuses: SatelliteStatus[] = ['online', 'offline', 'error', 'pending'];
+
+const satellites: Satellite[] = [
     {
         id: 1,
         name: 'F-HT-00-00',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 2,
         name: 'F-HT-00-01',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 3,
         name: 'F-CO2-00-01',
         area: 1,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 4,
         name: 'F-HT-00-02',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 5,
         name: 'F-HT-00-03',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 6,
         name: 'F-HT-01-00',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 7,
         name: 'F-HT-01-01',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 8,
         name: 'F-HT-01-02',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 9,
         name: 'F-HT-01-03',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 10,
         name: 'F-CO2-01-03',
         area: 1,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 11,
         name: 'F-HT-02-00',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 12,
         name: 'F-HT-02-01',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 13,
         name: 'F-HT-02-02',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 14,
         name: 'F-HT-02-03',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 16,
         name: 'F-HT-03-00',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 17,
         name: 'F-HT-03-01',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 18,
         name: 'F-HT-03-02',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 19,
         name: 'F-HT-03-03',
         area: 1,
-        class: 'HT'
+        class: 'HT',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 20,
         name: 'P-Temp',
         area: 2,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 21,
         name: 'P-CO2',
         area: 2,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 22,
         name: 'P-Rad',
         area: 2,
-        class: 'Rad'
+        class: 'Rad',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 23,
         name: 'C-Temp-00',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 24,
         name: 'C-Temp-01',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 25,
         name: 'C-Temp-02',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 26,
         name: 'C-Temp-03',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 27,
         name: 'C-Temp-04',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 28,
         name: 'C-Temp-05',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 29,
         name: 'C-Temp-06',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 30,
         name: 'C-Temp-07',
         area: 3,
-        class: 'T'
+        class: 'T',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 31,
         name: 'C-CO2-00',
         area: 3,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 32,
         name: 'C-CO2-01',
         area: 3,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 33,
         name: 'C-CO2-02',
         area: 3,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 34,
         name: 'C-CO2-03',
         area: 3,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 35,
         name: 'C-CO2-04',
         area: 3,
-        class: 'CO2'
+        class: 'CO2',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 39,
         name: 'C-Rad-00',
         area: 3,
-        class: 'Rad'
+        class: 'Rad',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 40,
         name: 'C-Rad-01',
         area: 3,
-        class: 'Rad'
+        class: 'Rad',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     },
     {
         id: 41,
         name: 'C-Rad-02',
         area: 3,
-        class: 'Rad'
+        class: 'Rad',
+        status: statuses[Math.floor(Math.random() * statuses.length)]
     }
 ];
+
 
 const dataPoints : DataPoint[] = [
     {
