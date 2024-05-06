@@ -20,6 +20,12 @@ const areas : Area[] = [
 
 const statuses: SatelliteStatus[] = ['online', 'offline', 'error', 'pending'];
 
+const currentTimestamp = Math.floor(Date.now() / 1000);
+
+const randomTimestampWithinLast24Hours = () => {
+    return (currentTimestamp - 86400) + Math.floor(Math.random() * 86400);
+}
+
 const satellites: Satellite[] = [
     {
         id: 1,
@@ -286,224 +292,224 @@ const satellites: Satellite[] = [
 const dataPoints : DataPoint[] = [
     {
         value: 35.2,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 1,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 36.1,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 1,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 19.4,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 2,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 18.9,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 2,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 408.5,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 3,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 410.0,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 3,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 22.8,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 23,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 23.2,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 23,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 21.1,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 24,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 21.3,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 24,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 405.0,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 31,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 406.5,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 31,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 405.7,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 32,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 407.1,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 32,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 7.8,
-        timestamp: "1683091200",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 39,
         sensor: "Radiation",
         unit: "Gy"
     },
     {
         value: 7.9,
-        timestamp: "1683094800",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 39,
         sensor: "Radiation",
         unit: "Gy"
     },
     {
         value: 36.7,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 1,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 19.1,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 2,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 411.8,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 3,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 20.9,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 23,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 22.7,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 24,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 408.4,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 31,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 408.0,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 32,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 7.6,
-        timestamp: "1683098400",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 39,
         sensor: "Radiation",
         unit: "Gy"
     },
     {
         value: 38.2,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 1,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 19.6,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 2,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 412.4,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 3,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 21.2,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 23,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 22.0,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 24,
         sensor: "Temperature",
         unit: "°C"
     },
     {
         value: 407.5,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 31,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 407.2,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 32,
         sensor: "CO2",
         unit: "ppm"
     },
     {
         value: 7.4,
-        timestamp: "1683102000",
+        timestamp: randomTimestampWithinLast24Hours(),
         satellite: 39,
         sensor: "Radiation",
         unit: "Gy"
@@ -514,86 +520,86 @@ const dataPoints : DataPoint[] = [
 const logs: Log[] = [
     {
         type: "info",
-        timestamp: "1683091200",
-        satellite: 1,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 1,
         message: "Update completed"
     },
     {
         type: "warning",
-        timestamp: "1683094800",
-        satellite: 2,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 2,
         message: "Did not report for 4 hours"
     },
     {
         type: "error",
-        timestamp: "1683098400",
-        satellite: 3,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 3,
         message: "An error occurred at 12:00"
     },
     {
         type: "success",
-        timestamp: "1683102000",
-        satellite: 1,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 1,
         message: "Connection restored successfully"
     },
     {
         type: "status",
-        timestamp: "1683105600",
-        satellite: 23,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 23,
         message: "System operating normally"
     },
     {
         type: "info",
-        timestamp: "1683109200",
-        satellite: 24,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 24,
         message: "Update completed"
     },
     {
         type: "error",
-        timestamp: "1683112800",
-        satellite: 31,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 31,
         message: "Update failed"
     },
     {
         type: "warning",
-        timestamp: "1683116400",
-        satellite: 32,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 32,
         message: "Connection stopped abruptly"
     },
     {
         type: "info",
-        timestamp: "1683120000",
-        satellite: 39,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 39,
         message: "Update completed"
     },
     {
         type: "error",
-        timestamp: "1683123600",
-        satellite: 3,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 3,
         message: "Did not report for 6 hours"
     },
     {
         type: "status",
-        timestamp: "1683127200",
-        satellite: 1,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 1,
         message: "System operating normally"
     },
     {
         type: "info",
-        timestamp: "1683130800",
-        satellite: 23,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 23,
         message: "Connection restored successfully"
     },
     {
         type: "success",
-        timestamp: "1683134400",
-        satellite: 2,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 2,
         message: "Update completed"
     },
     {
         type: "warning",
-        timestamp: "1683138000",
-        satellite: 3,
+        timestamp: randomTimestampWithinLast24Hours(),
+        source: 3,
         message: "Connection stopped abruptly"
     }
 ]
