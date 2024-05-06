@@ -247,164 +247,229 @@ const dataPoints : DataPoint[] = [
     {
         value: 35.2,
         timestamp: "1683091200",
-        satellite: 1
+        satellite: 1,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 36.1,
         timestamp: "1683094800",
-        satellite: 1
+        satellite: 1,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 19.4,
         timestamp: "1683091200",
-        satellite: 2
+        satellite: 2,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 18.9,
         timestamp: "1683094800",
-        satellite: 2
+        satellite: 2,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 408.5,
         timestamp: "1683091200",
-        satellite: 3
+        satellite: 3,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 410.0,
         timestamp: "1683094800",
-        satellite: 3
+        satellite: 3,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 22.8,
         timestamp: "1683091200",
-        satellite: 23
+        satellite: 23,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 23.2,
         timestamp: "1683094800",
-        satellite: 23
+        satellite: 23,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 21.1,
         timestamp: "1683091200",
-        satellite: 24
+        satellite: 24,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 21.3,
         timestamp: "1683094800",
-        satellite: 24
+        satellite: 24,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 405.0,
         timestamp: "1683091200",
-        satellite: 31
+        satellite: 31,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 406.5,
         timestamp: "1683094800",
-        satellite: 31
+        satellite: 31,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 405.7,
         timestamp: "1683091200",
-        satellite: 32
+        satellite: 32,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 407.1,
         timestamp: "1683094800",
-        satellite: 32
+        satellite: 32,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 7.8,
         timestamp: "1683091200",
-        satellite: 39
+        satellite: 39,
+        sensor: "Radiation",
+        unit: "Gy"
     },
     {
         value: 7.9,
         timestamp: "1683094800",
-        satellite: 39
+        satellite: 39,
+        sensor: "Radiation",
+        unit: "Gy"
     },
     {
         value: 36.7,
         timestamp: "1683098400",
-        satellite: 1
+        satellite: 1,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 19.1,
         timestamp: "1683098400",
-        satellite: 2
+        satellite: 2,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 411.8,
         timestamp: "1683098400",
-        satellite: 3
+        satellite: 3,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 20.9,
         timestamp: "1683098400",
-        satellite: 23
+        satellite: 23,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 22.7,
         timestamp: "1683098400",
-        satellite: 24
+        satellite: 24,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 408.4,
         timestamp: "1683098400",
-        satellite: 31
+        satellite: 31,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 408.0,
         timestamp: "1683098400",
-        satellite: 32
+        satellite: 32,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 7.6,
         timestamp: "1683098400",
-        satellite: 39
+        satellite: 39,
+        sensor: "Radiation",
+        unit: "Gy"
     },
     {
         value: 38.2,
         timestamp: "1683102000",
-        satellite: 1
+        satellite: 1,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 19.6,
         timestamp: "1683102000",
-        satellite: 2
+        satellite: 2,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 412.4,
         timestamp: "1683102000",
-        satellite: 3
+        satellite: 3,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 21.2,
         timestamp: "1683102000",
-        satellite: 23
+        satellite: 23,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 22.0,
         timestamp: "1683102000",
-        satellite: 24
+        satellite: 24,
+        sensor: "Temperature",
+        unit: "°C"
     },
     {
         value: 407.5,
         timestamp: "1683102000",
-        satellite: 31
+        satellite: 31,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 407.2,
         timestamp: "1683102000",
-        satellite: 32
+        satellite: 32,
+        sensor: "CO2",
+        unit: "ppm"
     },
     {
         value: 7.4,
         timestamp: "1683102000",
-        satellite: 39
+        satellite: 39,
+        sensor: "Radiation",
+        unit: "Gy"
     }
-]
+];
+
 
 const logs: Log[] = [
     {
