@@ -1,4 +1,4 @@
-export type SatelliteId = number | string;
+export type SatelliteId = number;
 
 import type { AreaId } from '@/types/Area'
 

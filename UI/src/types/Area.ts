@@ -1,4 +1,4 @@
-export type AreaId = number | string;
+export type AreaId = number;
 
 export type Area = {
     id: AreaId;

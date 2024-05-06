@@ -23,7 +23,9 @@ const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-app.use(anu)
+app.use(anu, {
+    initialTheme: 'dark'
+})
 app.use(PrimeVue);
 
 app.mount('#app')

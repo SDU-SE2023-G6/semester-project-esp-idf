@@ -22,13 +22,9 @@ const isActive = (path: string) => {
                 <FontAwesomeIcon :icon="faFile" /> 
                 <span>Logs</span>
             </router-link>
-            <router-link to="/areas">
+            <router-link to="/areas" :class="{ 'active': (isActive('/areas') || isActive('/satellites')) }">
                 <FontAwesomeIcon :icon="faMountainCity" /> 
                 <span>Areas</span>
-            </router-link>
-            <router-link to="/devices" :class="{ 'active': isActive('/devices') }">
-                <FontAwesomeIcon :icon="faMicrochip" /> 
-                <span>Devices</span>
             </router-link>
             <router-link to="/editor">
                 <FontAwesomeIcon :icon="faCode" /> 
@@ -68,10 +64,13 @@ const isActive = (path: string) => {
 
     nav a {
         text-decoration: none;
-        color: #495057;
+        color: var(--color-text);
     }
 
     nav a.router-link-exact-active, nav a.active {
-        color: #007bff;
+        color: var(--vt-c-blue)
+    }
+    nav a svg {
+        width: 1.25em;
     }
 </style>

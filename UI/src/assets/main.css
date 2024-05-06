@@ -30,3 +30,14 @@ a,
 .spinner--socker{
   margin: 3em;
 }
+
+h1 {
+  font-weight: bolder;
+  font-size: 2em;
+  margin-bottom: 1em;
+  color: var(--color-heading);
+}
+
+.button {
+  background: var(--vt-c-blue) !important;
+}

@@ -21,9 +21,11 @@
 			}
 		});
 	
+	 	var editor;
+	 
 		require(["webjars/ace/1.3.3/src/ace"], function(ace) {
 			require(["xtext/xtext-ace"], function(xtext) {
-				var editor = xtext.createEditor({
+				editor = xtext.createEditor({
 					baseUrl: baseUrl,
 					syntaxDefinition: "xtext-resources/generated/mode-helloweb"
 				});
@@ -38,30 +40,90 @@
 					enableSnippets: true,
 					enableLiveAutocompletion: false
 				});
+				
+				var newValue = "This is some default text!";
+        		editor.setValue(newValue, -1); // -1 moves the cursor to the start
 			});
 		});
+
+		var newValue;
+
+		function saveDsl() {
+			console.log("saving");
+		    let dslText = editor.getValue();
+		    newValue = dslText;  
+		    newValueJSON = JSON.stringify(dslText);  
+		    
+		    fetch('http://localhost:8080/saveDsl', {
+		      method: 'POST',
+		      headers: {
+		        'Content-Type': 'application/json',
+		      },
+		      body: JSON.stringify({dslText}),
+		    })
+		}
+		
+		function loadDsl() {
+			console.log(newValue);
+			editor.setValue(newValue, -1); // -1 moves the cursor to the start
+		}
+		
 
 	</script>
 </head>
 <body>
 
 <style>
-	/* some random styling */
-	#xtext-editor {
-		width: 800px;   /* Set the width of the editor */
-		height: 500px;  /* Set the height of the editor */
-		border: 3px solid #888; /* Add a border around the editor */
+	.content {
+		width: 100%;	
+		height: 100%;
+		position: relative;	
+		top: 0;
+		display: flex;
+		flex-direction: column;
 	}
-
+	.buttons {
+		display: flex;
+		flex-direction: row;
+		gap: 2em;
+	}
+	button {
+		padding: 0.75em 1.5em;
+		background: #007AFF;
+		color: #fff;
+		border: none;
+		border-radius: 10px;
+		font-weight: bolder;
+		cursor: pointer;
+		margin-bottom: 1em;
+	}
+	button:hover {
+		background: #228CFF;
+	}
+	.container {
+		margin: 0;
+		padding: 0;
+	}
+	#xtext-editor {
+		position: relative;
+		height: 100%;
+		border: none;
+	}
+	
+	
 </style>
 
 <div class="container">
-	<div class="header">
-		<h1>Example HelloWeb123 Web Editor</h1>
-	</div>
 	<div class="content">
+		<div class="buttons">
+			<button onclick="saveDsl()">Save DSL</button>
+			<button onclick="loadDsl()">Load DSL</button>	
+		</div>
+	
 		<div id="xtext-editor" data-editor-xtext-lang="helloweb"></div>
 	</div>
+	
+	
 </div>
 
 </body>
