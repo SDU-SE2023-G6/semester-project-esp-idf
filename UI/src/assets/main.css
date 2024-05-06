@@ -38,6 +38,15 @@ h1 {
   color: var(--color-heading);
 }
 
+h2 {
+  font-weight: bolder;
+  font-size: 1.25em;
+}
+
 .button {
   background: var(--vt-c-blue) !important;
+}
+
+.flex {
+  display: flex;
 }

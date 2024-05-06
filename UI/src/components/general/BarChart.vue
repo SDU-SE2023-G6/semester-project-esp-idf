@@ -68,5 +68,6 @@ const slidingWindow = computed(() => {
   .wrapper {
     border: 1px solid #333;
     padding: 1em;
+    border-radius: 10px;
   }
 </style>

@@ -16,7 +16,8 @@ import GlobalNavigation from './components/GlobalNavigation.vue'
 
 <style scoped>
 header {
-  height: 100vh;
+  height: 100%;
+  min-height: 100vh;
   background-color:var(--color-background-mute)
 }
 
