@@ -15,7 +15,9 @@ export const useDataStore = defineStore('data', {
   }),
   getters: {
     getAreas: state => state.areas,
+    getArea: state => (areaId: AreaId) => state.areas.find(area => area.id === areaId),
     getSatellites: state => state.satellites,
+    getSatellite: state => (satelliteId: SatelliteId) => state.satellites.find(satellite => satellite.id === satelliteId),
     getDataPoints: state => state.dataPoints,
     getLogs: state => state.logs,
     getSatellitesByArea: state => (areaId: AreaId) => state.satellites.filter((satellite: Satellite) => satellite.area === areaId),
