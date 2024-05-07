@@ -31,10 +31,7 @@ export const useDataStore = defineStore('data', {
   actions: {
     editSatellite(satellite: Satellite) {
       const index = this.satellites.findIndex(sat => sat.id === satellite.id);
-      console.log("idxi", index);
-      console.log("satellite", satellite)
       this.satellites[index] = satellite;
-      console.log("this.satellites[index]", this.satellites[index])
     },
     addArea(area: Area) {
       this.areas.push(area);

@@ -24,6 +24,8 @@
 
   --vt-c-layer-dark: rgba(255, 255, 255, 0.05);
   --vt-c-layer-light: rgba(0, 0, 0, 0.05);
+  --vt-c-layer-dark-hover: rgba(255, 255, 255, 0.1);
+  --vt-c-layer-light-hover: rgba(0, 0, 0, 0.1);
 
   --vt-c-text-light-1: var(--vt-c-indigo);
   --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
@@ -37,6 +39,8 @@
   --color-background-mute: var(--vt-c-white-mute);
 
   --color-layer: var(--vt-c-layer-light);
+  --color-layer-hover: var(--vt-c-layer-light-hover);
+
 
   --color-border: var(--vt-c-divider-light-2);
   --color-border-hover: var(--vt-c-divider-light-1);
@@ -62,6 +66,7 @@
     --color-background-mute: var(--vt-c-black-mute);
 
     --color-layer: var(--vt-c-layer-dark);
+    --color-layer-hover: var(--vt-c-layer-dark-hover);
 
     --color-border: var(--vt-c-divider-dark-2);
     --color-border-hover: var(--vt-c-divider-dark-1);

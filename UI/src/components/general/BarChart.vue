@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import { Bar } from 'vue-chartjs'
-  import { computed, defineProps } from 'vue'
+  import { computed } from 'vue'
   import { ArcElement, Chart as ChartJS, Legend, Tooltip, LinearScale, CategoryScale, BarElement } from 'chart.js'
-  import type { ChartOptions, ChartData, ChartDataset } from 'chart.js'
+  import type { ChartOptions, ChartData } from 'chart.js'
 
   ChartJS.register(ArcElement, Tooltip, Legend, LinearScale, CategoryScale, BarElement)
 
