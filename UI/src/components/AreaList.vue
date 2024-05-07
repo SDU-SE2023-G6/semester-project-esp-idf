@@ -39,6 +39,7 @@ const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
     <h1>Areas</h1>
 
     <ABtn class="button" @click="isDialogShown = true">
+      <i class="i-bx-location-plus" />
       Add Area
     </ABtn>
 
