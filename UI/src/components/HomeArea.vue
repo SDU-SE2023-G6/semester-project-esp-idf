@@ -4,7 +4,7 @@
         <RouterLink :to="`/areas/${ props.area.id}`"><h2 class="area-name">{{ props.area.name }}</h2></RouterLink>
         <div v-if="props.details" class="flex area-details">
           <RouterLink :to="`/areas/${ props.area.id}`">
-            <FontAwesomeIcon :icon="faEdit" />
+            <FontAwesomeIcon :icon="faList"/>
           </RouterLink>
           <FontAwesomeIcon :icon="faPencil" @click="isDialogShown = true"/>
           <FontAwesomeIcon :icon="faTrash" @click="removeArea()"/> 
@@ -53,7 +53,7 @@ import type { Area } from '@/types/Area';
 import HomeSatellite from '@/components/HomeSatellite.vue';
 import {useDataStore} from '@/stores/dataStore';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faTrash, faPencil, faEdit } from '@fortawesome/free-solid-svg-icons'
+import { faTrash, faPencil, faList } from '@fortawesome/free-solid-svg-icons'
 import { defineProps, ref } from 'vue';
 
 const dataStore = useDataStore();
