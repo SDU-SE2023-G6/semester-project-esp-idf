@@ -23,7 +23,7 @@
     margin-right: 5px;
   }
   
-  .status.info {
+  .status.info, .status.pending {
     background-color: var(--color-pending);
   }
   
@@ -35,7 +35,12 @@
     background-color: var(--color-disabled);
   }
   
-  .status.success {
+  .status.success, .status.online {
     background-color: var(--color-enabled);
   }
+
+  .status.offline {
+    background-color: var(--color-unknown);
+  }
+
 </style>

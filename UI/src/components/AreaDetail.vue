@@ -1,45 +1,53 @@
 <script setup lang="ts">
-  import { ref } from 'vue';
+  import { ref, computed, watch } from 'vue';
   import Button from "primevue/button"
   import DataTable from "primevue/datatable"
+  import InputText from "primevue/inputtext"
   import Column from "primevue/column"
   import Dropdown from "primevue/dropdown"
   import { useDataStore } from '@/stores/dataStore';
   import { useRoute } from 'vue-router';
   import BackButton from '@/components/general/BackButton.vue';
+  import { FilterMatchMode } from 'primevue/api';
+
 
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  import { faPencil, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+  import { faSearch, faTrashCan } from '@fortawesome/free-solid-svg-icons'
   import type { Satellite } from '@/types/Satellite';
+  import StatusCircle from './general/StatusCircle.vue';
+  import MultiSelect from 'primevue/multiselect';
 
 
   const dataStore = useDataStore();
   const route = useRoute();
 
-  const id = route.params.id;
-  const area = dataStore.getAreaById(Number(id));
-  console.log(area);
+  const id = ref(route.params.id);
+  const area = computed(() => dataStore.getAreaById(Number(id.value)));
 
-  const satellites = dataStore.getSatellitesByArea(Number(id));
-  console.log(satellites);
 
-  const columns = ["name", "class"];
+  const areas = dataStore.getAreas;
+  const satellites = ref(dataStore.getSatellitesByArea(Number(id.value)));
+
+  console.log("satellites", satellites.value);
+
+
   const selectedSatellites = ref([]);
-  const selectedClass = ref();
-  const classes = ref(dataStore.getClasses);
+  const selectedArea = ref();
+  const classes = dataStore.getClasses;
 
-
-  const changeClass = () => {
+  const changeArea = () => {
     for(let satellite of selectedSatellites.value) {
-      satellite.class = selectedClass.value;
+      satellite.area = selectedArea.value;
       dataStore.editSatellite(satellite);
     }
-  }
+    satellites.value = dataStore.getSatellitesByArea(Number(id.value));
+  } 
 
-  const deleteSatellite = () => {
-    console.log("delete satellite")
-    satellite.area = undefined;
-    dataStore.editSatellite(satellite);
+  const deleteSatellite = (satellite: Satellite) => {
+    if (!confirm("Are you sure you want to delete this area?")) return;
+    dataStore.deleteSatellite(satellite);
+    satellites.value = dataStore.getSatellitesByArea(Number(id.value));
+
   }
 
   const isDialogShown = ref(false);
@@ -49,6 +57,9 @@
     id: 0
   }
 
+  watch(satellites.value, () => {
+    console.log("satellites", satellites.value)
+  })
 
   const editSatellite = (satellite: Satellite) => {
 
@@ -73,92 +84,153 @@
     helpSatellite.name = "";
   }
 
+
+
+  const products = ref(satellites);
+  const editingRows = ref([]);
+
+
+const onRowEditSave = (event) => {
+    let { newData, index } = event;
+
+    products.value[index] = newData;
+};
+
+
+const filters = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+    class: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+    status: { value: null, matchMode: FilterMatchMode.EQUALS },
+});
+
+
+
+
 </script>
 
 <template>
 
   <BackButton />
 
-  <div v-if="area">
+  <div v-if="area" class="body-wrapper">
     <h1>{{ area.name }}</h1> 
   
-    <div :class="{ visible: selectedSatellites.length > 0 }" class="menu">
-      <Dropdown v-model="selectedClass" :options="classes"  placeholder="Select a class" />
-      <Button :label="`Move to class ${selectedClass}`" @click="changeClass" style="border: 2px solid black" />
+    <div class="flex menu-wrapper">
+      <div :class="{ visible: selectedSatellites.length > 0 }" class="area-menu">
+          <Dropdown v-model="selectedArea" :options="areas" optionLabel="name" placeholder="Select an area" :disabled="selectedSatellites.length <= 0" />
+
+          <ABtn class="button" @click="changeArea" :disabled="selectedSatellites.length <= 0">
+            Move to  {{selectedArea?.name}}
+          </ABtn>
+      </div>
+      <AInput
+          type="text"
+          placeholder="Keywords Search"
+          prepend-inner-icon="i-bx-search"
+          v-model="filters['global'].value"
+          class="input"
+        />
     </div>
 
-    <DataTable
-      v-model:selection="selectedSatellites"
-      :value="satellites"
-      selectionMode="multiple"
-      dataKey="id"
-      :rows="5"
-      :paginator="true"
-      :currentPageReportTemplate="'Showing {first} to {last} of {totalRecords}'"
-      :rowsPerPageOptions="[5, 10, 20]"
-    >
+    <div class="table-wrapper">
+      <DataTable
+        v-model:editingRows="editingRows"
+        v-model:selection="selectedSatellites"
+        v-model:filters="filters"
+        :globalFilterFields="['name', 'class', 'status']"
+        :value="satellites"
+        selectionMode="multiple"
+        editMode="row"
+        dataKey="id"
+        :rows="10"
+        :paginator="true"
+        :currentPageReportTemplate="'Showing {first} to {last} of {totalRecords}'"
+        :rowsPerPageOptions="[5, 10, 20]"
+        @row-edit-save="onRowEditSave"
+      >
 
-    <template #empty> No customers found. </template>
-    <template #loading> Loading customers data. Please wait. </template>
+      <template #empty> No satellites found. </template>
+      <template #loading> Loading satellites data. Please wait. </template>  
 
+      <Column selectionMode="multiple" headerStyle="width: 3em" />
 
-    <Column selectionMode="multiple" headerStyle="width: 3em"></Column>
-    <Column v-for="col of columns" :key="col" :field="col" :header="col"></Column>
+      <column field="status" header="Status" style="width: 50px;">
+        <template #body="{ data }">
+          <StatusCircle :type="data.status" />
+        </template>
+      </column>
 
+      <Column field="name" header="Name" style="width: 30%;">
+        <template #editor="{ data, field }">
+          <InputText v-model="data[field]" autofocus/>
+        </template>
+      </Column>
 
-    <column field="actions" header="Actions">
-      <template #body="{ data }">
-        <FontAwesomeIcon :icon="faPencil" @click="editSatellite(data)"/>
-        <ADialog
-          v-model="isDialogShown"
-          title="Edit Satellite"
-        >
-          <div class="a-card-body">
-            <AInput
-              type="text"
-              label="Satellite name"
-              placeholder="Enter satellite name"
-              v-model="helpSatellite.name"
-              required
-            />
+      <Column field="class" header="Class" style="width: 30%;">
+        <template #editor="{ data, field }">
+            <Dropdown v-model="data[field]" :options="classes" placeholder="Select a class" />
+        </template>
+      </Column>
 
-            <div class="buttons">
-              <ABtn
-                color="success"
-                @click="handleModal()"
-              >
-                Confirm
-              </ABtn>
-              <ABtn
-                variant="light"
-                color="danger"
-                @click="isDialogShown = false"
-              >
-                Close
-              </ABtn>
-            </div>
-          </div>
-        </ADialog>
-      </template>
-    </column>
+      <Column :rowEditor="true" style="width: 10%; min-width: 8rem" bodyStyle="text-align:center">
+        <p>X</p>
+      </Column>
 
-      
-    </DataTable>
-
+      <Column>
+        <template #body="{ data }">
+            <FontAwesomeIcon :icon="faTrashCan" @click="deleteSatellite(data)" />
+        </template>
+      </Column>
+      </DataTable>
+    </div>
 
   </div>
 
   <p v-else class="">No area found</p>
 </template>
 
-<style scoped>
-  .menu {
+<style>
+  .p-datatable-tbody tr:hover td
+  {
+    background: var(--color-layer-hover) !important;
+  }
+
+  .p-datatable-thead th, .p-paginator {
+    background: var(--color-background-mute) !important;
+  }
+
+  .p-datatable-tbody td	 {
+    background: var(--color-background-soft) !important;
+  }
+
+  .menu-wrapper {
+    justify-content: space-between;
+    margin-bottom: 1em;
+    position: relative
+  }
+
+  .input {
+    position: absolute;
+    right: 0;
+  }
+
+  .table-wrapper {
+    border-radius: 15px;
+    overflow: hidden;
+   
+  }
+  .menu-wrapper .input {
+    width: 30%;
+    max-width: 300px;
+  }
+
+  .area-menu {
     opacity: 0;
+    gap: 1em;
+    display: flex;
   }
   .visible {
     opacity: 1;
-  }
-  input {
-    border: 1px solid black;
   }
 </style>

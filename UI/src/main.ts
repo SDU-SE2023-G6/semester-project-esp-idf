@@ -5,7 +5,7 @@ import 'anu-vue/dist/style.css'
 // default theme styles
 import '@anu-vue/preset-theme-default/dist/style.css'
 
-import 'primevue/resources/themes/aura-light-green/theme.css'
+import 'primevue/resources/themes/aura-dark-noir/theme.css'
 
 
 import './assets/main.css'

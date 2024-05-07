@@ -63,7 +63,7 @@
   <style scoped>
   .dialog-content {
     align-items: center;
-    padding: 1em;
+    padding: 0 1em 1em 1em;
     gap: 0.25em;
     display: grid;
     grid-template-columns: 15px 1fr;

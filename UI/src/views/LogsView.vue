@@ -31,7 +31,7 @@ const toggleType = (type: LogType) => {
 <template>
   <div>
     <h1>Logs</h1>
-    <div class="flex menu-wrapper">
+    <div class="flex logs-menu-wrapper">
       <h3>Filter: </h3>
       <div class="flex menu" 
            v-for="logType in logTypes" 
@@ -55,7 +55,7 @@ const toggleType = (type: LogType) => {
 .menu:hover {
   filter: brightness(150%);
 }
-.menu-wrapper {
+.logs-menu-wrapper {
   margin-bottom: 1em;
 }
 .menu.selected {
