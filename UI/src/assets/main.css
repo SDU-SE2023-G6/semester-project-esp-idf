@@ -42,6 +42,10 @@ h2 {
   font-weight: bolder;
   font-size: 1.25em;
 }
+h3 {
+  font-weight: bolder;
+  font-size: 1em;
+}
 
 .button {
   background: var(--vt-c-blue) !important;
@@ -65,4 +69,8 @@ main {
   margin-left: 180px;
   height: 100%;
   min-height: 100vh;
+}
+
+.w-full {
+  width: 100%;
 }
