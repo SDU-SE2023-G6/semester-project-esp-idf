@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @Document
 @NoArgsConstructor
 @Data
-public class Device {
+public class Satellite {
   private @MongoId ObjectId id;
   private @NotBlank String name;
   private @Nullable Area area;

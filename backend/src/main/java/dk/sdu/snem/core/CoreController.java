@@ -1,6 +1,6 @@
 package dk.sdu.snem.core;
 
-import dk.sdu.snem.core.repo.DeviceRepository;
+import dk.sdu.snem.core.repo.SatelliteRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class CoreController {
 
-  private final DeviceRepository deviceRepo;
+  private final SatelliteRepository satelliteRepo;
 
-  public CoreController(DeviceRepository deviceRepo) {
-    this.deviceRepo = deviceRepo;
+  public CoreController(SatelliteRepository deviceRepo) {
+    this.satelliteRepo = deviceRepo;
   }
 
   @RequestMapping(
@@ -24,11 +24,11 @@ public class CoreController {
       method = RequestMethod.GET)
   @ResponseBody
   @Operation(summary = "Register new user.")
-  public List<DeviceMetadata> getDevices() {
-    return deviceRepo.findAll().stream()
+  public List<SatelliteMetadata> getSatellites() {
+    return satelliteRepo.findAll().stream()
         .map(
             x ->
-                new DeviceMetadata(
+                new SatelliteMetadata(
                     x.getId().toHexString(),
                     x.getName(),
                     new AreaMetadata(x.getId().toHexString(), x.getName()),
@@ -39,7 +39,7 @@ public class CoreController {
         .toList();
   }
 
-  public record DeviceMetadata(
+  public record SatelliteMetadata(
       String id, String name, AreaMetadata area, @Nullable DeviceTypeMetadata deviceTypeMetadata) {}
 
   public record AreaMetadata(String id, String name) {}
