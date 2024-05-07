@@ -4,38 +4,38 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Document
 @NoArgsConstructor
 @Data
-public class Log {
+public class Satellite {
   private @MongoId ObjectId id;
-  private @Indexed @NotNull Instant timestamp;
-  private @Nullable String message;
-  private @Indexed @Nullable ObjectId satellite;
+  private @NotBlank String name;
 
-  private @Indexed @NotNull LogType type = LogType.UNSPECIFIED;
+  private @DocumentReference @Indexed @Nullable Area area;
+  private @DocumentReference @Indexed @Nullable DeviceType deviceType;
+  private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING;
 
   @Getter
   @Schema(enumAsRef = true)
-  public enum LogType {
-    UNSPECIFIED("UNSPECIFIED"),
-    INFO("INFO"),
-    WARNING("WARNING"),
-    HEARTBEAT("HEARTBEAT");
-    private final String stringValue;
+  public enum SatelliteStatus {
+    ONLINE("ONLINE"),
+    OFFLINE("OFFLINE"),
+    ERROR("ERROR"),
+    PENDING("PENDING");
 
-    LogType(String stringValue) {
-      this.stringValue = stringValue;
+    private final String value;
+
+    SatelliteStatus(String value) {
+      this.value = value;
     }
   }
 }
