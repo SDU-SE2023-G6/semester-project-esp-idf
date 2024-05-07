@@ -3,6 +3,8 @@ package dk.sdu.snem.core.model;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,19 +17,17 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @NoArgsConstructor
 @Data
 public class Log {
-
   private @MongoId ObjectId id;
-
-  private @NonNull LogType logType = LogType.UNKNOWN;
-
-  private @NotBlank String system;
+  private @NotNull Instant timestamp;
   private @Nullable String message;
-  private @Nullable ObjectId deviceId;
+  private @Nullable ObjectId satellite;
+
+  private @NotNull LogType type = LogType.UNSPECIFIED;
 
   @Getter
   @Schema(enumAsRef = true)
   public enum LogType {
-    UNKNOWN("UNKNOWN"),
+    UNSPECIFIED("UNSPECIFIED"),
     INFO("INFO"),
     WARNING("WARNING"),
     HEARTBEAT("HEARTBEAT");
