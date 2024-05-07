@@ -7,6 +7,7 @@ import '@anu-vue/preset-theme-default/dist/style.css'
 
 import 'primevue/resources/themes/aura-light-green/theme.css'
 
+import "https://unpkg.com/esp-web-tools@10/dist/web/install-button.js";
 
 import './assets/main.css'
 

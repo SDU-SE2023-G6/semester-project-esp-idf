@@ -1,0 +1,13 @@
+{
+    "name": "Initial firmware",
+    "version": "2024.0.1",
+    "new_install_prompt_erase": false,
+    "builds": [
+      {
+        "chipFamily": "ESP32",
+        "parts": [
+          { "path": "esp-web-install/new-satellite-firmware.bin", "offset": 0 }
+        ]
+      }
+    ]
+  }

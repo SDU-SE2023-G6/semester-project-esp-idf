@@ -33,10 +33,6 @@ const router = createRouter({
       ]
     },
     {
-      path: '/satellites/:id',
-      component: () => import('../components/SatelliteDetail.vue'),
-    },
-    {
       path: '/editor',
       name: 'XtextEditor',
       component: () => import('../views/DslView.vue')
@@ -45,6 +41,11 @@ const router = createRouter({
       path: '/data-monitoring',
       name: 'dataMonitoring',
       component: () => import('../views/DataMonitoringView.vue')
+    },
+    {
+      path: '/new-device',
+      name: 'newDevice',
+      component: () => import('../views/NewDeviceView.vue')
     }
   ]
 });
