@@ -33,10 +33,6 @@ const router = createRouter({
       ]
     },
     {
-      path: '/satellites/:id',
-      component: () => import('../components/SatelliteDetail.vue'),
-    },
-    {
       path: '/editor',
       name: 'XtextEditor',
       component: () => import('../views/DslView.vue')
