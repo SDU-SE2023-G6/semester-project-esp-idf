@@ -1,0 +1,41 @@
+version: '3.7'
+services:
+  backend:
+    build: .
+    container_name: backend
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongodb_container
+    environment:
+      - SPRING_MONGODB_DATABASE=snemdb
+      - SPRING_MONGODB_HOST=mongodb_container
+    command: "java -jar /app.jar"
+
+  mqtt_broker:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt_broker
+    restart: always
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  mongodb_container:
+    image: mongo:6
+    container_name: mongodb_container
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: testdb
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data_container:/data/db
+
+volumes:
+  mongodb_data_container:
+
+
