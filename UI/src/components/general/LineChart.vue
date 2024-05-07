@@ -1,10 +1,11 @@
 <script setup lang="ts">
-  import { Bar } from 'vue-chartjs'
+  import { Line } from 'vue-chartjs'
   import { computed } from 'vue'
-  import { ArcElement, Chart as ChartJS, Legend, Tooltip, LinearScale, CategoryScale, BarElement } from 'chart.js'
+  import { ArcElement, Chart as ChartJS, Legend, Tooltip, LinearScale, CategoryScale, PointElement, LineElement } from 'chart.js'
   import type { ChartOptions, ChartData } from 'chart.js'
 
-  ChartJS.register(ArcElement, Tooltip, Legend, LinearScale, CategoryScale, BarElement)
+  ChartJS.register(ArcElement, Tooltip, Legend, LinearScale, CategoryScale, PointElement, LineElement)
+
 
   const props = defineProps<{
     labels: string[];
@@ -12,17 +13,18 @@
     color: string;
   }>()
 
-  const chartData = computed<ChartData<'bar'>>(() => {
+  const chartData = computed<ChartData<'line'>>(() => {
     return {
       labels: props.labels,
       datasets: [{
         data: props.data, 
         backgroundColor: props.color,
+        borderColor: props.color,
       }],
     }
   })
 
-  const chartOptions: ChartOptions<'bar'> = {
+  const chartOptions: ChartOptions<'line'> = {
   plugins: {
     legend: {
       display: false,
@@ -55,7 +57,7 @@
 
 <template>
     <div class="wrapper">
-        <Bar
+        <Line
             :options="chartOptions"
             :data="chartData"
         />
@@ -63,4 +65,5 @@
 </template>
 
 <style scoped>
+
 </style>

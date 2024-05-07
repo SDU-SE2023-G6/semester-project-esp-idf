@@ -22,19 +22,14 @@ const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
     return
   }
 
-  if(!isEditMode.value) {
-    dataStore.addArea({
+  dataStore.addArea({
       name: area.name,
       id: 69
-    })
-  } else {
-    dataStore.editArea(area) 
-  }
+  })
 
   isDialogShown.value = false;
   helpArea.name = "";
   isEditMode.value = false;
-
 }
 
 </script>
@@ -51,10 +46,12 @@ const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
       <HomeArea v-for="area in areas" :key="area.id" :area="area" :details="true"/>
     </div>
 
+    
+
 
     <ADialog
       v-model="isDialogShown"
-      :title="isEditMode ? 'Edit Area' : 'Add New Area'"
+      title="Add New Area"
     >
       <div class="a-card-body">
         <AInput
@@ -92,8 +89,21 @@ const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
    margin-bottom: 1em;
 
   }
+  .buttons {
+    display: flex;
+    gap: 0.5em;
+  }
+  .a-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
   .area-wrapper {
     gap: 1em;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .area-wrapper > * {
+   max-height: 300px;
   }
 </style>

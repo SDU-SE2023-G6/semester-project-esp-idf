@@ -24,7 +24,7 @@
           type="text"
           label="Area name"
           placeholder="Enter area name"
-          v-model="$props.area.name"
+          v-model="tempAreaName"
           required
         />
 
@@ -69,6 +69,7 @@ const props = defineProps<Props>();
 const satellites = dataStore.getSatellitesByArea(props.area.id);
 
 const isDialogShown = ref(false)
+const tempAreaName = ref(props.area.name);
 
 
 const removeArea = () => {
@@ -81,7 +82,7 @@ const editArea = (area: Area) => {
   if(area.name === "") {
     return
   }
-
+  area.name = tempAreaName.value;
   dataStore.editArea(area) 
   isDialogShown.value = false;
 }
@@ -96,12 +97,15 @@ const editArea = (area: Area) => {
   gap: 1em;
   align-items: center;
   position: relative;
-  z-index: 100;
+}
+.area-details > * {
+  cursor: pointer;
   color: var(--vt-c-blue);
 }
 .area-details > *:hover {
   cursor: pointer;
-  color:var(--vt-c-blue-hover)
+  filter: brightness(150%);
+  background: none;
 }
 .area-container {
   display: flex;
@@ -119,11 +123,9 @@ const editArea = (area: Area) => {
   display: flex;
   flex-direction: column;
   gap: 1em;
-
 }
 
 .area-satellites {
-  max-height: 200px;
   overflow-y: scroll;
   padding-right: 10px;
 }

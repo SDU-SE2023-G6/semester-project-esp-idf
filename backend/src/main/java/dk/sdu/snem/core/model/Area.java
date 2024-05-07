@@ -11,8 +11,6 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @NoArgsConstructor
 @Data
 public class Area {
-  @MongoId
-  private ObjectId id;
-  @NotBlank
-  private String name;
+  private @MongoId ObjectId id;
+  private @NotBlank String name;
 }

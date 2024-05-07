@@ -15,14 +15,4 @@ import GlobalNavigation from './components/GlobalNavigation.vue'
 </template>
 
 <style scoped>
-header {
-  height: 100%;
-  min-height: 100vh;
-  background-color:var(--color-background-mute)
-}
-
-main {
-  padding: 2em
-}
-
 </style>

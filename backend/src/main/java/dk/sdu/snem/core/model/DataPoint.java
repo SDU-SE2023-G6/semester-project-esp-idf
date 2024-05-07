@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -18,9 +19,9 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class DataPoint {
   private @MongoId ObjectId id;
 
-  private @NotNull Instant timestamp;
-  private @NotNull ObjectId deviceId;
-  private @NotNull String sensor;
+  private @Indexed @NotNull Instant timestamp;
+  private @Indexed @NotNull ObjectId deviceId;
+  private @Indexed @NotNull String sensor;
 
   private @NotNull Double measurement;
   private @NotBlank String unit;
