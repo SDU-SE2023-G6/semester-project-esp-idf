@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -18,11 +19,11 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @Data
 public class Log {
   private @MongoId ObjectId id;
-  private @NotNull Instant timestamp;
+  private @Indexed @NotNull Instant timestamp;
   private @Nullable String message;
-  private @Nullable ObjectId satellite;
+  private @Indexed @Nullable ObjectId satellite;
 
-  private @NotNull LogType type = LogType.UNSPECIFIED;
+  private @Indexed @NotNull LogType type = LogType.UNSPECIFIED;
 
   @Getter
   @Schema(enumAsRef = true)

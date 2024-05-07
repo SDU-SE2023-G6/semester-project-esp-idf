@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.MongoId;
@@ -18,12 +19,10 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class Satellite {
   private @MongoId ObjectId id;
   private @NotBlank String name;
-  @DocumentReference
-  private @Nullable Area area;
-  @DocumentReference
-  private @Nullable DeviceType deviceType;
-  private @NotNull SatelliteStatus status = SatelliteStatus.PENDING;
 
+  private @DocumentReference @Indexed @Nullable Area area;
+  private @DocumentReference @Indexed @Nullable DeviceType deviceType;
+  private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING;
 
   @Getter
   @Schema(enumAsRef = true)
@@ -34,9 +33,9 @@ public class Satellite {
     PENDING("PENDING");
 
     private final String value;
+
     SatelliteStatus(String value) {
       this.value = value;
     }
   }
-
 }
