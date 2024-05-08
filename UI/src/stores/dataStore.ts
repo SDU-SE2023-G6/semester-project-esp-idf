@@ -5,7 +5,7 @@ import type { DataPoint } from '@/types/DataPoint';
 import type { Log } from '@/types/Log';
 import type { Area, AreaId } from '@/types/Area';
 import type { Satellite, SatelliteId } from '@/types/Satellite';
-import type { get } from 'http';
+import { AreaApi } from './api';
 
 export const useDataStore = defineStore('data', {
   state: () => ({
@@ -39,6 +39,14 @@ export const useDataStore = defineStore('data', {
     },
     addArea(area: Area) {
       this.areas.push(area);
+
+      // Example of how to use the API
+      // TODO: Remove this
+      AreaApi.addArea(
+        {
+          name: area.name,
+        }
+      );
     },
     editArea(area: Area) {
       const index = this.areas.findIndex(a => a.id === area.id);

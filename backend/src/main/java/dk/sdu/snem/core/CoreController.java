@@ -1,39 +1,54 @@
 package dk.sdu.snem.core;
 
+import dk.sdu.snem.core.CoreController.AreaMetadata;
+import dk.sdu.snem.core.CoreController.DataPointMetadata;
+import dk.sdu.snem.core.CoreController.DeviceTypeMetadata;
+import dk.sdu.snem.core.CoreController.LogMetadata;
+import dk.sdu.snem.core.CoreController.SatelliteMetadata;
 import dk.sdu.snem.core.model.Area;
 import dk.sdu.snem.core.model.DeviceType;
+import dk.sdu.snem.core.model.Log;
 import dk.sdu.snem.core.model.Satellite;
 import dk.sdu.snem.core.repo.AreaRepository;
+import dk.sdu.snem.core.repo.DataPointRepository;
 import dk.sdu.snem.core.repo.DeviceTypeRepository;
+import dk.sdu.snem.core.repo.LogRepository;
 import dk.sdu.snem.core.repo.SatelliteRepository;
 import dk.sdu.snem.exceptions.ConflictException;
 import dk.sdu.snem.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
+import java.time.Instant;
 import java.util.List;
 import org.bson.types.ObjectId;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Core")
-@RequestMapping("/core")
+@RequestMapping("")
 @RestController
 public class CoreController {
 
   private final SatelliteRepository satelliteRepo;
   private final AreaRepository areaRepo;
   private final DeviceTypeRepository deviceTypeRepo;
+  private final DataPointRepository dataPointsRepo;
+  private final LogRepository logsRepo;
 
   public CoreController(
       SatelliteRepository deviceRepo,
       AreaRepository areaRepo,
+      DataPointRepository dataPointsRepo,
+      LogRepository logsRepo,
       DeviceTypeRepository deviceTypeRepo) {
     this.satelliteRepo = deviceRepo;
     this.areaRepo = areaRepo;
     this.deviceTypeRepo = deviceTypeRepo;
+    this.dataPointsRepo = dataPointsRepo;
+    this.logsRepo = logsRepo;
   }
 
   @GetMapping("/areas")
+  @Tag(name = "Area")
   @ResponseBody
   @Operation(summary = "Get all areas.")
   public List<AreaMetadata> getAreas() {
@@ -43,6 +58,7 @@ public class CoreController {
   }
 
   @PostMapping("/area")
+  @Tag(name = "Area")
   @Operation(summary = "Add new area.")
   public AreaMetadata addArea(@RequestBody AreaMetadata areaMetadata) {
     Area newArea = new Area();
@@ -53,19 +69,19 @@ public class CoreController {
   }
 
   @GetMapping("/area/{areaId}")
+  @Tag(name = "Area")
   @ResponseBody
   @Operation(summary = "Get area by ID.")
   public AreaMetadata getAreaById(@PathVariable String areaId) {
-    Area area = areaRepo.findById(new ObjectId(areaId))
-        .orElseThrow(NotFoundException::new);
+    Area area = areaRepo.findById(new ObjectId(areaId)).orElseThrow(NotFoundException::new);
     return new AreaMetadata(area.getId().toHexString(), area.getName());
   }
 
   @DeleteMapping("/area/{areaId}")
+  @Tag(name = "Area")
   @Operation(summary = "Delete area by ID.")
   public void deleteAreaById(@PathVariable String areaId) {
-    Area area = areaRepo.findById(new ObjectId(areaId))
-        .orElseThrow(NotFoundException::new);
+    Area area = areaRepo.findById(new ObjectId(areaId)).orElseThrow(NotFoundException::new);
 
     if (satelliteRepo.existsByArea(area)) {
       throw new ConflictException("Area is still linked to satellites, remove before deleting.");
@@ -74,7 +90,17 @@ public class CoreController {
     areaRepo.delete(area);
   }
 
+  @PutMapping("/area/{areaId}")
+  @Tag(name = "Area")
+  @Operation(summary = "Edit area.")
+  public void editArea(@PathVariable String areaId, @RequestBody AreaMetadata areaMetadata) {
+    Area area = areaRepo.findById(new ObjectId(areaId)).orElseThrow(NotFoundException::new);
+    area.setName(areaMetadata.name());
+    areaRepo.save(area);
+  }
+
   @GetMapping("/area/{areaId}/satellites")
+  @Tag(name = "Area")
   @ResponseBody
   @Operation(summary = "Get all satellites in an area.")
   public List<SatelliteMetadata> getSatellitesInArea(@PathVariable String areaId) {
@@ -85,24 +111,25 @@ public class CoreController {
                 new SatelliteMetadata(
                     satellite.getId().toHexString(),
                     satellite.getName(),
+                    satellite.getStatus(),
                     satellite.getArea() == null
                         ? null
                         : new AreaMetadata(
-                        satellite.getArea().getId().toHexString(),
-                        satellite.getArea().getName()),
+                            satellite.getArea().getId().toHexString(),
+                            satellite.getArea().getName()),
                     satellite.getDeviceType() == null
                         ? null
                         : new DeviceTypeMetadata(
-                        satellite.getDeviceType().getId().toHexString(),
-                        satellite.getDeviceType().getName())))
+                            satellite.getDeviceType().getId().toHexString(),
+                            satellite.getDeviceType().getName())))
         .toList();
   }
-
 
   @RequestMapping(
       value = "/satellites",
       produces = {"application/json"},
       method = RequestMethod.GET)
+  @Tag(name = "Satellite")
   @ResponseBody
   @Operation(summary = "Get satellites")
   public List<SatelliteMetadata> getSatellites() {
@@ -112,6 +139,7 @@ public class CoreController {
                 new SatelliteMetadata(
                     x.getId().toHexString(),
                     x.getName(),
+                    x.getStatus(),
                     x.getArea() == null
                         ? null
                         : new AreaMetadata(x.getId().toHexString(), x.getArea().getName()),
@@ -123,14 +151,16 @@ public class CoreController {
   }
 
   @GetMapping("/satellite/{satelliteId}")
+  @Tag(name = "Satellite")
   @ResponseBody
   @Operation(summary = "Get satellite by ID.")
   public SatelliteMetadata getSatelliteById(@PathVariable String satelliteId) {
-    Satellite satellite = satelliteRepo.findById(new ObjectId(satelliteId))
-        .orElseThrow(NotFoundException::new);
+    Satellite satellite =
+        satelliteRepo.findById(new ObjectId(satelliteId)).orElseThrow(NotFoundException::new);
     return new SatelliteMetadata(
         satellite.getId().toHexString(),
         satellite.getName(),
+        satellite.getStatus(),
         satellite.getArea() == null
             ? null
             : new AreaMetadata(
@@ -143,13 +173,15 @@ public class CoreController {
   }
 
   @PutMapping("/satellite")
+  @Tag(name = "Satellite")
   @Operation(summary = "Edit satellite.")
   public void editSatellite(@RequestBody SatelliteMetadata satelliteMetadata) {
     final Area area =
         satelliteMetadata.area() == null
             ? null
-            : areaRepo.findById(new ObjectId(satelliteMetadata.area().id()))
-            .orElseThrow(NotFoundException::new);
+            : areaRepo
+                .findById(new ObjectId(satelliteMetadata.area().id()))
+                .orElseThrow(NotFoundException::new);
     final DeviceType type =
         satelliteMetadata.deviceTypeMetadata() == null
             ? null
@@ -158,7 +190,8 @@ public class CoreController {
                 .orElseThrow(NotFoundException::new);
 
     final Satellite satellite =
-        satelliteRepo.findById(new ObjectId(satelliteMetadata.id()))
+        satelliteRepo
+            .findById(new ObjectId(satelliteMetadata.id()))
             .orElseThrow(NotFoundException::new);
 
     satellite.setArea(area);
@@ -168,11 +201,114 @@ public class CoreController {
     satelliteRepo.save(satellite);
   }
 
+  @GetMapping("/satellite/{satelliteId}/data-points")
+  @Tag(name = "Satellite")
+  @ResponseBody
+  @Operation(summary = "Get all data points for a satellite.")
+  public List<DataPointMetadata> getDataPointsBySatellite(@PathVariable String satelliteId) {
+    return dataPointsRepo.findAllBySatellite_Id(new ObjectId(satelliteId)).stream()
+        .map(
+            dataPoint ->
+                new DataPointMetadata(
+                    dataPoint.getId().toHexString(),
+                    dataPoint.getTimestamp(),
+                    dataPoint.getUnit(),
+                    dataPoint.getMeasurement(),
+                    satelliteId,
+                    dataPoint.getSensor()))
+        .toList();
+  }
+
+  @GetMapping("/satellite/{satelliteId}/logs")
+  @Tag(name = "Satellite")
+  @ResponseBody
+  @Operation(summary = "Get all logs for a satellite.")
+  public List<LogMetadata> getLogsBySatellite(@PathVariable String satelliteId) {
+    return logsRepo.findAllBySatellite_Id(new ObjectId(satelliteId)).stream()
+        .map(
+            log ->
+                new LogMetadata(
+                    log.getId().toHexString(),
+                    log.getTimestamp(),
+                    log.getMessage(),
+                    satelliteId,
+                    log.getType()))
+        .toList();
+  }
+
+  @GetMapping("/logs")
+  @Tag(name = "Logs")
+  @ResponseBody
+  @Operation(summary = "Get all Logs.")
+  public List<LogMetadata> getLogs() {
+    return logsRepo.findAll().stream()
+        .map(
+            log ->
+                new LogMetadata(
+                    log.getId().toHexString(),
+                    log.getTimestamp(),
+                    log.getMessage(),
+                    (log.getSatellite() == null || log.getSatellite().getId() == null)
+                        ? null
+                        : log.getSatellite().getId().toHexString(),
+                    log.getType()))
+        .toList();
+  }
+
+  @GetMapping("/data-points")
+  @Tag(name = "Data points")
+  @ResponseBody
+  @Operation(summary = "Get all Data points.")
+  public List<DataPointMetadata> getDataPoints() {
+    return dataPointsRepo.findAll().stream()
+        .map(
+            dataPoint ->
+                new DataPointMetadata(
+                    dataPoint.getId().toHexString(),
+                    dataPoint.getTimestamp(),
+                    dataPoint.getUnit(),
+                    dataPoint.getMeasurement(),
+                    dataPoint.getSatellite().getId().toHexString(),
+                    dataPoint.getSensor()))
+        .toList();
+  }
+
+
+  @GetMapping("/device-types")
+  @Tag(name = "Device Type")
+  @ResponseBody
+  @Operation(summary = "Get device types of satellites.")
+  public List<DeviceTypeMetadata> getDeviceTypes() {
+    return deviceTypeRepo.findAll().stream()
+        .map(x -> new DeviceTypeMetadata(x.getId().toHexString(), x.getName()))
+        .toList();
+  }
+
+
 
   public record SatelliteMetadata(
-      String id, String name, AreaMetadata area, @Nullable DeviceTypeMetadata deviceTypeMetadata) {}
+      String id,
+      String name,
+      Satellite.SatelliteStatus status,
+      AreaMetadata area,
+      @Nullable DeviceTypeMetadata deviceTypeMetadata) {}
 
   public record AreaMetadata(String id, String name) {}
 
   public record DeviceTypeMetadata(String id, String name) {}
+
+  public record DataPointMetadata(
+      String id,
+      Instant timestamp,
+      String unit,
+      Double measurement,
+      String satelliteId,
+      String sensor) {}
+
+  public record LogMetadata(
+      String id,
+      Instant timestamp,
+      String message,
+      @Nullable String satelliteId,
+      Log.LogType type) {}
 }

@@ -19,6 +19,7 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory;
 import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
@@ -34,11 +35,8 @@ import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
 @Configuration
 @EnableAsync
 @EnableMongoAuditing
-@OpenAPIDefinition(
-    servers = @Server(url = "${server.servlet.contextPath}", description = "Default Server URL"))
+@OpenAPIDefinition
 public class ApplicationConfig implements WebMvcConfigurer {
-
-
 
   private final MongoDatabaseFactory databaseFactory;
   private final MappingMongoConverter mongoConverter;
@@ -55,6 +53,13 @@ public class ApplicationConfig implements WebMvcConfigurer {
     registry.addConverter(new Formatters.StringToObjectIdArrayConverter());
   }
 
+  @Override
+  public void addCorsMappings(CorsRegistry registry) {
+    registry.addMapping("/**")  // Allow CORS for all endpoints
+        .allowedOrigins("*") // Allow requests from any origin
+        .allowedMethods("*") // Allow all HTTP methods
+        .allowedHeaders("*"); // Allow all headers
+  }
   @Bean
   public ValidatingMongoEventListener validatingMongoEventListener() {
     return new ValidatingMongoEventListener(validator());

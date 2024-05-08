@@ -3,6 +3,8 @@
  */
 package org.example.helloweb.validation;
 
+import org.eclipse.xtext.validation.Check;
+import org.example.helloweb.helloWeb.SensorConfig;
 
 /**
  * This class contains custom validation rules. 
@@ -21,5 +23,9 @@ public class HelloWebValidator extends AbstractHelloWebValidator {
 //					INVALID_NAME);
 //		}
 //	}
-	
+	 @Check
+	 public void checkWhateverIsMapped(SensorConfig sensorConfig) {
+		 
+	 }
+	 
 }

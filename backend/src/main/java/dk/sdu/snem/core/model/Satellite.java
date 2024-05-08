@@ -20,8 +20,10 @@ public class Satellite {
   private @MongoId ObjectId id;
   private @NotBlank String name;
 
-  private @DocumentReference @Indexed @Nullable Area area;
-  private @DocumentReference @Indexed @Nullable DeviceType deviceType;
+  @DocumentReference
+  private  @Indexed @Nullable Area area;
+  @DocumentReference
+  private @Indexed @Nullable DeviceType deviceType;
   private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING;
 
   @Getter

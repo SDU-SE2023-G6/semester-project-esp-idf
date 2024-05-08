@@ -1,9 +1,9 @@
 package dk.sdu.snem.core;
 
+import static dk.sdu.snem.core.CoreController.*;
 import static net.bytebuddy.matcher.ElementMatchers.is;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,15 +11,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
+import dk.sdu.snem.core.model.Log;
+import dk.sdu.snem.core.model.Log.LogType;
+import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.sdu.snem.core.CoreController.AreaMetadata;
 import dk.sdu.snem.core.model.Area;
+import dk.sdu.snem.core.model.DataPoint;
 import dk.sdu.snem.core.model.DeviceType;
 import dk.sdu.snem.core.model.Satellite;
+import dk.sdu.snem.core.model.Satellite.SatelliteStatus;
 import dk.sdu.snem.core.repo.AreaRepository;
+import dk.sdu.snem.core.repo.DataPointRepository;
 import dk.sdu.snem.core.repo.DeviceTypeRepository;
+import dk.sdu.snem.core.repo.LogRepository;
 import dk.sdu.snem.core.repo.SatelliteRepository;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,7 +39,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -47,6 +55,10 @@ class CoreControllerTest {
   @Autowired
   private SatelliteRepository satelliteRepo;
   @Autowired
+  private LogRepository logRepo;
+  @Autowired
+  private DataPointRepository dataPointRepo;
+  @Autowired
   private ObjectMapper objectMapper;
   @Autowired
   private MockMvc mockMvc;
@@ -56,6 +68,8 @@ class CoreControllerTest {
     areaRepo.deleteAll();
     deviceTypeRepo.deleteAll();
     satelliteRepo.deleteAll();
+    logRepo.deleteAll();;
+    dataPointRepo.deleteAll();
   }
 
   @AfterEach
@@ -63,6 +77,8 @@ class CoreControllerTest {
     areaRepo.deleteAll();
     deviceTypeRepo.deleteAll();
     satelliteRepo.deleteAll();
+    logRepo.deleteAll();;
+    dataPointRepo.deleteAll();
   }
 
   @Nested
@@ -77,7 +93,7 @@ class CoreControllerTest {
       areaRepo.saveAll(List.of(area1, area2));
 
       // Act
-      MvcResult result = mockMvc.perform(get("/core/areas")
+      MvcResult result = mockMvc.perform(get("/areas")
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
@@ -93,7 +109,7 @@ class CoreControllerTest {
     @Test
     void returnsEmptyList() throws Exception {
       // Act
-      MvcResult result = mockMvc.perform(get("/core/areas")
+      MvcResult result = mockMvc.perform(get("/areas")
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
@@ -113,7 +129,7 @@ class CoreControllerTest {
       AreaMetadata newArea = new AreaMetadata(null, "New Area");
 
       // Act
-      MvcResult result = mockMvc.perform(post("/core/area")
+      MvcResult result = mockMvc.perform(post("/area")
               .contentType(MediaType.APPLICATION_JSON)
               .content(objectMapper.writeValueAsString(newArea)))
           .andExpect(status().isOk())
@@ -137,7 +153,7 @@ class CoreControllerTest {
       AreaMetadata newArea = new AreaMetadata(null, "");
 
       // Act
-      mockMvc.perform(post("/core/area")
+      mockMvc.perform(post("/area")
               .contentType(MediaType.APPLICATION_JSON)
               .content(objectMapper.writeValueAsString(newArea)))
           .andExpect(status().isUnprocessableEntity()); // Expecting bad request due to empty name
@@ -154,7 +170,7 @@ class CoreControllerTest {
       AreaMetadata newArea = new AreaMetadata(null, existingArea.name());
 
       // Act
-      MvcResult result = mockMvc.perform(post("/core/area")
+      MvcResult result = mockMvc.perform(post("/area")
               .contentType(MediaType.APPLICATION_JSON)
               .content(objectMapper.writeValueAsString(newArea)))
           .andExpect(status().isOk())
@@ -187,7 +203,7 @@ class CoreControllerTest {
       area = areaRepo.save(area);
 
       // Act
-      MvcResult result = mockMvc.perform(get("/core/area/{areaId}", area.getId().toHexString())
+      MvcResult result = mockMvc.perform(get("/area/{areaId}", area.getId().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
@@ -202,7 +218,7 @@ class CoreControllerTest {
     @Test
     void getAreaByInvalidId() throws Exception {
       // Act
-      mockMvc.perform(get("/core/area/{areaId}", ObjectId.get().toHexString())
+      mockMvc.perform(get("/area/{areaId}", ObjectId.get().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isNotFound());
     }
@@ -218,7 +234,7 @@ class CoreControllerTest {
       area = areaRepo.save(area);
 
       // Act
-      mockMvc.perform(delete("/core/area/{areaId}", area.getId().toHexString())
+      mockMvc.perform(delete("/area/{areaId}", area.getId().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk());
 
@@ -229,7 +245,7 @@ class CoreControllerTest {
     @Test
     void deleteAreaByInvalidId() throws Exception {
       // Act
-      mockMvc.perform(delete("/core/area/{areaId}", ObjectId.get().toHexString())
+      mockMvc.perform(delete("/area/{areaId}", ObjectId.get().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isNotFound());
     }
@@ -247,7 +263,7 @@ class CoreControllerTest {
       satelliteRepo.save(satellite);
 
       // Act
-      mockMvc.perform(delete("/core/area/{areaId}", area.getId().toHexString())
+      mockMvc.perform(delete("/area/{areaId}", area.getId().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isConflict());
     }
@@ -274,14 +290,14 @@ class CoreControllerTest {
       satelliteRepo.save(satellite2);
 
       // Act
-      MvcResult result = mockMvc.perform(get("/core/area/{areaId}/satellites", area.getId().toHexString())
+      MvcResult result = mockMvc.perform(get("/area/{areaId}/satellites", area.getId().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
 
       // Assert
       String responseContent = result.getResponse().getContentAsString();
-      List<CoreController.SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
+      List<SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(satellites.size()).isEqualTo(2);
       assertThat(satellites.get(0).name()).isEqualTo("Satellite 1");
       assertThat(satellites.get(0).area().name()).isEqualTo("Test Area");
@@ -297,14 +313,14 @@ class CoreControllerTest {
       area = areaRepo.save(area);
 
       // Act
-      MvcResult result = mockMvc.perform(get("/core/area/{areaId}/satellites", area.getId().toHexString())
+      MvcResult result = mockMvc.perform(get("/area/{areaId}/satellites", area.getId().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
 
       // Assert
       String responseContent = result.getResponse().getContentAsString();
-      List<CoreController.SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
+      List<SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(satellites.size()).isEqualTo(0);
     }
   }
@@ -340,14 +356,14 @@ class CoreControllerTest {
       satelliteRepo.save(satellite2);
 
       // Act
-      MvcResult result = mockMvc.perform(get("/core/satellites")
+      MvcResult result = mockMvc.perform(get("/satellites")
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
 
       // Assert
       String responseContent = result.getResponse().getContentAsString();
-      List<CoreController.SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
+      List<SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(satellites.size()).isEqualTo(2);
       assertThat(satellites.get(0).name()).isEqualTo("Satellite 1");
       assertThat(satellites.get(0).area().name()).isEqualTo("Area 1");
@@ -362,14 +378,14 @@ class CoreControllerTest {
     @Test
     void getSatellitesWithNoSatellites() throws Exception {
       // Act
-      MvcResult result = mockMvc.perform(get("/core/satellites")
+      MvcResult result = mockMvc.perform(get("/satellites")
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
 
       // Assert
       String responseContent = result.getResponse().getContentAsString();
-      List<CoreController.SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
+      List<SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(satellites.size()).isEqualTo(0);
     }
   }
@@ -396,15 +412,15 @@ class CoreControllerTest {
       satellite = satelliteRepo.save(satellite);
 
       // Act
-      MvcResult result = mockMvc.perform(get("/core/satellite/{satelliteId}", satellite.getId().toHexString())
+      MvcResult result = mockMvc.perform(get("/satellite/{satelliteId}", satellite.getId().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isOk())
           .andReturn();
 
       // Assert
       String responseContent = result.getResponse().getContentAsString();
-      CoreController.SatelliteMetadata
-          returnedSatellite = objectMapper.readValue(responseContent, CoreController.SatelliteMetadata.class);
+      SatelliteMetadata
+          returnedSatellite = objectMapper.readValue(responseContent, SatelliteMetadata.class);
       assertThat(returnedSatellite.name()).isEqualTo("Test Satellite");
       assertThat(returnedSatellite.area().name()).isEqualTo("Test Area");
       assert returnedSatellite.deviceTypeMetadata() != null;
@@ -414,7 +430,7 @@ class CoreControllerTest {
     @Test
     void getSatelliteByInvalidId() throws Exception {
       // Act
-      mockMvc.perform(get("/core/satellite/{satelliteId}", ObjectId.get().toHexString())
+      mockMvc.perform(get("/satellite/{satelliteId}", ObjectId.get().toHexString())
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isNotFound());
     }
@@ -440,15 +456,16 @@ class CoreControllerTest {
       satellite.setDeviceType(deviceType);
       satellite = satelliteRepo.save(satellite);
 
-      CoreController.SatelliteMetadata updatedMetadata = new CoreController.SatelliteMetadata(
+      SatelliteMetadata updatedMetadata = new SatelliteMetadata(
           satellite.getId().toHexString(),
           "Updated Satellite",
+          SatelliteStatus.PENDING,
           new AreaMetadata(area.getId().toHexString(), area.getName()),
-          new CoreController.DeviceTypeMetadata(deviceType.getId().toHexString(), deviceType.getName())
+          new DeviceTypeMetadata(deviceType.getId().toHexString(), deviceType.getName())
       );
 
       // Act
-      mockMvc.perform(put("/core/satellite")
+      mockMvc.perform(put("/satellite")
               .contentType(MediaType.APPLICATION_JSON)
               .content(objectMapper.writeValueAsString(updatedMetadata)))
           .andExpect(status().isOk());
@@ -480,15 +497,16 @@ class CoreControllerTest {
       satellite.setDeviceType(deviceType);
       satellite = satelliteRepo.save(satellite);
 
-      CoreController.SatelliteMetadata updatedMetadata = new CoreController.SatelliteMetadata(
+      SatelliteMetadata updatedMetadata = new SatelliteMetadata(
           satellite.getId().toHexString(),
           "Updated Satellite",
+          satellite.getStatus(),
           null, // Unset area
           null  // Unset device type
       );
 
       // Act
-      mockMvc.perform(put("/core/satellite")
+      mockMvc.perform(put("/satellite")
               .contentType(MediaType.APPLICATION_JSON)
               .content(objectMapper.writeValueAsString(updatedMetadata)))
           .andExpect(status().isOk());
@@ -505,18 +523,303 @@ class CoreControllerTest {
     @Test
     void editSatelliteWithInvalidId() throws Exception {
       // Arrange
-      CoreController.SatelliteMetadata invalidMetadata = new CoreController.SatelliteMetadata(
+      SatelliteMetadata invalidMetadata = new SatelliteMetadata(
           ObjectId.get().toHexString(),
           "Updated Satellite",
+          SatelliteStatus.PENDING,
           new AreaMetadata(ObjectId.get().toHexString(), "Invalid Area"),
-          new CoreController.DeviceTypeMetadata(ObjectId.get().toHexString(), "Invalid Device Type")
+          new DeviceTypeMetadata(ObjectId.get().toHexString(), "Invalid Device Type")
       );
 
       // Act
-      mockMvc.perform(put("/core/satellite")
+      mockMvc.perform(put("/satellite")
               .contentType(MediaType.APPLICATION_JSON)
               .content(objectMapper.writeValueAsString(invalidMetadata)))
           .andExpect(status().isNotFound());
     }
   }
+
+  @Nested
+  class EditAreaTests {
+
+    @Test
+    void editArea() throws Exception {
+      // Arrange
+      Area area = new Area();
+      area.setName("Original Area");
+      area = areaRepo.save(area);
+
+      AreaMetadata updatedMetadata = new AreaMetadata(
+          area.getId().toHexString(),
+          "Updated Area"
+      );
+
+      // Act
+      mockMvc.perform(put("/area/{areaId}", area.getId().toHexString())
+              .contentType(MediaType.APPLICATION_JSON)
+              .content(objectMapper.writeValueAsString(updatedMetadata)))
+          .andExpect(status().isOk());
+
+      // Assert
+      Optional<Area> updatedAreaOpt = areaRepo.findById(area.getId());
+      assertThat(updatedAreaOpt.isPresent()).isTrue();
+      var updatedArea = updatedAreaOpt.get();
+      assertThat(updatedArea.getName()).isEqualTo("Updated Area");
+    }
+
+    @Test
+    void editAreaWithInvalidId() throws Exception {
+      // Arrange
+      AreaMetadata invalidMetadata = new AreaMetadata(
+          ObjectId.get().toHexString(),
+          "Updated Area"
+      );
+
+      // Act
+      mockMvc.perform(put("/core/area/{areaId}", ObjectId.get().toHexString())
+              .contentType(MediaType.APPLICATION_JSON)
+              .content(objectMapper.writeValueAsString(invalidMetadata)))
+          .andExpect(status().isNotFound());
+    }
+  }
+
+  @Nested
+  class GetDataPointsBySatelliteTests {
+
+    @Test
+    void getDataPointsBySatellite() throws Exception {
+      // Arrange
+      Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
+
+      DataPoint dataPoint1 = createAndSaveDataPoint(satellite, Instant.now(), "m/s", 10.0, "Sensor1");
+      DataPoint dataPoint2 = createAndSaveDataPoint(satellite, Instant.now(), "°C", 25.0, "Sensor2");
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/satellite/{satelliteId}/data-points", satellite.getId().toHexString())
+              .contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk())
+          .andReturn();
+
+      // Assert
+      String responseContent = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+      List<DataPointMetadata> dataPoints = objectMapper.readValue(responseContent, new TypeReference<>() {});
+      assertThat(dataPoints.size()).isEqualTo(2);
+
+      for (int i = 0; i < dataPoints.size(); i++) {
+        DataPointMetadata metadata = dataPoints.get(i);
+        DataPoint dataPoint = i == 0 ? dataPoint1 : dataPoint2;
+
+        // Truncate timestamps to milliseconds precision
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = dataPoint.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
+
+        assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
+        assertThat(metadata.unit()).isEqualTo(dataPoint.getUnit());
+        assertThat(metadata.measurement()).isEqualTo(dataPoint.getMeasurement());
+        assertThat(metadata.satelliteId()).isEqualTo(satellite.getId().toHexString());
+        assertThat(metadata.sensor()).isEqualTo(dataPoint.getSensor());
+      }
+    }
+
+  }
+
+  @Nested
+  class GetLogsBySatelliteTests {
+
+    @Test
+    void getLogsBySatellite() throws Exception {
+      // Arrange
+      Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
+
+      Log log1 = createAndSaveLog(satellite, Instant.now(), "Log message 1", LogType.INFO);
+      Log log2 = createAndSaveLog(satellite, Instant.now(), "Log message 2", LogType.WARNING);
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/satellite/{satelliteId}/logs", satellite.getId().toHexString())
+              .contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk())
+          .andReturn();
+
+      // Assert
+      String responseContent = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+      List<LogMetadata> logs = objectMapper.readValue(responseContent, new TypeReference<>() {});
+
+      assertThat(logs.size()).isEqualTo(2);
+
+      for (int i = 0; i < logs.size(); i++) {
+        LogMetadata metadata = logs.get(i);
+        Log log = i == 0 ? log1 : log2;
+
+        assertThat(metadata.id()).isEqualTo(log.getId().toHexString());
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
+        assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
+        assertThat(metadata.message()).isEqualTo(log.getMessage());
+        assertThat(metadata.satelliteId()).isEqualTo(satellite.getId().toHexString());
+        assertThat(metadata.type()).isEqualTo(log.getType());
+      }
+    }
+
+    @Test
+    void getLogsBySatellite_OnlyReturnRelated() throws Exception {
+      // Arrange
+      Satellite satelliteUnrelated = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
+      createAndSaveLog(satelliteUnrelated, Instant.now(), "Log message 1", LogType.INFO);
+      createAndSaveLog(satelliteUnrelated, Instant.now(), "Log message 2", LogType.WARNING);
+
+      Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
+      Log log1 = createAndSaveLog(satellite, Instant.now(), "Log message 1", LogType.INFO);
+      Log log2 = createAndSaveLog(satellite, Instant.now(), "Log message 2", LogType.WARNING);
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/satellite/{satelliteId}/logs", satellite.getId().toHexString())
+              .contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk())
+          .andReturn();
+
+      // Assert
+      String responseContent = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+      List<LogMetadata> logs = objectMapper.readValue(responseContent, new TypeReference<>() {});
+
+      assertThat(logs.size()).isEqualTo(2);
+
+      for (int i = 0; i < logs.size(); i++) {
+        LogMetadata metadata = logs.get(i);
+        Log log = i == 0 ? log1 : log2;
+
+        assertThat(metadata.id()).isEqualTo(log.getId().toHexString());
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
+        assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
+        assertThat(metadata.message()).isEqualTo(log.getMessage());
+        assertThat(metadata.satelliteId()).isEqualTo(satellite.getId().toHexString());
+        assertThat(metadata.type()).isEqualTo(log.getType());
+      }
+    }
+
+  }
+
+  @Nested
+  class GetLogsTests {
+
+    @Test
+    void getLogs_ReturnsAllLogs() throws Exception {
+      // Arrange
+      Satellite satellite1 = createAndSaveSatellite("Satellite 1", "Area 1", "Device Type 1");
+      Satellite satellite2 = createAndSaveSatellite("Satellite 2", "Area 2", "Device Type 2");
+
+      Log log1 = createAndSaveLog(satellite1, Instant.now(), "Log message 1", LogType.INFO);
+      Log log2 = createAndSaveLog(satellite2, Instant.now(), "Log message 2", LogType.WARNING);
+      Log log3 = createAndSaveLog(null, Instant.now(), "Log message 2", LogType.UNSPECIFIED);
+      List<Log> expectedLogs = List.of(log1, log2, log3);
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/logs")
+              .contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk())
+          .andReturn();
+
+      // Assert
+      String responseContent = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+      List<LogMetadata> logs = objectMapper.readValue(responseContent, new TypeReference<>() {});
+
+      assertThat(logs.size()).isEqualTo(3);
+
+      for (int i = 0; i < logs.size(); i++) {
+        LogMetadata metadata = logs.get(i);
+        Log log = expectedLogs.get(i);
+
+        assertThat(metadata.id()).isEqualTo(log.getId().toHexString());
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
+        assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
+        assertThat(metadata.message()).isEqualTo(log.getMessage());
+        if(log.getSatellite() != null) {
+          assert metadata.satelliteId() != null;
+          assertThat(metadata.satelliteId()).isEqualTo(log.getSatellite().getId().toHexString());
+        } else {
+          assertThat(metadata.satelliteId()).isNull();
+        }
+        assertThat(metadata.type()).isEqualTo(log.getType());
+      }
+    }
+
+  }
+
+  @Nested
+  class GetDataPointsTests {
+
+    @Test
+    void getDataPoints_ReturnsAllDataPoints() throws Exception {
+      // Arrange
+      Satellite satellite1 = createAndSaveSatellite("Satellite 1", "Area 1", "Device Type 1");
+      Satellite satellite2 = createAndSaveSatellite("Satellite 2", "Area 2", "Device Type 2");
+
+      DataPoint dataPoint1 = createAndSaveDataPoint(satellite1, Instant.now(), "m/s", 10.0, "Sensor 1");
+      DataPoint dataPoint2 = createAndSaveDataPoint(satellite2, Instant.now(), "°C", 25.0, "Sensor 2");
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/data-points")
+              .contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk())
+          .andReturn();
+
+      // Assert
+      String responseContent = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+      List<DataPointMetadata> dataPoints = objectMapper.readValue(responseContent, new TypeReference<>() {});
+
+      assertThat(dataPoints.size()).isEqualTo(2);
+
+      for (int i = 0; i < dataPoints.size(); i++) {
+        DataPointMetadata metadata = dataPoints.get(i);
+        DataPoint dataPoint = i == 0 ? dataPoint1 : dataPoint2;
+
+        assertThat(metadata.id()).isEqualTo(dataPoint.getId().toHexString());
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = dataPoint.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
+        assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
+        assertThat(metadata.unit()).isEqualTo(dataPoint.getUnit());
+        assertThat(metadata.measurement()).isEqualTo(dataPoint.getMeasurement());
+        assertThat(metadata.satelliteId()).isEqualTo(dataPoint.getSatellite().getId().toHexString());
+        assertThat(metadata.sensor()).isEqualTo(dataPoint.getSensor());
+      }
+    }
+
+  }
+
+  Satellite createAndSaveSatellite(String name, String areaName, String deviceTypeName) {
+    Area area = new Area();
+    area.setName(areaName);
+    area = areaRepo.save(area);
+
+    DeviceType deviceType = new DeviceType();
+    deviceType.setName(deviceTypeName);
+    deviceType = deviceTypeRepo.save(deviceType);
+
+    Satellite satellite = new Satellite();
+    satellite.setName(name);
+    satellite.setArea(area);
+    satellite.setDeviceType(deviceType);
+    return satelliteRepo.save(satellite);
+  }
+
+  Log createAndSaveLog(Satellite satellite, Instant timestamp, String message, LogType type) {
+    Log log = new Log();
+    log.setSatellite(satellite);
+    log.setTimestamp(timestamp);
+    log.setMessage(message);
+    log.setType(type);
+    return logRepo.save(log);
+  }
+
+  private DataPoint createAndSaveDataPoint(Satellite satellite, Instant timestamp, String unit, Double measurement, String sensor) {
+    DataPoint dataPoint = new DataPoint();
+    dataPoint.setSatellite(satellite);
+    dataPoint.setTimestamp(timestamp);
+    dataPoint.setUnit(unit);
+    dataPoint.setMeasurement(measurement);
+    dataPoint.setSensor(sensor);
+    return dataPointRepo.save(dataPoint);
+  }
+
 }

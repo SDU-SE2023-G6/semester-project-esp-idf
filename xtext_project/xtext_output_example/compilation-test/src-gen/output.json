@@ -1,0 +1,37 @@
+{
+    "DeviceTypes": [
+        {
+            "name": "HTL",
+            "sensors": [
+                {
+                    "name": "outside",
+                    "sensor": "DHT11",
+                    "pins": [1, 2],
+                    "samplingRate": ""
+                },
+                {
+                    "name": "top",
+                    "sensor": "light",
+                    "pins": [3],
+                    "samplingRate": "2s"
+                }
+            ]
+        }
+    ],
+    "Sensors": [
+        {
+            "name": "DHT11",
+            "reader": "dht11Reader",
+            "units": ["C", "A"],
+            "pins": ["data", "ref"],
+            "out": ["temp", "humidity"]
+        },
+        {
+            "name": "light",
+            "reader": "lightResReader",
+            "units": ["Lux"],
+            "pins": ["pin"],
+            "out": ["value"]
+        }
+    ]
+}
