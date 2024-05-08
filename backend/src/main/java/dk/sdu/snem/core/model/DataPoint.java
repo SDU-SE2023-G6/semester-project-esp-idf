@@ -11,6 +11,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Document
@@ -20,7 +21,8 @@ public class DataPoint {
   private @MongoId ObjectId id;
 
   private @Indexed @NotNull Instant timestamp;
-  private @Indexed @NotNull ObjectId deviceId;
+  @DocumentReference(lazy = true)
+  private @Indexed @NotNull Satellite satellite;
   private @Indexed @NotNull String sensor;
 
   private @NotNull Double measurement;

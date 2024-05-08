@@ -12,6 +12,7 @@ import lombok.NonNull;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Document
@@ -21,7 +22,8 @@ public class Log {
   private @MongoId ObjectId id;
   private @Indexed @NotNull Instant timestamp;
   private @Nullable String message;
-  private @Indexed @Nullable ObjectId satellite;
+  @DocumentReference(lazy = true)
+  private @Indexed @Nullable Satellite satellite;
 
   private @Indexed @NotNull LogType type = LogType.UNSPECIFIED;
 

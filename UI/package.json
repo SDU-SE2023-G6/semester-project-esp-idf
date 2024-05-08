@@ -12,7 +12,8 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "generate:api": "openapi-generator-cli generate -i http://localhost:8080/v3/api-docs -g typescript -o ./src/api/"
   },
   "dependencies": {
     "@anu-vue/preset-theme-default": "^0.15.2",
@@ -31,15 +32,18 @@
     "primevue": "^3.52.0",
     "vue": "^3.4.21",
     "vue-chartjs": "^5.3.1",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "whatwg-fetch": "^3.6.20"
   },
   "devDependencies": {
     "@iconify-json/bx": "^1.1.10",
+    "@openapitools/openapi-generator-cli": "^2.13.4",
     "@playwright/test": "^1.43.0",
     "@rushstack/eslint-patch": "^1.8.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^20.12.5",
+    "@types/whatwg-fetch": "^0.0.33",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
     "@vue/eslint-config-prettier": "^9.0.0",
