@@ -2,12 +2,76 @@ grammar org.example.helloweb.HelloWeb with org.eclipse.xtext.common.Terminals
 
 generate helloWeb "http://www.example.org/helloweb/HelloWeb"
 
-Model:
-	greetings+=Greeting*;
-	
-Greeting:
-	'Hello' name=ID '!';
+SensorConfig:
+    (sensors+=Sensor | deviceTypes+=DeviceType)*;
 
-Integer:
-	'Int' name=ID '=' value=INT ';' 
-;
+Sensor:
+    'sensor' name=ID '{'
+        'units:' units+=SensorUnit (',' units+=SensorUnit)*
+        'reader:' reader=ID
+        'pins:' pins+=Pin (',' pins+=Pin)*
+        'out:' out+=Output (',' out+=Output)*
+    '}';
+
+
+DeviceType:
+    'deviceType' name=ID '{'
+        (sensorInstantiations+=SensorInstantiation)*
+        ('batchRatePolicy:' batchRatePolicy=TimeUnit)?
+        ('batchSizePolicy:' batchSizePolicy=INT)?
+        ('heartBeatPolicy:' heartBeatPolicy=TimeUnit)?
+    '}';
+
+SensorInstantiation:
+    sensor=[Sensor] name=ID '{'
+        'pins:' pins+=INT (',' pins+=INT)*
+        ('samplingRate:' samplingRate=TimeUnit)?
+        (constraints+=Constraint)*
+    '}';
+    
+    
+Constraint:
+    '(' condition=Condition ')' '{'
+        ('samplingRate:' samplingRate=TimeUnit)?
+    '}';
+
+Condition:
+    Comparison | NestedLogicalCondition;
+
+NestedLogicalCondition:
+    '(' left=Condition ')' operator=('AND' | 'OR' | 'NOT') '(' right=Condition ')';
+    
+Comparison:
+    left=ComparisonValue operator=ComparisonOperator right=ComparisonValue;
+
+ComparisonValue:
+    ValueRef | Decimal | {ComparisonValue} value=INT;
+
+ValueRef:
+    (sensorInstantiation=[SensorInstantiation] '.')? out=ID;
+    
+Output:
+    name=ID;
+
+Pin:
+    name=ID;
+
+SensorUnit:
+    value=ID;
+    
+
+TimeUnit:
+    INT ('s' | 'm' | 'h' | 'd');
+    
+Decimal:
+	left=INT '.' right=INT;
+
+ComparisonOperator:
+    '>' | '<' | '>=' | '<=' | '=' | '!=';
+
+    
+    
+    
+    
+    
+    

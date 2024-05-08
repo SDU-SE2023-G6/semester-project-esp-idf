@@ -1,0 +1,48 @@
+sensor DHT11 {
+	units: C, A
+	reader: dht11Reader
+	pins: data, ref
+	out: temp, humidity
+	
+}
+
+sensor light {
+	units: Lux
+	reader: lightResReader
+	pins: pin
+	out: value
+}
+
+
+deviceType HTL {
+	DHT11 outside {
+		pins: 1, 2
+		(temp > 20) {
+			samplingRate: 2s
+		}
+	}
+	light top {
+		pins: 3
+		samplingRate: 2s
+		
+		(value > 20) {
+			samplingRate: 2s
+		}
+		
+		(outside.temp = 90.0) {
+			samplingRate: 4d
+		}
+		
+		(((outside.temp = 90.12) AND (value > 200)) OR ((outside.temp = 90.0) AND (value > 20))) {
+			samplingRate: 4d
+		}
+		
+	}
+	
+	heartBeatPolicy: 10s
+	
+}
+
+
+
+

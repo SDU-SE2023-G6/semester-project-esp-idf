@@ -3,10 +3,21 @@
  */
 package org.example.helloweb.generator
 
+import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
+import org.example.helloweb.helloWeb.Comparison
+import org.example.helloweb.helloWeb.ComparisonValue
+import org.example.helloweb.helloWeb.Condition
+import org.example.helloweb.helloWeb.Decimal
+import org.example.helloweb.helloWeb.DeviceType
+import org.example.helloweb.helloWeb.NestedLogicalCondition
+import org.example.helloweb.helloWeb.Sensor
+import org.example.helloweb.helloWeb.SensorConfig
+import org.example.helloweb.helloWeb.SensorInstantiation
+import org.example.helloweb.helloWeb.ValueRef
 
 /**
  * Generates code from your model files on save.
@@ -16,10 +27,400 @@ import org.eclipse.xtext.generator.IGeneratorContext
 class HelloWebGenerator extends AbstractGenerator {
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-//		fsa.generateFile('greetings.txt', 'People to greet: ' + 
-//			resource.allContents
-//				.filter(Greeting)
-//				.map[name]
-//				.join(', '))
+    	// Generate shared library code
+        generateSharedLibraryCode(fsa)
+        
+        // Iterate through all SensorConfig instances in the resource
+        for (sensorConfig : resource.contents.filter(SensorConfig)) {
+	        generateJsonLogs(sensorConfig.deviceTypes, sensorConfig.sensors, fsa);
+            // Generate code for each Sensor
+            sensorConfig.sensors.forEach [ sensor |
+                generateSensorCode(sensor, fsa)
+            ]
+            // Generate code for each DeviceType
+            sensorConfig.deviceTypes.forEach [ deviceType |
+                generateDeviceTypeCode(deviceType, fsa)
+            ]
+        }
+		
 	}
+		
+
+    def void generateSensorCode(Sensor sensor, IFileSystemAccess2 fsa) {
+    // Generate code for the sensor here
+    var sensorCode = '''
+	#include "«sensor.name»_sensor.h"
+	
+	Sensor «sensor.name»_sensor = {
+	    .name = "«sensor.name»",
+	    .reader = "«sensor.reader»",
+	    .readerFunction = &«sensor.reader»_ReaderFunction,
+	    «FOR unit: sensor.units»
+	    .units[«sensor.units.indexOf(unit)»] = "«unit.value»",
+	    «ENDFOR»
+	    .unitCount = «sensor.units.size»,
+	    «FOR pin: sensor.pins»
+	    .pins[«sensor.pins.indexOf(pin)»] = "«pin.name»",
+	    «ENDFOR»
+	    .pinCount = «sensor.pins.size»,
+	    «FOR out: sensor.out»
+	    .out[«sensor.out.indexOf(out)»] = "«out.name»",
+	    «ENDFOR»	 
+	    .outCount = «sensor.out.size»
+	};   	    
+	'''
+	
+	val headerFile = '''
+	#ifndef «sensor.name.toUpperCase»_SENSOR_H
+	#define «sensor.name.toUpperCase»_SENSOR_H
+	#include <stdio.h>
+	#include "shared_snem_library.h"
+	#include "«sensor.reader»_sensor_reader.h"
+	
+	extern Sensor «sensor.name»_sensor;
+
+	#endif /* «sensor.name.toUpperCase»_SENSOR_H */
+	'''
+	
+    fsa.generateFile(sensor.name + "_sensor.c", sensorCode)
+    fsa.generateFile(sensor.name + "_sensor.h", headerFile)
+    
+    }
+
+
+    def void generateDeviceTypeCode(DeviceType deviceType, IFileSystemAccess2 fsa) {
+    // Generate code for the device type here
+    var readingIncrement = 0;
+    var deviceTypeCode = 
+    '''
+	#include "«deviceType.name»_device_type.h"
+	
+	«FOR instantiation : deviceType.sensorInstantiations»
+	SensorInstantiation «deviceType.name»_«instantiation.sensor.name»_«instantiation.name» = {
+	    .sensor = &«instantiation.sensor.name»_sensor,
+	    .name = "«instantiation.name»",
+	    .pins = {«instantiation.pins.join(', ')»},
+	    .pinCount = «instantiation.pins.size»,
+	    .samplingRate = «mapXTextTimeUnitToC(instantiation.samplingRate)»
+	};
+	«ENDFOR»
+	
+	// Define DeviceType constant
+	DeviceType «deviceType.name»_device_type = {
+	    .name = "«deviceType.name»",
+	    .sensorInstantiations = {«deviceType.sensorInstantiations.map[instantiation | '''&«deviceType.name»_«instantiation.sensor.name»_«instantiation.name»'''].join(', ')»},
+	    .sensorCount = «deviceType.sensorInstantiations.size»,
+	    .batchRatePolicy = «mapXTextTimeUnitToC(deviceType.batchRatePolicy)»,
+	    .batchSizePolicy = «deviceType.batchSizePolicy»,
+	    .heartBeatPolicy = «mapXTextTimeUnitToC(deviceType.heartBeatPolicy)»
+	};
+	
+	DeviceType* «deviceType.name»_device_applyConstraints(double* readings) {
+		DeviceType* modified = duplicateDeviceType(&«deviceType.name»_device_type);
+		«FOR instantiation: deviceType.sensorInstantiations»
+		«FOR output : instantiation.sensor.out»
+		double «instantiation.name»_«output.name» = readings[«readingIncrement++»];
+		«ENDFOR»
+		«ENDFOR»
+		«FOR instantiation : deviceType.sensorInstantiations»
+		«FOR constraint : instantiation.constraints»
+		if («generateCondition(deviceType, instantiation, constraint.condition)») {
+			modified->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.value = «extractXTextTimeUnitCount(constraint.samplingRate)»;
+			modified->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.unit = «extractXTextTimeUnit(constraint.samplingRate)»;
+		}
+		«ENDFOR»
+		«ENDFOR»
+		
+		
+		
+		return modified;
+	}
+	'''
+	
+	val headerFile = '''
+		#ifndef «deviceType.name.toUpperCase»_DEVICE_TYPE_H
+		#define «deviceType.name.toUpperCase»_DEVICE_TYPE_H
+		#include <stdio.h>
+		#include "shared_snem_library.h"
+		«FOR instantiation : deviceType.sensorInstantiations»
+		#include "«instantiation.sensor.name»_sensor.h"
+		«ENDFOR»
+		
+		DeviceType* «deviceType.name»_device_applyConstraints(double* readings);
+		
+		#endif /* «deviceType.name.toUpperCase»_DEVICE_TYPE_H */
+	'''
+
+	
+    // Write the device type configuration to a C file
+    fsa.generateFile(deviceType.name + "_device_type.c", deviceTypeCode)
+    fsa.generateFile(deviceType.name + "_device_type.h", headerFile)
+	
+    }
+		
+	def String generateCondition(DeviceType type, SensorInstantiation instantiation, Condition condition) {
+	    if (condition instanceof Comparison) {
+	        return generateComparison(type, instantiation, condition as Comparison)
+	    } else if (condition instanceof NestedLogicalCondition) {
+	        return generateNestedLogicalCondition(type, instantiation, condition as NestedLogicalCondition)
+	    } else {
+	        throw new RuntimeException()
+	    }
+	}
+	
+	def String generateComparison(DeviceType type, SensorInstantiation instantiation, Comparison comparison) {
+	    val left = generateComparisonValue(type, instantiation, comparison.left)
+	    val right = generateComparisonValue(type, instantiation, comparison.right)
+		val operator = switch comparison.operator {
+		    case ">" : ">"
+		    case "<" : "<"
+		    case ">=" : ">="
+		    case "<=" : "<="
+		    case "=" : "=="
+		    case "!=" : "!="
+		    default: throw new RuntimeException("Operator not supported " + comparison.operator.toString)
+		}
+		
+    	return left + " " + operator + " " + right
+	}
+	
+	def String generateComparisonValue(DeviceType type, SensorInstantiation instantiation, ComparisonValue value) {
+	    switch value {
+	       ValueRef: {
+		        var sensorInstantiationName = ""
+		        if (value.sensorInstantiation !== null) {
+		        	sensorInstantiationName += value.sensorInstantiation.name 
+		        }  else {
+		        	sensorInstantiationName += instantiation.name
+		        }
+		        return sensorInstantiationName + "_" + value.out
+    		}
+	        Decimal:
+	            value.left + "." + value.right
+	        ComparisonValue:
+	        	value.value.toString
+	        default:
+	            throw new RuntimeException("Unsupported Comparison Value " + value.toString)
+	    }
+	}
+	
+	def String generateNestedLogicalCondition(DeviceType type, SensorInstantiation instantiation, NestedLogicalCondition condition) {
+	    val leftCondition = generateCondition(type, instantiation, condition.left)
+	    val rightCondition = generateCondition(type, instantiation, condition.right)
+	
+	    val operator = switch condition.operator {
+	        case "AND": "&&"
+	        case "OR": "||"
+	        case "NOT": "!"
+	        default: throw new RuntimeException("Logical operator not supported " + condition.operator.toString)
+	    }
+	
+	    if (condition.operator == "NOT") {
+	        return operator + "(" + leftCondition + " " + rightCondition + ")"
+	    } else {
+	        return "(" + leftCondition + " " + operator + " " + rightCondition + ")"
+	    }
+	}
+
+	
+	def void generateSharedLibraryCode(IFileSystemAccess2 fsa) {
+    	// Generate the shared library header file
+    	val headerFile = '''
+		#ifndef SHARED_SNEM_LIBRARY_H
+		#define SHARED_SNEM_LIBRARY_H
+					
+		#include <stdio.h>
+		#include <stdlib.h>
+		#include <string.h>
+
+
+		
+		// Pre-identify types and constants
+		typedef struct Sensor Sensor;
+		typedef struct SensorInstantiation SensorInstantiation;
+		typedef struct DeviceType DeviceType;
+		typedef struct TimeDuration TimeDuration;
+		typedef enum TimeUnit TimeUnit;
+		
+		#define MAX_CONSTRAINTS 10
+		#define MAX_UNITS 100
+		#define MAX_PINS 100
+		#define MAX_OUTPUTS 100
+		#define MAX_INSTANTIATIONS 100
+		
+		enum TimeUnit {
+		    SECOND,
+		    MINUTE,
+		    HOUR,
+		    DAY
+		};
+		
+		struct TimeDuration {
+		    int value;
+		    TimeUnit unit;
+		};
+		
+		struct Sensor {
+		    char name[100];
+		    char units[MAX_UNITS][100];
+		    int unitCount;
+		    char reader[150];
+		    double* (*readerFunction)(int*, int);
+		    char pins[MAX_PINS][100];
+		    int pinCount;
+		    char out[MAX_OUTPUTS][100];
+		    int outCount;
+		};
+		
+		struct SensorInstantiation {
+		    Sensor* sensor;
+		    char name[100];
+		    int pins[MAX_PINS];
+		    int pinCount;
+		    TimeDuration samplingRate;
+		};
+		
+		struct DeviceType {
+		    char name[100];
+		    SensorInstantiation* sensorInstantiations[MAX_INSTANTIATIONS];
+		    int sensorCount;
+		    TimeDuration batchRatePolicy;
+		    int batchSizePolicy;
+		    TimeDuration heartBeatPolicy;
+		};
+		
+		DeviceType *duplicateDeviceType(const DeviceType *original);
+		void freeDeviceType(DeviceType *deviceType);
+			
+		#endif // SHARED_SNEM_LIBRARY_H
+		'''
+		
+		val sourceFile = '''
+		#include "shared_snem_library.h"
+		
+		DeviceType* duplicateDeviceType(const DeviceType* original) {
+		    // Allocate memory for the new DeviceType
+		    DeviceType* duplicated = (DeviceType*)malloc(sizeof(DeviceType));
+		    if (duplicated == NULL) {
+		        fprintf(stderr, "Memory allocation failed\n");
+		        exit(EXIT_FAILURE);
+		    }
+		
+		    // Copy the original DeviceType into the newly allocated memory
+		    memcpy(duplicated, original, sizeof(DeviceType));
+		
+		    // Duplicate sensor instantiations
+		    duplicated->sensorCount = original->sensorCount;
+		    for (int i = 0; i < original->sensorCount; i++) {
+		        // Allocate memory for each SensorInstantiation
+		        SensorInstantiation* duplicatedInstantiation = (SensorInstantiation*)malloc(sizeof(SensorInstantiation));
+		        if (duplicatedInstantiation == NULL) {
+		            fprintf(stderr, "Memory allocation failed\n");
+		            exit(EXIT_FAILURE);
+		        }
+		        // Copy the original SensorInstantiation into the duplicated one
+		        memcpy(duplicatedInstantiation, original->sensorInstantiations[i], sizeof(SensorInstantiation));
+		        // Update the pointer in the duplicated DeviceType
+		        duplicated->sensorInstantiations[i] = duplicatedInstantiation;
+		    }
+		
+		    return duplicated;
+		}
+		
+		
+		void freeDeviceType(DeviceType* deviceType) {
+		    if (deviceType == NULL) {
+		        return;
+		    }
+		    // Free each SensorInstantiation
+		    for (int i = 0; i < deviceType->sensorCount; i++) {
+		        free(deviceType->sensorInstantiations[i]);
+		    }
+		    // Free the DeviceType itself
+		    free(deviceType);
+		}
+		'''
+		
+
+    	fsa.generateFile("shared_snem_library.h", headerFile)
+    	fsa.generateFile("shared_snem_library.c", sourceFile)
+	}
+	def String extractXTextTimeUnitCount(String timeDuration) {
+	 	if (timeDuration === null || timeDuration.isEmpty()) {
+        	return "1"
+    	}
+    	timeDuration.replaceAll("\\D", "")
+	}
+	def String extractXTextTimeUnit(String timeDuration) {
+	    if (timeDuration === null || timeDuration.isEmpty()) {
+	        return "SECOND"
+	    }
+	    timeDuration.replaceAll("\\d", "")
+	    
+	    switch (timeDuration) {
+	        case "s": return "SECOND"
+	        case "m": return "MINUTE"
+	        case "h": return "HOUR"
+	        case "d": return "DAY"
+	        default: return "SECOND"
+	    }
+	}
+	def String mapXTextTimeUnitToC(String timeDuration) {
+	    if (timeDuration === null || timeDuration.isEmpty()) {
+        	return "{1, SECOND}"; 
+    	}
+		
+	    val count = timeDuration.replaceAll("\\D", "")
+	    val unit = timeDuration.replaceAll("\\d", "")
+	    
+	    switch (unit) {
+	        case "s": return "{" + count + ", SECOND}"
+	        case "m": return "{" + count + ", MINUTE}"
+	        case "h": return "{" + count + ", HOUR}"
+	        case "d": return "{" + count + ", DAY}"
+	        default: return "{1, SECOND}"
+	    }
+	}
+	
+	    def generateJsonLogs(EList<DeviceType> deviceTypes, EList<Sensor> sensors, IFileSystemAccess2 fsa) {
+        // Initialize JSON object
+        var json = '''
+        {
+            "DeviceTypes": [
+                «FOR deviceType : deviceTypes»
+                {
+                    "name": "«deviceType.name»",
+                    "sensors": [
+                        «FOR instantiation : deviceType.sensorInstantiations»
+                        {
+                            "name": "«instantiation.name»",
+                            "sensor": "«instantiation.sensor.name»",
+                            "pins": [«instantiation.pins.join(', ')»],
+                            "samplingRate": "«instantiation.samplingRate»"
+                        }«IF instantiation != deviceType.sensorInstantiations.last»,«ENDIF»
+                        «ENDFOR»
+                    ]
+                }«IF deviceType != deviceTypes.last»,«ENDIF»
+                «ENDFOR»
+            ],
+            "Sensors": [
+                «FOR sensor : sensors»
+                {
+                    "name": "«sensor.name»",
+                    "reader": "«sensor.reader»",
+                    "units": ["«sensor.units.map[unit | unit.value].join('", "')»"],
+                    "pins": ["«sensor.pins.map[unit | unit.name].join('", "')»"],
+                    "out": ["«sensor.out.map[unit | unit.name].join('", "')»"]
+                }«IF sensor != sensors.last»,«ENDIF»
+                «ENDFOR»
+            ]
+        }
+        '''
+
+        // Write JSON to file
+        fsa.generateFile("output.json", json)
+    }
+	
+
+
 }
