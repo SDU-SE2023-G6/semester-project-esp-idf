@@ -3,7 +3,15 @@
  */
 package org.example.helloweb.web;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.HashMap;
+import java.util.ServiceLoader;
+
 import org.eclipse.jetty.annotations.AnnotationConfiguration;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.webapp.Configuration;
@@ -24,6 +32,26 @@ public class ServerLauncher {
 	private static final Logger LOG = LoggerFactory.getLogger(ServerLauncher.class);
 	
 	public static void main(String[] args) {
+	    // Register the in-memory file system provider
+	    InMemoryFileSystemProvider provider = new InMemoryFileSystemProvider();
+	    // Register the provider using ServiceLoader
+		ServiceLoader<FileSystemProvider> loader = ServiceLoader.load(FileSystemProvider.class);
+		boolean isProviderRegistered = false;
+		for (FileSystemProvider existingProvider : loader) {
+		    if (existingProvider.getScheme().equalsIgnoreCase("in-memory")) {
+		        isProviderRegistered = true;
+		        break;
+		    }
+		}
+		if (!isProviderRegistered) {
+		    // Add your provider to the ServiceLoader's providers list
+		    ServiceLoader<FileSystemProvider> providers = ServiceLoader.load(FileSystemProvider.class);
+		    ((Iterable<FileSystemProvider>) providers).forEach(p -> {});
+		} else {
+		    throw new IllegalStateException("In-memory file system provider is already registered");
+		}
+		// Now, the in-memory file system provider is registered and ready to be used
+	        
 		Server server = new Server(new InetSocketAddress("localhost", 8080));
 		WebAppContext ctx = new WebAppContext();
 		ctx.setResourceBase("WebRoot");

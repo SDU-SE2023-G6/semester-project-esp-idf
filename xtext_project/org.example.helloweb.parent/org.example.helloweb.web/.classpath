@@ -15,24 +15,72 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
 		<attributes>
+			<attribute name="module" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="target/generated-sources/annotations">
 		<attributes>
+			<attribute name="ignore_optional_problems" value="true"/>
 			<attribute name="optional" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
-			<attribute name="ignore_optional_problems" value="true"/>
 			<attribute name="m2e-apt" value="true"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" output="target/test-classes" path="target/generated-test-sources/test-annotations">
 		<attributes>
+			<attribute name="ignore_optional_problems" value="true"/>
 			<attribute name="optional" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
-			<attribute name="ignore_optional_problems" value="true"/>
 			<attribute name="m2e-apt" value="true"/>
 		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="/home/personal/.eclipse/org.eclipse.platform_4.28/plugins/org.eclipse.xtext.xtext.generator_2.31.0.v20230529-0659.jar" sourcepath="/home/personal/.eclipse/org.eclipse.platform_4.28/plugins/org.eclipse.xtext.xtext.generator.source_2.31.0.v20230529-0659.jar">
+		<accessrules>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/builder/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ecore/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ecore2xtext/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/exporting/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/formatting/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/generator/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/grammarAccess/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/index/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/junit/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/model/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/model/annotations/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/model/project/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/ex/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/postProcessing/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/internal/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/parser/antlr/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/parser/antlr/internal/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/services/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/simpleExpressions/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/simpleExpressions/impl/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/parser/antlr/splitting/simpleExpressions/util/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/resourceFactory/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/scoping/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/serializer/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/types/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/codemining/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/compare/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/contentAssist/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/labeling/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/outline/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/projectWizard/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/quickfix/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/refactoring/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/tasks/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/ui/templates/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/util/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/validation/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/web/*"/>
+			<accessrule kind="accessible" pattern="org/eclipse/xtext/xtext/generator/xbase/*"/>
+			<accessrule ignoreifbetter="true" kind="nonaccessible" pattern="**/*"/>
+		</accessrules>
 	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

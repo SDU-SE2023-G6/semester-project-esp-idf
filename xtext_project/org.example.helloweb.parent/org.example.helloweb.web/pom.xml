@@ -125,5 +125,10 @@
 			<version>2.0.5</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.example.helloweb</groupId>
+			<artifactId>org.example.helloweb</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 </project>
