@@ -46,5 +46,11 @@ menu "Example Configuration"
     config BROKER_URL
         string "Broker URL"
         default "mqtt://localhost:1883"
-    
+        help
+            URL of the MQTT broker.
+    config SERVER_URL
+        string "Server URL"
+        default "http://localhost:8080"
+        help 
+            URL of the backend server. Should not end in a backslash.
 endmenu

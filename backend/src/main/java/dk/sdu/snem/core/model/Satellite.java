@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class Satellite {
   private @MongoId ObjectId id;
   private @NotBlank String name;
+  private @NotBlank String deviceMACAddress;
 
   @DocumentReference
   private  @Indexed @Nullable Area area;

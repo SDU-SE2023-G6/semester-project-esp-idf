@@ -21,6 +21,7 @@
 #include "protocol_examples_common.h"
 #include "ota_routine.c"
 #include "mqtt_routine.c"
+#include "http/http_routine.c"
 
 #if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 #include "esp_efuse.h"
@@ -30,7 +31,7 @@
 #include "esp_wifi.h"
 #endif
 
-static const char *TAG = "MAIN_ROUTINE"; 
+static const char *TAG = "MAIN_ROUTINE";
 
 void app_main(void)
 {
@@ -58,6 +59,12 @@ void app_main(void)
 
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
-    mqtt5_app_start();
-    //xTaskCreate(&advanced_ota_example_task, "advanced_ota_example_task", 1024 * 8, NULL, 5, NULL);
+    // mqtt5_app_start();
+
+    // device_registration_t *device_registration = malloc(sizeof(device_registration_t));
+    // device_registration->deviceName = "ESP32";
+    // device_registration->deviceMACAddress = base_mac_addr;
+    // free(device_registration);
+
+    xTaskCreate(&satellite_register_device, "register_device", 8192, NULL, 5, NULL);
 }

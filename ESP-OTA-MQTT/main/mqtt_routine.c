@@ -26,7 +26,7 @@
 
 static const char *T_MQTT = "mqtt5_example";
 
-uint8_t base_mac_addr[6] = {0}; // Store the MAC address of the ESP32
+uint8_t base_mac_addr[6] = {0}; // MAC address of the ESP32
 char device_update_topic[50] = {0}; // Topic for receiving OTA updates
 char device_heartbeat_topic[50] = {0};
 
@@ -74,27 +74,6 @@ static esp_mqtt5_publish_property_config_t publish_property = {
     .response_topic = "/topic/test/response",
     .correlation_data = "123456",
     .correlation_data_len = 6,
-};
-
-static esp_mqtt5_subscribe_property_config_t subscribe_property = {
-    .subscribe_id = 25555,
-    .no_local_flag = false,
-    .retain_as_published_flag = false,
-    .retain_handle = 0,
-    .is_share_subscribe = true,
-    .share_name = "group1",
-};
-
-static esp_mqtt5_subscribe_property_config_t subscribe1_property = {
-    .subscribe_id = 25555,
-    .no_local_flag = true,
-    .retain_as_published_flag = false,
-    .retain_handle = 0,
-};
-
-static esp_mqtt5_unsubscribe_property_config_t unsubscribe_property = {
-    .is_share_subscribe = true,
-    .share_name = "group1",
 };
 
 static esp_mqtt5_disconnect_property_config_t disconnect_property = {
@@ -160,24 +139,16 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
         char *topic = malloc(event->topic_len + 1);
         memcpy(topic, event->topic, event->topic_len);
         topic[event->topic_len] = '\0';
+
         if (strcmp(topic, device_update_topic) == 0) {
             ESP_LOGI(T_MQTT, "OTA update received");
             ESP_LOGI(T_MQTT, "Handle OTA data: %.*s", event->data_len, event->data);
         } else if (strcmp(topic, device_heartbeat_topic) == 0) {
             ESP_LOGI(T_MQTT, "Other topic received %s", topic);
         }
-        free(topic);
 
-        // ESP_LOGI(T_MQTT, "MQTT_EVENT_DATA");
-        // print_user_property(event->property->user_property);
-        // ESP_LOGI(T_MQTT, "payload_format_indicator is %d", event->property->payload_format_indicator);
-        // ESP_LOGI(T_MQTT, "response_topic is %.*s", event->property->response_topic_len, event->property->response_topic);
-        // ESP_LOGI(T_MQTT, "correlation_data is %.*s", event->property->correlation_data_len, event->property->correlation_data);
-        // ESP_LOGI(T_MQTT, "content_type is %.*s", event->property->content_type_len, event->property->content_type);
-        // ESP_LOGI(T_MQTT, "TOPIC=%.*s", event->topic_len, event->topic);
-        // ESP_LOGI(T_MQTT, "DATA=%.*s", event->data_len, event->data);
+        free(topic);
         break;
-        
     case MQTT_EVENT_ERROR:
         ESP_LOGI(T_MQTT, "MQTT_EVENT_ERROR");
         print_user_property(event->property->user_property);

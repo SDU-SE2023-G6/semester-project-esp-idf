@@ -236,6 +236,24 @@ public class CoreController {
         .toList();
   }
 
+  @PostMapping("/satellite/register")
+  @Tag(name = "Satellite")
+  @ResponseBody
+  @Operation(summary = "Register a ESP Satellite.")
+  public SatelliteRegisterResponseDTO satelliteRegister(@RequestBody SatelliteRegisterDTO satellite) {
+    try {
+      var s = new Satellite();
+      s.setName(satellite.deviceName());
+      s.setDeviceMACAddress(satellite.deviceMACAddress());
+      this.satelliteRepo.save(s);
+      return new SatelliteRegisterResponseDTO(true);
+    } catch (Exception e) {
+      System.out.println("Failed to add Satellite.");
+      return new SatelliteRegisterResponseDTO(false);
+    }
+  }
+
+
   @GetMapping("/logs")
   @Tag(name = "Logs")
   @ResponseBody
@@ -284,8 +302,6 @@ public class CoreController {
         .toList();
   }
 
-
-
   public record SatelliteMetadata(
       String id,
       String name,
@@ -311,4 +327,14 @@ public class CoreController {
       String message,
       @Nullable String satelliteId,
       Log.LogType type) {}
+
+
+  public record SatelliteRegisterResponseDTO(
+          boolean success
+  ) {}
+
+  public record SatelliteRegisterDTO(
+          String deviceName,
+          String deviceMACAddress) {}
 }
+
