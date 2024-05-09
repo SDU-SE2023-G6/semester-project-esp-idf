@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import Data from '@/assets/dummy';
 import type { DataPoint } from '@/types/DataPoint';
-import type { Log } from '@/types/Log';
+import type { Log, LogSource } from '@/types/Log';
 import type { Area, AreaId } from '@/types/Area';
 import type { Satellite, SatelliteId } from '@/types/Satellite';
 import { AreaApi } from './api';
@@ -25,7 +25,8 @@ export const useDataStore = defineStore('data', {
     getLogs: state => state.logs,
     getSatellitesByArea: state => (areaId: AreaId) => state.satellites.filter((satellite: Satellite) => satellite.area === areaId),
     getDataPointsBySatellite: state => (satelliteId: SatelliteId) => state.dataPoints.filter(dataPoint => dataPoint.satellite === satelliteId),
-    getLogsBySatellite: state => (satelliteId: SatelliteId) => state.logs.filter(log => log.satellite === satelliteId),
+    getLogsBySatellite: state => (satelliteId: SatelliteId) => state.logs.filter(log => log.source === satelliteId),
+    getLogsBySource: state => (source: LogSource) => state.logs.filter(log => log.source === source),
     getClasses: state => state.satellites.map(satellite => satellite.class).filter((value, index, self) => self.indexOf(value) === index)
   },
   actions: {
