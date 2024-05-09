@@ -48,7 +48,7 @@
 <style scoped>
   .chart {
     width: 100% !important;
-    height: auto  !important;
+    height: 100%  !important;
   }
   .column-wrapper {
     display: flex;
@@ -79,7 +79,7 @@
     flex-wrap: wrap;
     min-width: min-content;
     max-width: max-content;
-    width: 45ch;
+    width: 45vw;
   }
 
 </style>
