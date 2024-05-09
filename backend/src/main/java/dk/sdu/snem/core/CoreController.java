@@ -17,11 +17,20 @@ import dk.sdu.snem.core.repo.SatelliteRepository;
 import dk.sdu.snem.exceptions.ConflictException;
 import dk.sdu.snem.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
+
+import jakarta.servlet.http.HttpServletResponse;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.query.BasicQuery;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("")
@@ -236,6 +245,41 @@ public class CoreController {
         .toList();
   }
 
+  @PostMapping("/satellite/register")
+  @Tag(name = "Satellite")
+  @ResponseBody
+  @Operation(summary = "Register a ESP Satellite.")
+  @ApiResponses(value = {
+          @ApiResponse(responseCode = "200", description = "Device has already been registered."),
+          @ApiResponse(responseCode = "201", description = "Device has been registered for the first time."),
+          @ApiResponse(responseCode = "400", description = "Error creating satellite.")
+  })
+  public ResponseEntity<SatelliteRegisterResponseDTO> satelliteRegister(@RequestBody SatelliteRegisterDTO satellite) {
+    try {
+      Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(satellite.deviceMACAddress());
+
+      // Device exists
+      SatelliteRegisterResponseDTO satelliteRegisterResponseDTO = new SatelliteRegisterResponseDTO(true);
+
+      if (currentSatellite != null) {
+        // TODO: Decide if there should be more actions for when a device registers itself.
+        return new ResponseEntity<>(satelliteRegisterResponseDTO, HttpStatusCode.valueOf(201));
+      }
+
+      var s = new Satellite(satellite.deviceName(), satellite.deviceMACAddress());
+      this.satelliteRepo.save(s);
+      return new ResponseEntity<>(satelliteRegisterResponseDTO, HttpStatusCode.valueOf(200));
+
+    } catch (Exception e) {
+      System.out.println("Failed to add Satellite.");
+      return new ResponseEntity<>(
+              new SatelliteRegisterResponseDTO(false),
+              HttpStatusCode.valueOf(400)
+      );
+    }
+  }
+
+
   @GetMapping("/logs")
   @Tag(name = "Logs")
   @ResponseBody
@@ -284,8 +328,6 @@ public class CoreController {
         .toList();
   }
 
-
-
   public record SatelliteMetadata(
       String id,
       String name,
@@ -311,4 +353,14 @@ public class CoreController {
       String message,
       @Nullable String satelliteId,
       Log.LogType type) {}
+
+
+  public record SatelliteRegisterResponseDTO(
+          boolean success
+  ) {}
+
+  public record SatelliteRegisterDTO(
+          String deviceName,
+          String deviceMACAddress) {}
 }
+

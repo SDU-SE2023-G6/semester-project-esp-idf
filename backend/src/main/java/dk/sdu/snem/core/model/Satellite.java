@@ -19,12 +19,18 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class Satellite {
   private @MongoId ObjectId id;
   private @NotBlank String name;
+  private @NotBlank String deviceMACAddress;
 
   @DocumentReference
   private  @Indexed @Nullable Area area;
   @DocumentReference
   private @Indexed @Nullable DeviceType deviceType;
   private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING;
+
+  public Satellite(String name, String deviceMACAddress) {
+    this.name = name;
+    this.deviceMACAddress = deviceMACAddress;
+  }
 
   @Getter
   @Schema(enumAsRef = true)

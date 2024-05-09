@@ -20,9 +20,16 @@
 #include "mqtt_client.h"
 #include "esp_log.h"
 #include "mqtt5_client.h"
+#include "esp_mac.h"
+
 #include "sdkconfig.h" // Load the config files
 
 static const char *T_MQTT = "mqtt5_example";
+
+uint8_t base_mac_addr[6] = {0}; // MAC address of the ESP32
+char device_update_topic[50] = {0}; // Topic for receiving OTA updates
+char device_heartbeat_topic[50] = {0};
+
 
 #define USE_PROPERTY_ARR_SIZE   sizeof(user_property_arr)/sizeof(esp_mqtt5_user_property_item_t)
 
@@ -38,7 +45,6 @@ static esp_mqtt5_user_property_item_t user_property_arr[] = {
         {"u", "user"},
         {"p", "password"}
     };
-
 
 
 static void print_user_property(mqtt5_user_property_handle_t user_property)
@@ -70,27 +76,6 @@ static esp_mqtt5_publish_property_config_t publish_property = {
     .correlation_data_len = 6,
 };
 
-static esp_mqtt5_subscribe_property_config_t subscribe_property = {
-    .subscribe_id = 25555,
-    .no_local_flag = false,
-    .retain_as_published_flag = false,
-    .retain_handle = 0,
-    .is_share_subscribe = true,
-    .share_name = "group1",
-};
-
-static esp_mqtt5_subscribe_property_config_t subscribe1_property = {
-    .subscribe_id = 25555,
-    .no_local_flag = true,
-    .retain_as_published_flag = false,
-    .retain_handle = 0,
-};
-
-static esp_mqtt5_unsubscribe_property_config_t unsubscribe_property = {
-    .is_share_subscribe = true,
-    .share_name = "group1",
-};
-
 static esp_mqtt5_disconnect_property_config_t disconnect_property = {
     .session_expiry_interval = 60,
     .disconnect_reason = 0,
@@ -107,35 +92,24 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
     switch ((esp_mqtt_event_id_t) event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(T_MQTT, "MQTT_EVENT_CONNECTED");
+
         print_user_property(event->property->user_property);
         esp_mqtt5_client_set_user_property(&publish_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
         esp_mqtt5_client_set_publish_property(client, &publish_property);
-        msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 1);
+
+        // subscribe to the device update topic
+        msg_id = esp_mqtt_client_subscribe(client, device_update_topic, 0);
+
+        // TODO: Consider using a enum here.
+        // Publish a i am alive message
+        esp_mqtt_client_publish(client, device_heartbeat_topic, "Alive", 0, 0, 0);
+        
+
         esp_mqtt5_client_delete_user_property(publish_property.user_property);
         publish_property.user_property = NULL;
         ESP_LOGI(T_MQTT, "sent publish successful, msg_id=%d", msg_id);
-
-        esp_mqtt5_client_set_user_property(&subscribe_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
-        esp_mqtt5_client_set_subscribe_property(client, &subscribe_property);
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
-        esp_mqtt5_client_delete_user_property(subscribe_property.user_property);
-        subscribe_property.user_property = NULL;
-        ESP_LOGI(T_MQTT, "sent subscribe successful, msg_id=%d", msg_id);
-
-        esp_mqtt5_client_set_user_property(&subscribe1_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
-        esp_mqtt5_client_set_subscribe_property(client, &subscribe1_property);
-        msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 2);
-        esp_mqtt5_client_delete_user_property(subscribe1_property.user_property);
-        subscribe1_property.user_property = NULL;
-        ESP_LOGI(T_MQTT, "sent subscribe successful, msg_id=%d", msg_id);
-
-        esp_mqtt5_client_set_user_property(&unsubscribe_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
-        esp_mqtt5_client_set_unsubscribe_property(client, &unsubscribe_property);
-        msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos0");
-        ESP_LOGI(T_MQTT, "sent unsubscribe successful, msg_id=%d", msg_id);
-        esp_mqtt5_client_delete_user_property(unsubscribe_property.user_property);
-        unsubscribe_property.user_property = NULL;
         break;
+
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(T_MQTT, "MQTT_EVENT_DISCONNECTED");
         print_user_property(event->property->user_property);
@@ -161,14 +135,19 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
         print_user_property(event->property->user_property);
         break;
     case MQTT_EVENT_DATA:
-        ESP_LOGI(T_MQTT, "MQTT_EVENT_DATA");
-        print_user_property(event->property->user_property);
-        ESP_LOGI(T_MQTT, "payload_format_indicator is %d", event->property->payload_format_indicator);
-        ESP_LOGI(T_MQTT, "response_topic is %.*s", event->property->response_topic_len, event->property->response_topic);
-        ESP_LOGI(T_MQTT, "correlation_data is %.*s", event->property->correlation_data_len, event->property->correlation_data);
-        ESP_LOGI(T_MQTT, "content_type is %.*s", event->property->content_type_len, event->property->content_type);
-        ESP_LOGI(T_MQTT, "TOPIC=%.*s", event->topic_len, event->topic);
-        ESP_LOGI(T_MQTT, "DATA=%.*s", event->data_len, event->data);
+
+        char *topic = malloc(event->topic_len + 1);
+        memcpy(topic, event->topic, event->topic_len);
+        topic[event->topic_len] = '\0';
+
+        if (strcmp(topic, device_update_topic) == 0) {
+            ESP_LOGI(T_MQTT, "OTA update received");
+            ESP_LOGI(T_MQTT, "Handle OTA data: %.*s", event->data_len, event->data);
+        } else if (strcmp(topic, device_heartbeat_topic) == 0) {
+            ESP_LOGI(T_MQTT, "Other topic received %s", topic);
+        }
+
+        free(topic);
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(T_MQTT, "MQTT_EVENT_ERROR");
@@ -189,6 +168,27 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
 
 static void mqtt5_app_start(void)
 {
+    /*** SETUP THE MAC ADRESS STUFF ***/
+    // Get and set the mac adress of the device
+    esp_read_mac(base_mac_addr, ESP_MAC_WIFI_STA);
+
+     // create a topic string for the device
+    char device_topic[32] = {0};
+    sprintf(device_topic, "/topic/%02x%02x%02x%02x%02x%02x", 
+        base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
+        base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
+
+    // print the base topic the device is using
+    ESP_LOGI(T_MQTT, "Connect on /topic/%02x%02x%02x%02x%02x%02x", 
+        base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
+        base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
+
+
+    // Set the device update and heartbeat topics
+    sprintf(device_update_topic, "%s/update", device_topic);
+    sprintf(device_heartbeat_topic,"%s/heartbeat", device_topic);
+
+
     esp_mqtt5_connection_property_config_t connect_property = {
         .session_expiry_interval = 10,
         .maximum_packet_size = 1024,
@@ -217,31 +217,6 @@ static void mqtt5_app_start(void)
         .session.last_will.retain = true,
     };
 
-#if CONFIG_BROKER_URL_FROM_STDIN
-    char line[128];
-
-    if (strcmp(mqtt5_cfg.uri, "FROM_STDIN") == 0) {
-        int count = 0;
-        printf("Please enter url of mqtt broker\n");
-        while (count < 128) {
-            int c = fgetc(stdin);
-            if (c == '\n') {
-                line[count] = '\0';
-                break;
-            } else if (c > 0 && c < 127) {
-                line[count] = c;
-                ++count;
-            }
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-        }
-        mqtt5_cfg.broker.address.uri = line;
-        printf("Broker url: %s\n", line);
-    } else {
-        ESP_LOGE(T_MQTT, "Configuration mismatch: wrong broker url");
-        abort();
-    }
-#endif /* CONFIG_BROKER_URL_FROM_STDIN */
-
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt5_cfg);
 
     /* Set connection properties and user properties */
@@ -258,5 +233,5 @@ static void mqtt5_app_start(void)
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt5_event_handler, NULL);
     esp_mqtt_client_start(client);
-}
 
+}

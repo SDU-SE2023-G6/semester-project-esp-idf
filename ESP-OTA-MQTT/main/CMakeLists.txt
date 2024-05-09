@@ -1,4 +1,9 @@
 idf_component_register(SRCS "ota_routine.c" "main.c" "mqtt_routine.c"
-                    INCLUDE_DIRS "." 
+                    INCLUDE_DIRS "." "http"
                     # Embed the server root certificate into the final binary
-                    EMBED_TXTFILES ${project_dir}/server_certs/ca_cert.pem)
+                    EMBED_TXTFILES ${project_dir}/server_certs/ca_cert.pem
+                    REQUIRES json esp_event esp_netif mqtt esp_http_client app_update esp_https_ota nvs_flash esp_wifi
+                )
+
+set_target_properties(${COMPONENT_LIB} PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized)
+
