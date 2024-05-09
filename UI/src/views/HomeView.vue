@@ -54,6 +54,7 @@
     display: flex;
     flex-direction: column;
     gap: 1em;
+    max-width: 500px;
   }
   .general-wrapper {
     background: var(--color-layer);
@@ -67,12 +68,18 @@
   .main-wrapper {
     width: 100%;
     gap: 2em;
+    display: flex;
+    justify-content: left;
+    flex-wrap: wrap;
   }
+  
   .area-wrapper {
     gap: 1em;
-    display: grid;
-    grid-template-columns: auto auto;
-    grid-template-rows: auto auto;
+    display: flex;
+    flex-wrap: wrap;
+    min-width: min-content;
+    max-width: max-content;
+    width: 45ch;
   }
 
 </style>

@@ -114,6 +114,8 @@ const editArea = (area: Area) => {
   padding: 10px;
   background: var(--color-layer);
   border-radius: 10px;
+  min-width: 300px;
+  height: fit-content;
 }
 .buttons {
   display: flex;
