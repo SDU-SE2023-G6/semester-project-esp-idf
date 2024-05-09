@@ -19,7 +19,6 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
-#include "ota_routine.c"
 #include "mqtt_routine.c"
 #include "http/http_routine.c"
 

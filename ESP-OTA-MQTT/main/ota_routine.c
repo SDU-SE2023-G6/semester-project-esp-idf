@@ -94,31 +94,19 @@ static esp_err_t _http_client_init_cb(esp_http_client_handle_t http_client)
     return err;
 }
 
-void advanced_ota_example_task(void *pvParameter)
+/**
+ * @brief Function to perform OTA using HTTP
+*/
+int perform_ota(char *update_url)
 {
     ESP_LOGI(T_OTA, "Starting Advanced OTA example");
 
     esp_err_t ota_finish_err = ESP_OK;
     esp_http_client_config_t config = {
-        .url = CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,
-        .cert_pem = (char *)server_cert_pem_start,
+        .url = update_url,
         .timeout_ms = CONFIG_EXAMPLE_OTA_RECV_TIMEOUT,
         .keep_alive_enable = true,
     };
-
-#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
-    char url_buf[OTA_URL_SIZE];
-    if (strcmp(config.url, "FROM_STDIN") == 0) {
-        example_configure_stdin_stdout();
-        fgets(url_buf, OTA_URL_SIZE, stdin);
-        int len = strlen(url_buf);
-        url_buf[len - 1] = '\0';
-        config.url = url_buf;
-    } else {
-        ESP_LOGE(T_OTA, "Configuration mismatch: wrong firmware upgrade image url");
-        abort();
-    }
-#endif
 
 #ifdef CONFIG_EXAMPLE_SKIP_COMMON_NAME_CHECK
     config.skip_cert_common_name_check = true;
@@ -137,7 +125,7 @@ void advanced_ota_example_task(void *pvParameter)
     esp_err_t err = esp_https_ota_begin(&ota_config, &https_ota_handle);
     if (err != ESP_OK) {
         ESP_LOGE(T_OTA, "ESP HTTPS OTA Begin failed");
-        vTaskDelete(NULL);
+        return ESP_FAIL;
     }
 
     esp_app_desc_t app_desc;
@@ -177,12 +165,12 @@ void advanced_ota_example_task(void *pvParameter)
                 ESP_LOGE(T_OTA, "Image validation failed, image is corrupted");
             }
             ESP_LOGE(T_OTA, "ESP_HTTPS_OTA upgrade failed 0x%x", ota_finish_err);
-            vTaskDelete(NULL);
+            return ESP_FAIL;
         }
     }
 
 ota_end:
     esp_https_ota_abort(https_ota_handle);
     ESP_LOGE(T_OTA, "ESP_HTTPS_OTA upgrade failed");
-    vTaskDelete(NULL);
+    return ESP_FAIL;
 }

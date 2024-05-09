@@ -21,6 +21,8 @@
 #include "esp_log.h"
 #include "mqtt5_client.h"
 #include "esp_mac.h"
+#include "cJSON.h"
+#include "ota_routine.c"
 
 #include "sdkconfig.h" // Load the config files
 
@@ -103,7 +105,6 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
         // TODO: Consider using a enum here.
         // Publish a i am alive message
         esp_mqtt_client_publish(client, device_heartbeat_topic, "Alive", 0, 0, 0);
-        
 
         esp_mqtt5_client_delete_user_property(publish_property.user_property);
         publish_property.user_property = NULL;
@@ -140,9 +141,23 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
         memcpy(topic, event->topic, event->topic_len);
         topic[event->topic_len] = '\0';
 
+        // Check which topic the message was received on
         if (strcmp(topic, device_update_topic) == 0) {
             ESP_LOGI(T_MQTT, "OTA update received");
             ESP_LOGI(T_MQTT, "Handle OTA data: %.*s", event->data_len, event->data);
+            cJSON *root = cJSON_Parse(event->data);
+            cJSON *url = cJSON_GetObjectItem(root, "url");
+            if (url) {
+                ESP_LOGI(T_MQTT, "OTA URL: %s", url->valuestring);
+                // Start the OTA update
+                esp_err_t OTA_RESULT = perform_ota(url->valuestring);
+                if (OTA_RESULT == ESP_OK) {
+                    ESP_LOGI(T_MQTT, "OTA update successful");
+                } else {
+                    ESP_LOGI(T_MQTT, "OTA update failed");
+                }
+            }
+
         } else if (strcmp(topic, device_heartbeat_topic) == 0) {
             ESP_LOGI(T_MQTT, "Other topic received %s", topic);
         }
