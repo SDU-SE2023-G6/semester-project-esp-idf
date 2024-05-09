@@ -30,5 +30,5 @@ FROM maven:3.9.6-eclipse-temurin-17
 COPY . /app/
 WORKDIR /app/
 RUN mvn -pl '!org.example.helloweb.tests,!org.example.helloweb.ui.tests' -am clean compile install package 
-EXPOSE 8080
-CMD ["sh", "-c",  "mvn -f org.example.helloweb.web -e jetty:run -B -Djetty.port=${SERVER_PORT:-8080}"]
+EXPOSE 8081
+CMD ["sh", "-c",  "mvn -f org.example.helloweb.web -e jetty:run -B -Djetty.port=${SERVER_PORT:-8081}"]

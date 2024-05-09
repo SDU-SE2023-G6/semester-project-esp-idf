@@ -22,7 +22,7 @@ RUN mvn -B -Dmaven.test.skip clean package spring-boot:repackage
 # Runtime 
 #
 FROM eclipse-temurin:21-jre-alpine
-COPY --from=builder /build/target/autosearch-*.jar /app.jar
+COPY --from=builder /build/target/*.jar /app.jar
 
 ARG buildVersion
 ENV APP_BUILD_VERSION $buildVersion

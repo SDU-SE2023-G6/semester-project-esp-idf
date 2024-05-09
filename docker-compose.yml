@@ -16,9 +16,12 @@ services:
       - 8080:8080
     depends_on:
       - mongodb_container
+      - mqtt_broker
     environment:
       - SPRING_MONGODB_DATABASE=snemdb
       - SPRING_MONGODB_HOST=mongodb_container
+      - MQTT_HOST=mqtt_broker
+    command: "java -jar /app.jar"
 
   xtext_backend:
     build: ./xtext_project/org.example.helloweb.parent

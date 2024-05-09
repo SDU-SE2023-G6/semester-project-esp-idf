@@ -50,7 +50,7 @@ public class ServerLauncher {
 	    
 		
 	    String portStr = System.getenv("SERVER_PORT");
-	    int port = (portStr != null && !portStr.isEmpty()) ? Integer.parseInt(portStr) : 8080;
+	    int port = (portStr != null && !portStr.isEmpty()) ? Integer.parseInt(portStr) : 8081;
 		Server server = new Server(new InetSocketAddress("localhost", port));
 		WebAppContext ctx = new WebAppContext();
 		ctx.setResourceBase("WebRoot");

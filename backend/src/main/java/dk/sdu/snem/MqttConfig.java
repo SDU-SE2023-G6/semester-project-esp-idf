@@ -1,5 +1,7 @@
 package dk.sdu.snem;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,7 +78,15 @@ public class MqttConfig {
   public DefaultMqttPahoClientFactory mqttClientFactory() {
     DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
     MqttConnectOptions options = new MqttConnectOptions();
-    options.setServerURIs(new String[]{String.format("tcp://%s:%d", mqttBrokerHost, mqttBrokerPort)});
+
+    InetAddress address = null;
+    try {
+      address = InetAddress.getByName(mqttBrokerHost);
+    } catch (UnknownHostException e) {
+      throw new RuntimeException(e);
+    }
+    System.out.println("IP Address of " + mqttBrokerHost + ": " + address.getHostAddress());
+    options.setServerURIs(new String[]{String.format("tcp://%s:%d", address.getHostAddress(), mqttBrokerPort)});
     factory.setConnectionOptions(options);
     return factory;
   }
