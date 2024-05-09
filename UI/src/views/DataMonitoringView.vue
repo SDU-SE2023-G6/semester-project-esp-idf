@@ -68,13 +68,14 @@ const dummyLineData = [20, 30, 40, 50, 60, 70, 80, 90, 100, 90, 80, 70, 60, 50, 
 
 <style scoped>
   .charts-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 1em;
+    flex-wrap: wrap;
   }
   .tile {
     border: 1px solid #333;
     padding: 1em;
     border-radius: 10px;
+    min-width: 30vw;
   }
 </style>

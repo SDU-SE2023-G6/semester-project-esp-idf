@@ -37,7 +37,7 @@
 </script>
 
 <template>
-    <div>
+    <div class="wrapper">
         <Pie
             :options="chartOptions"
             :data="chartData"
@@ -46,5 +46,8 @@
 </template>
 
 <style scoped>
- 
+.wrapper {
+    width: 100%;
+    height: 100%;
+}
 </style>
