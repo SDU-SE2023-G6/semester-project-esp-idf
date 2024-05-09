@@ -1,5 +1,6 @@
 package dk.sdu.snem.core.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -22,5 +23,18 @@ public class Program {
   private @Nullable String cCode;
   private @Nullable Binary[] compiledBinary;
   private @Nullable String binaryHash;
+
+  /*
+  private CompilationState compileState = CompilationState.NOT_STARTED;
+  private String compileLog;
+
+  @Schema(enumAsRef = true)
+  public enum CompilationState {
+    NOT_STARTED,
+    COMPILING,
+    ERROR,
+    FINISHED
+  }
+   */
 
 }

@@ -27,6 +27,11 @@ public class Satellite {
   private @Indexed @Nullable DeviceType deviceType;
   private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING;
 
+  public Satellite(String name, String deviceMACAddress) {
+    this.name = name;
+    this.deviceMACAddress = deviceMACAddress;
+  }
+
   @Getter
   @Schema(enumAsRef = true)
   public enum SatelliteStatus {

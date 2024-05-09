@@ -7,6 +7,9 @@ import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface SatelliteRepository extends MongoRepository<Satellite, ObjectId> {
-  List<Satellite> findAllByArea_Id(ObjectId areId);
+  List<Satellite> findAllByArea_Id(ObjectId areaId);
+
+  Satellite findByDeviceMACAddress(String address);
+
   boolean existsByArea(Area area);
 }
