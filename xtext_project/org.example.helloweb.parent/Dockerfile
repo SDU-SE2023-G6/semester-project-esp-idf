@@ -1,26 +1,34 @@
-# Use a base image with Java and Maven installed for building
-FROM maven:3.8.3-openjdk-17-slim AS builder
+#
+# Dependencies stage
+#
+#FROM maven:3.8.3-openjdk-17-slim AS dependencies
+#COPY pom.xml /build/
 
-# Set the working directory
-WORKDIR /app
+#COPY org.example.helloweb.ide/pom.xml /build/org.example.helloweb.ide/
+#COPY org.example.helloweb.tests/pom.xml /build/org.example.helloweb.tests/
+#COPY org.example.helloweb.web/pom.xml /build/org.example.helloweb.web/
+#COPY org.example.helloweb/pom.xml /build/org.example.helloweb/
+#COPY org.example.helloweb.ui/pom.xml /build/org.example.helloweb.ui/
+#COPY org.example.helloweb.target/ /build/org.example.helloweb.target/
+#COPY org.example.helloweb.ui.tests/pom.xml /build/org.example.helloweb.ui.tests/
 
-# Copy the source code into the container
-COPY . .
+#COPY org.example.helloweb.ide/META-INF/ /build/org.example.helloweb.ide/META-INF/
+#COPY org.example.helloweb/META-INF/ /build/org.example.helloweb/META-INF/
+#COPY org.example.helloweb.tests/META-INF/ /build/org.example.helloweb.tests/META-INF/
+#COPY org.example.helloweb.ui/META-INF/ /build/org.example.helloweb.ui/META-INF/
+#COPY org.example.helloweb.ui.tests/META-INF/ /build/org.example.helloweb.ui.tests/META-INF/
 
-# Build the application
-RUN mvn clean package -DskipTests
+#WORKDIR /build/
+#RUN mvn -pl '!org.example.helloweb.tests,!org.example.helloweb.ui.tests,!org.example.helloweb.ide,!org.example.helloweb.web,!org.example.helloweb.ui' -am -B clean dependency:go-offline dependency:resolve-plugins
 
-# Use a lightweight base image with Java installed for runtime
-FROM openjdk:17-slim
-
-# Set the working directory
-WORKDIR /app
-
-# Copy the built JAR file from the builder stage to the runtime stage
-COPY --from=builder /app/org.example.helloweb.web/target/*.jar ./app.jar
-
-# Expose the port used by your application
+#
+# Build and RUN
+#
+#FROM dependencies AS builder
+FROM maven:3.9.6-eclipse-temurin-17
+#COPY --from=dependencies /root/.m2 /root/.m2
+COPY . /app/
+WORKDIR /app/
+RUN mvn -pl '!org.example.helloweb.tests,!org.example.helloweb.ui.tests' -am clean compile install package 
 EXPOSE 8080
-
-# Command to run your application
-CMD ["java", "-cp", "app.jar", "org.example.helloweb.web.ServerLauncher"]
+CMD ["sh", "-c",  "mvn -f org.example.helloweb.web -e jetty:run -B -Djetty.port=${SERVER_PORT:-8080}"]

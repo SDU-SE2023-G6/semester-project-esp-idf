@@ -1,5 +1,6 @@
 version: '3.7'
 services:
+
   backend:
     build: .
     container_name: backend
@@ -11,7 +12,15 @@ services:
     environment:
       - SPRING_MONGODB_DATABASE=snemdb
       - SPRING_MONGODB_HOST=mongodb_container
-    command: "java -jar /app.jar"
+
+  xtext_backend:
+    build: ./xtext_project/org.example.helloweb.parent
+    container_name: xtext_backend
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      - SERVER_PORT=8081
 
   mqtt_broker:
     image: eclipse-mosquitto:2.0
@@ -20,7 +29,7 @@ services:
     ports:
       - "1883:1883"
     volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./backend/mosquitto.conf:/mosquitto/config/mosquitto.conf
 
   mongodb_container:
     image: mongo:6

@@ -32,9 +32,7 @@ public class ServerLauncher {
 	private static final Logger LOG = LoggerFactory.getLogger(ServerLauncher.class);
 	
 	public static void main(String[] args) {
-	    // Register the in-memory file system provider
 	    InMemoryFileSystemProvider provider = new InMemoryFileSystemProvider();
-	    // Register the provider using ServiceLoader
 		ServiceLoader<FileSystemProvider> loader = ServiceLoader.load(FileSystemProvider.class);
 		boolean isProviderRegistered = false;
 		for (FileSystemProvider existingProvider : loader) {
@@ -44,15 +42,16 @@ public class ServerLauncher {
 		    }
 		}
 		if (!isProviderRegistered) {
-		    // Add your provider to the ServiceLoader's providers list
 		    ServiceLoader<FileSystemProvider> providers = ServiceLoader.load(FileSystemProvider.class);
 		    ((Iterable<FileSystemProvider>) providers).forEach(p -> {});
 		} else {
 		    throw new IllegalStateException("In-memory file system provider is already registered");
 		}
-		// Now, the in-memory file system provider is registered and ready to be used
-	        
-		Server server = new Server(new InetSocketAddress("localhost", 8080));
+	    
+		
+	    String portStr = System.getenv("SERVER_PORT");
+	    int port = (portStr != null && !portStr.isEmpty()) ? Integer.parseInt(portStr) : 8080;
+		Server server = new Server(new InetSocketAddress("localhost", port));
 		WebAppContext ctx = new WebAppContext();
 		ctx.setResourceBase("WebRoot");
 		ctx.setWelcomeFiles(new String[] {"index.html"});
