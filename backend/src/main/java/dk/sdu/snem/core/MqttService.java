@@ -12,7 +12,6 @@ public class MqttService {
 
   private final LogRepository logRepo;
   private final MqttInboundLogsGateway logsGateway;
-
   private final MqttInboundDataPointsGateway dataPointsGateway;
 
   public MqttService(

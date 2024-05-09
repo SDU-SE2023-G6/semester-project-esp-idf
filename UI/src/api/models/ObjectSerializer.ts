@@ -4,6 +4,9 @@ export * from '../models/DeviceTypeMetadata';
 export * from '../models/ErrorResponse';
 export * from '../models/LogMetadata';
 export * from '../models/LogType';
+export * from '../models/ProgramDslContent';
+export * from '../models/ProgramStatus';
+export * from '../models/ProgramStatusProjection';
 export * from '../models/SatelliteMetadata';
 export * from '../models/SatelliteStatus';
 
@@ -13,6 +16,9 @@ import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata      } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
+import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramStatus } from '../models/ProgramStatus';
+import { ProgramStatusProjection   } from '../models/ProgramStatusProjection';
 import { SatelliteMetadata      } from '../models/SatelliteMetadata';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 
@@ -30,6 +36,7 @@ let primitives = [
 
 let enumsMap: Set<string> = new Set<string>([
     "LogType",
+    "ProgramStatus",
     "SatelliteStatus",
 ]);
 
@@ -39,6 +46,8 @@ let typeMap: {[index: string]: any} = {
     "DeviceTypeMetadata": DeviceTypeMetadata,
     "ErrorResponse": ErrorResponse,
     "LogMetadata": LogMetadata,
+    "ProgramDslContent": ProgramDslContent,
+    "ProgramStatusProjection": ProgramStatusProjection,
     "SatelliteMetadata": SatelliteMetadata,
 }
 

@@ -7,6 +7,9 @@ import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
+import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramStatus } from '../models/ProgramStatus';
+import { ProgramStatusProjection } from '../models/ProgramStatusProjection';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 
@@ -261,6 +264,119 @@ export class ObjectLogsApi {
      */
     public getLogs(param: LogsApiGetLogsRequest = {}, options?: Configuration): Promise<Array<LogMetadata>> {
         return this.api.getLogs( options).toPromise();
+    }
+
+}
+
+import { ObservableProgramApi } from "./ObservableAPI";
+import { ProgramApiRequestFactory, ProgramApiResponseProcessor} from "../apis/ProgramApi";
+
+export interface ProgramApiCompileProgramRequest {
+}
+
+export interface ProgramApiCompileProgramContinueDestructivelyRequest {
+}
+
+export interface ProgramApiGetProgramDslContentRequest {
+}
+
+export interface ProgramApiGetProgramStatusRequest {
+}
+
+export interface ProgramApiSaveProgramDslContentRequest {
+    /**
+     * 
+     * @type ProgramDslContent
+     * @memberof ProgramApisaveProgramDslContent
+     */
+    programDslContent: ProgramDslContent
+}
+
+export class ObjectProgramApi {
+    private api: ObservableProgramApi
+
+    public constructor(configuration: Configuration, requestFactory?: ProgramApiRequestFactory, responseProcessor?: ProgramApiResponseProcessor) {
+        this.api = new ObservableProgramApi(configuration, requestFactory, responseProcessor);
+    }
+
+    /**
+     * Get program DSL definition
+     * @param param the request object
+     */
+    public compileProgramWithHttpInfo(param: ProgramApiCompileProgramRequest = {}, options?: Configuration): Promise<HttpInfo<ProgramStatusProjection>> {
+        return this.api.compileProgramWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get program DSL definition
+     * @param param the request object
+     */
+    public compileProgram(param: ProgramApiCompileProgramRequest = {}, options?: Configuration): Promise<ProgramStatusProjection> {
+        return this.api.compileProgram( options).toPromise();
+    }
+
+    /**
+     * Continue compilation despite warnings
+     * @param param the request object
+     */
+    public compileProgramContinueDestructivelyWithHttpInfo(param: ProgramApiCompileProgramContinueDestructivelyRequest = {}, options?: Configuration): Promise<HttpInfo<ProgramStatusProjection>> {
+        return this.api.compileProgramContinueDestructivelyWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Continue compilation despite warnings
+     * @param param the request object
+     */
+    public compileProgramContinueDestructively(param: ProgramApiCompileProgramContinueDestructivelyRequest = {}, options?: Configuration): Promise<ProgramStatusProjection> {
+        return this.api.compileProgramContinueDestructively( options).toPromise();
+    }
+
+    /**
+     * Get program DSL definition
+     * @param param the request object
+     */
+    public getProgramDslContentWithHttpInfo(param: ProgramApiGetProgramDslContentRequest = {}, options?: Configuration): Promise<HttpInfo<ProgramDslContent>> {
+        return this.api.getProgramDslContentWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get program DSL definition
+     * @param param the request object
+     */
+    public getProgramDslContent(param: ProgramApiGetProgramDslContentRequest = {}, options?: Configuration): Promise<ProgramDslContent> {
+        return this.api.getProgramDslContent( options).toPromise();
+    }
+
+    /**
+     * Get program status
+     * @param param the request object
+     */
+    public getProgramStatusWithHttpInfo(param: ProgramApiGetProgramStatusRequest = {}, options?: Configuration): Promise<HttpInfo<ProgramStatusProjection>> {
+        return this.api.getProgramStatusWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get program status
+     * @param param the request object
+     */
+    public getProgramStatus(param: ProgramApiGetProgramStatusRequest = {}, options?: Configuration): Promise<ProgramStatusProjection> {
+        return this.api.getProgramStatus( options).toPromise();
+    }
+
+    /**
+     * Update program DSL definition
+     * @param param the request object
+     */
+    public saveProgramDslContentWithHttpInfo(param: ProgramApiSaveProgramDslContentRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.saveProgramDslContentWithHttpInfo(param.programDslContent,  options).toPromise();
+    }
+
+    /**
+     * Update program DSL definition
+     * @param param the request object
+     */
+    public saveProgramDslContent(param: ProgramApiSaveProgramDslContentRequest, options?: Configuration): Promise<void> {
+        return this.api.saveProgramDslContent(param.programDslContent,  options).toPromise();
     }
 
 }

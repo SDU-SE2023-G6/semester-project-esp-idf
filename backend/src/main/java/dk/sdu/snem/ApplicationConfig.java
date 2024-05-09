@@ -1,35 +1,38 @@
 package dk.sdu.snem;
 
 import com.mongodb.lang.NonNull;
+import dk.sdu.snem.core.model.Program;
+import dk.sdu.snem.core.model.ReaderFunction;
+import dk.sdu.snem.core.repo.ProgramRepository;
+import dk.sdu.snem.core.repo.ReaderFunctionRepository;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.bson.types.ObjectId;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.format.FormatterRegistry;
-import org.springframework.integration.annotation.IntegrationComponentScan;
-import org.springframework.integration.annotation.MessagingGateway;
-import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory;
-import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /** Misc. configuration of the application. */
 @Configuration
@@ -40,12 +43,54 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private final MongoDatabaseFactory databaseFactory;
   private final MappingMongoConverter mongoConverter;
+  private final ReaderFunctionRepository readerFunctionRepo;
+  private final ProgramRepository programRepo;
 
-  public ApplicationConfig(MongoDatabaseFactory databaseFactory, MappingMongoConverter mongoConverter) {
+  public ApplicationConfig(
+      MongoDatabaseFactory databaseFactory,
+      MappingMongoConverter mongoConverter,
+      ReaderFunctionRepository readerFunctionRepo, ProgramRepository programRepo) {
     this.databaseFactory = databaseFactory;
     this.mongoConverter = mongoConverter;
+    this.readerFunctionRepo = readerFunctionRepo;
+    this.programRepo = programRepo;
   }
 
+  @Bean
+  CommandLineRunner defaultReaderSeeder() {
+    return args -> {
+      PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+      try {
+        Resource[] directories = resolver.getResources("classpath:/sampleReaders/*");
+        for (Resource directory : directories) {
+
+          ReaderFunction readerFunction =
+              readerFunctionRepo
+                  .findByName(directory.getFilename())
+                  .orElseGet(
+                      () -> {
+                        var function = new ReaderFunction();
+                        function.setName(directory.getFilename());
+                        return readerFunctionRepo.save(function);
+                      });
+
+          Resource[] files =
+              resolver.getResources("classpath:/sampleReaders/" + directory.getFilename() + "/*");
+          byte[] allFilesAsZip = zipFiles(files);
+          readerFunction.setSourceFiles(allFilesAsZip);
+          readerFunctionRepo.save(readerFunction);
+        }
+      } catch (IOException e) {
+        // Handle exception
+        e.printStackTrace();
+      }
+    };
+  }
+
+  @Bean
+  public RestTemplate restTemplate() {
+    return new RestTemplate();
+  }
 
   @Override
   public void addFormatters(FormatterRegistry registry) {
@@ -55,11 +100,13 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   @Override
   public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**")  // Allow CORS for all endpoints
+    registry
+        .addMapping("/**") // Allow CORS for all endpoints
         .allowedOrigins("*") // Allow requests from any origin
         .allowedMethods("*") // Allow all HTTP methods
         .allowedHeaders("*"); // Allow all headers
   }
+
   @Bean
   public ValidatingMongoEventListener validatingMongoEventListener() {
     return new ValidatingMongoEventListener(validator());
@@ -126,5 +173,18 @@ public class ApplicationConfig implements WebMvcConfigurer {
     }
   }
 
-
+  private byte[] zipFiles(Resource[] files) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+      for (Resource file : files) {
+        if (file.isReadable() && file.isFile()) {
+          ZipEntry zipEntry = new ZipEntry(Objects.requireNonNull(file.getFilename()));
+          zos.putNextEntry(zipEntry);
+          zos.write(file.getInputStream().readAllBytes());
+          zos.closeEntry();
+        }
+      }
+    }
+    return baos.toByteArray();
+  }
 }

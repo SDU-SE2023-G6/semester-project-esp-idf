@@ -43,6 +43,9 @@
 				
 				var newValue = "This is some default text!";
         		editor.setValue(newValue, -1); // -1 moves the cursor to the start
+
+				// Load the DSL text from the server
+				loadDsl();
 			});
 		});
 
@@ -54,8 +57,8 @@
 		    newValue = dslText;  
 		    newValueJSON = JSON.stringify(dslText);  
 		    
-		    fetch('http://localhost:8081/saveDsl', {
-		      method: 'POST',
+		    fetch('http://localhost:8080/program', {
+		      method: 'PUT',
 		      headers: {
 		        'Content-Type': 'application/json',
 		      },
@@ -64,10 +67,20 @@
 		}
 		
 		function loadDsl() {
-			console.log(newValue);
-			editor.setValue(newValue, -1); // -1 moves the cursor to the start
+			fetch('http://localhost:8080/program')
+				.then(response => response.json())
+				.then(data => {
+					if (data.dslText) {
+						console.log(data.dslText);
+						editor.setValue(data.dslText, -1); // -1 moves the cursor to the start
+					} else {
+						console.log("No DSL text found");
+					}
+				})
+				.catch(error => {
+					console.error('Error loading DSL:', error);
+				});
 		}
-		
 
 	</script>
 </head>

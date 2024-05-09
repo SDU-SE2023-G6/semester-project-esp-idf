@@ -17,17 +17,26 @@ COPY pom.xml /build/
 WORKDIR /build/
 RUN mvn -B -Dmaven.test.skip clean package spring-boot:repackage
 
+#
+# Build Tools stage
+#
+FROM alpine:latest AS build-tools
+RUN apk add --no-cache gcc make
 
 #
 # Runtime 
 #
 FROM eclipse-temurin:21-jre-alpine
 COPY --from=builder /build/target/*.jar /app.jar
+RUN apk add --no-cache build-base
 
 ARG buildVersion
 ENV APP_BUILD_VERSION $buildVersion
 ENV JAVA_TOOL_OPTIONS --enable-preview
 EXPOSE 8080
 EXPOSE 80
+
+COPY --from=build-tools /usr/bin/gcc /usr/bin/gcc
+COPY --from=build-tools /usr/bin/make /usr/bin/make
 
 CMD ["java", "-jar", "/app.jar"]

@@ -8,6 +8,9 @@ import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
+import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramStatus } from '../models/ProgramStatus';
+import { ProgramStatusProjection } from '../models/ProgramStatusProjection';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 
@@ -352,6 +355,171 @@ export class ObservableLogsApi {
      */
     public getLogs(_options?: Configuration): Observable<Array<LogMetadata>> {
         return this.getLogsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Array<LogMetadata>>) => apiResponse.data));
+    }
+
+}
+
+import { ProgramApiRequestFactory, ProgramApiResponseProcessor} from "../apis/ProgramApi";
+export class ObservableProgramApi {
+    private requestFactory: ProgramApiRequestFactory;
+    private responseProcessor: ProgramApiResponseProcessor;
+    private configuration: Configuration;
+
+    public constructor(
+        configuration: Configuration,
+        requestFactory?: ProgramApiRequestFactory,
+        responseProcessor?: ProgramApiResponseProcessor
+    ) {
+        this.configuration = configuration;
+        this.requestFactory = requestFactory || new ProgramApiRequestFactory(configuration);
+        this.responseProcessor = responseProcessor || new ProgramApiResponseProcessor();
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public compileProgramWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ProgramStatusProjection>> {
+        const requestContextPromise = this.requestFactory.compileProgram(_options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.compileProgramWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public compileProgram(_options?: Configuration): Observable<ProgramStatusProjection> {
+        return this.compileProgramWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ProgramStatusProjection>) => apiResponse.data));
+    }
+
+    /**
+     * Continue compilation despite warnings
+     */
+    public compileProgramContinueDestructivelyWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ProgramStatusProjection>> {
+        const requestContextPromise = this.requestFactory.compileProgramContinueDestructively(_options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.compileProgramContinueDestructivelyWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Continue compilation despite warnings
+     */
+    public compileProgramContinueDestructively(_options?: Configuration): Observable<ProgramStatusProjection> {
+        return this.compileProgramContinueDestructivelyWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ProgramStatusProjection>) => apiResponse.data));
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public getProgramDslContentWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ProgramDslContent>> {
+        const requestContextPromise = this.requestFactory.getProgramDslContent(_options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getProgramDslContentWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public getProgramDslContent(_options?: Configuration): Observable<ProgramDslContent> {
+        return this.getProgramDslContentWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ProgramDslContent>) => apiResponse.data));
+    }
+
+    /**
+     * Get program status
+     */
+    public getProgramStatusWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ProgramStatusProjection>> {
+        const requestContextPromise = this.requestFactory.getProgramStatus(_options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getProgramStatusWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get program status
+     */
+    public getProgramStatus(_options?: Configuration): Observable<ProgramStatusProjection> {
+        return this.getProgramStatusWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ProgramStatusProjection>) => apiResponse.data));
+    }
+
+    /**
+     * Update program DSL definition
+     * @param programDslContent 
+     */
+    public saveProgramDslContentWithHttpInfo(programDslContent: ProgramDslContent, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.saveProgramDslContent(programDslContent, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.saveProgramDslContentWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Update program DSL definition
+     * @param programDslContent 
+     */
+    public saveProgramDslContent(programDslContent: ProgramDslContent, _options?: Configuration): Observable<void> {
+        return this.saveProgramDslContentWithHttpInfo(programDslContent, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
 }
