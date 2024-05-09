@@ -5,7 +5,7 @@
 <template>
     <div class="wrapper">
         <h1>DSL Editor</h1>
-        <iframe src="http://localhost:8080"></iframe>
+        <iframe src="http://localhost:8081"></iframe>
         <!--<XtextEditor />-->
     </div>
 </template>
