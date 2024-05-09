@@ -144,12 +144,18 @@ void http_register_deivce(void)
     char *payload = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER);
 
     uint8_t esp_mac_address[6] = {0};
-    esp_read_mac(ESP_MAC_WIFI_STA, ESP_MAC_WIFI_STA);
-    char deviceMACAddress[18];
+    esp_read_mac(esp_mac_address, ESP_MAC_WIFI_STA);
+
+    ESP_LOGI(T_HTTP, "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x", 
+            esp_mac_address[0], esp_mac_address[1], esp_mac_address[2], 
+            esp_mac_address[3], esp_mac_address[4], esp_mac_address[5]);
+
+    char* deviceMACAddress = (char *)malloc(18);
     sprintf(deviceMACAddress, "%02x:%02x:%02x:%02x:%02x:%02x", 
             esp_mac_address[0], esp_mac_address[1], esp_mac_address[2], 
             esp_mac_address[3], esp_mac_address[4], esp_mac_address[5]);
 
+    create_device_registration_payload("New ESP", deviceMACAddress, payload);
     esp_http_client_config_t config = {
         .url = CONFIG_SERVER_URL"/satellite/register",
         .event_handler = _http_event_handler,
@@ -175,6 +181,7 @@ void http_register_deivce(void)
     ESP_LOG_BUFFER_HEX(T_HTTP, local_response_buffer, strlen(local_response_buffer));
 
     free(payload);
+    free(deviceMACAddress);
     esp_http_client_cleanup(client);
 }
 
