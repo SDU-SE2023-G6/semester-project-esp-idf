@@ -17,4 +17,5 @@ export type Satellite = {
     name?: string;
     area?: AreaId;
     status: SatelliteStatus;
+    macAddress?: string;
 }
