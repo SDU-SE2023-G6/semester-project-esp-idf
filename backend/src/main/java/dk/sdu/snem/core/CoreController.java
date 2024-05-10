@@ -1,10 +1,5 @@
 package dk.sdu.snem.core;
 
-import dk.sdu.snem.core.CoreController.AreaMetadata;
-import dk.sdu.snem.core.CoreController.DataPointMetadata;
-import dk.sdu.snem.core.CoreController.DeviceTypeMetadata;
-import dk.sdu.snem.core.CoreController.LogMetadata;
-import dk.sdu.snem.core.CoreController.SatelliteMetadata;
 import dk.sdu.snem.core.model.Area;
 import dk.sdu.snem.core.model.DeviceType;
 import dk.sdu.snem.core.model.Log;
@@ -21,14 +16,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.core.query.BasicQuery;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -326,6 +324,29 @@ public class CoreController {
     return deviceTypeRepo.findAll().stream()
         .map(x -> new DeviceTypeMetadata(x.getId().toHexString(), x.getName()))
         .toList();
+  }
+
+  @GetMapping("/binary/{binaryName}")
+  @Tag(name = "Download a binary")
+  @ResponseBody
+  @Operation
+  public ResponseEntity<byte[]> downloadBinary() {
+    Path p = Paths.get("/home/henriko/Documents/courses/semester-project-esp-idf/_old/bins/hello-world.bin");
+    File file = new File(p.toUri());
+    if (!file.exists()) {
+      return new ResponseEntity<>(null, HttpStatusCode.valueOf(404));
+    }
+    byte[] byteArray = new byte[(int) file.length()];
+    try (FileInputStream inputStream = new FileInputStream(file)) {
+      inputStream.read(byteArray);
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + file.getName() + "\"").body(byteArray);
   }
 
   public record SatelliteMetadata(

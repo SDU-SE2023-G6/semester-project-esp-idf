@@ -156,7 +156,10 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
                 } else {
                     ESP_LOGI(T_MQTT, "OTA update failed");
                 }
+            } else {
+                ESP_LOGI(T_MQTT, "OTA URL not found");
             }
+            cJSON_Delete(root);
 
         } else if (strcmp(topic, device_heartbeat_topic) == 0) {
             ESP_LOGI(T_MQTT, "Other topic received %s", topic);
@@ -248,5 +251,6 @@ static void mqtt5_app_start(void)
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt5_event_handler, NULL);
     esp_mqtt_client_start(client);
-
+    
+    vTaskDelete(NULL);
 }

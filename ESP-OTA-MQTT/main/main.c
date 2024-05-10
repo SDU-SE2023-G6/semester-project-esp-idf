@@ -66,4 +66,5 @@ void app_main(void)
     // free(device_registration);
 
     xTaskCreate(&satellite_register_device, "register_device", 8192, NULL, 5, NULL);
+    xTaskCreate(&mqtt5_app_start, "start mqtt", 8192, NULL, 5, NULL);
 }
