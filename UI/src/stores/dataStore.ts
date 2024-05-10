@@ -6,8 +6,6 @@ import type { Area, AreaId } from '@/types/Area';
 import type { Satellite, SatelliteId } from '@/types/Satellite';
 import { AreaApi, DataPointsApi, DeviceTypeApi, LogsApi, SatelliteApi, ProgramApi } from './api';
 import type { AreaMetadata, DataPointMetadata, DeviceTypeMetadata, LogMetadata, SatelliteMetadata } from '@/api';
-import type { get } from 'http';
-import { deprecate } from 'util';
 import type { SatelliteType } from '@/types/SatelliteType';
 
 function AreaMetadatasToAreas(areaMetadatas: AreaMetadata[]): Area[] {
