@@ -4,9 +4,9 @@
         <div class="log-left">
             <StatusCircle :type="log.type" />
             <div class="timestamp">{{ timeStampToDate(log.timestamp) }}</div>
-            <div class="name">{{ getSourceName(log.source) }}</div>
+            <div class="name">{{ sourceName }}</div>
         </div>
-        <div class="class">{{ getClass(log.source) }}</div>
+        <div class="class">{{ typeName }}</div>
       </div>
       <div class="message">{{ log.message }}</div>
     </div>
@@ -29,7 +29,6 @@
   <script setup lang="ts">
     import type { Log, LogSource } from '@/types/Log';
     import {useDataStore} from '@/stores/dataStore';
-    import { useTime } from '@/composables/useTime';
     import { ref } from 'vue';
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
     import { faXmark } from '@fortawesome/free-solid-svg-icons'
@@ -43,21 +42,28 @@
     
     const props = defineProps<Props>();
 
-    const { timeStampToDate } = useTime()
+    function timeStampToDate(timestamp: Date): string {
+        return `${timestamp.toLocaleDateString()} ${timestamp.toLocaleTimeString()}`;
+    }
     
     const isDialogShown = ref(false)
 
+    let sourceName = '...';
+    let typeName = '...';
 
-
-    function getSourceName(source: LogSource): string {
-        if(source === 'system') return 'System';
-        return dataStore.getSatellite(source)?.name || 'Unknown';
+    async function getSourceName(source: LogSource){
+      const fetechedSourcename = (await dataStore.getSatelliteById(source))?.name || 'System';
+      sourceName = fetechedSourcename;
     }
 
-    function getClass(source: LogSource): string {
-        if(source === 'system') return 'System';
-        return dataStore.getSatellite(source)?.class || 'Unknown';
+    async function getTypeName(source: LogSource){
+      if(!source) return typeName = '';
+      const satelliteTypeName = (await dataStore.getSatelliteById(source)).type?.name || '';
+      typeName = satelliteTypeName;
     }
+
+    getSourceName(props.log.source);
+    getTypeName(props.log.source);
   </script>
   
   <style scoped>

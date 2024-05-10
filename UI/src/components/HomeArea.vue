@@ -82,6 +82,8 @@ setTimeout(() => {
   fetchSatellites();
 }, 1000);
 
+fetchSatellites();
+
 const isDialogShown = ref(false)
 const tempAreaName = ref(props.area.name);
 

@@ -4,7 +4,7 @@
       <div :class="props.satellite.status + ' status'"></div>
       <div class="name">{{ props.satellite.name }}</div>
     </div>
-    <div class="class">{{ props.satellite.class }}</div>
+    <div class="class">{{ props.satellite.type?.name }}</div>
   </div>
 </template>
 
