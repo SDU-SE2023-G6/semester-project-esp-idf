@@ -456,7 +456,7 @@ public class CoreController {
 
    return ResponseEntity.ok()
            .contentType(MediaType.APPLICATION_JSON)
-           .body(new BinaryVersion(currentBinary.getId(), currentBinary.getBinaryHash()));
+           .body(new BinaryVersion(currentBinary.getId().toHexString(), currentBinary.getBinaryHash()));
   }
 
   @GetMapping("/program/binary/{binaryId}")
@@ -503,7 +503,7 @@ public class CoreController {
 
   public record AreaMetadata(String id, @NotBlank @Parameter(required = true) String name) {}
 
-  public record BinaryVersion(ObjectId binaryId, String binaryIdHash) {}
+  public record BinaryVersion(String binaryId, String binaryIdHash) {}
 
   public record DeviceTypeMetadata(String id, String name, boolean deprecated) {}
 

@@ -308,7 +308,7 @@ class CoreControllerTest {
       String responseContent = result.getResponse().getContentAsString();
       BinaryVersion version = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(version).isNotNull();
-      assertThat(version.binaryId()).isEqualTo(newBinary.getId());
+      assertThat(version.binaryId()).isEqualTo(newBinary.getId().toHexString());
       assertThat(version.binaryIdHash()).isEqualTo("1234");
     }
 
