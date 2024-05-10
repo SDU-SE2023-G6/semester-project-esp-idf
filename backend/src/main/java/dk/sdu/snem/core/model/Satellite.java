@@ -39,6 +39,7 @@ public class Satellite {
     ONLINE("ONLINE"),
     OFFLINE("OFFLINE"),
     ERROR("ERROR"),
+    UPDATING("UPDATING"),
     PENDING_METADATA("PENDING_METADATA");
 
     private final String value;

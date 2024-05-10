@@ -505,6 +505,15 @@ export class ObjectProgramApi {
 import { ObservableSatelliteApi } from "./ObservableAPI";
 import { SatelliteApiRequestFactory, SatelliteApiResponseProcessor} from "../apis/SatelliteApi";
 
+export interface SatelliteApiDeleteSatelliteByIdRequest {
+    /**
+     * 
+     * @type string
+     * @memberof SatelliteApideleteSatelliteById
+     */
+    satelliteId: string
+}
+
 export interface SatelliteApiEditSatelliteRequest {
     /**
      * 
@@ -558,6 +567,22 @@ export class ObjectSatelliteApi {
 
     public constructor(configuration: Configuration, requestFactory?: SatelliteApiRequestFactory, responseProcessor?: SatelliteApiResponseProcessor) {
         this.api = new ObservableSatelliteApi(configuration, requestFactory, responseProcessor);
+    }
+
+    /**
+     * Delete satellite by ID.
+     * @param param the request object
+     */
+    public deleteSatelliteByIdWithHttpInfo(param: SatelliteApiDeleteSatelliteByIdRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.deleteSatelliteByIdWithHttpInfo(param.satelliteId,  options).toPromise();
+    }
+
+    /**
+     * Delete satellite by ID.
+     * @param param the request object
+     */
+    public deleteSatelliteById(param: SatelliteApiDeleteSatelliteByIdRequest, options?: Configuration): Promise<void> {
+        return this.api.deleteSatelliteById(param.satelliteId,  options).toPromise();
     }
 
     /**

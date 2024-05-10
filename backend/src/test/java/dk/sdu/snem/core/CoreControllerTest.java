@@ -310,9 +310,9 @@ class CoreControllerTest {
       List<SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(satellites.size()).isEqualTo(2);
       assertThat(satellites.get(0).name()).isEqualTo("Satellite 1");
-      assertThat(satellites.get(0).area().name()).isEqualTo("Test Area");
+      assertThat(satellites.get(0).areaId()).isEqualTo(area.getId().toHexString());
       assertThat(satellites.get(1).name()).isEqualTo("Satellite 2");
-      assertThat(satellites.get(1).area().name()).isEqualTo("Test Area");
+      assertThat(satellites.get(1).areaId()).isEqualTo(area.getId().toHexString());
     }
 
     @Test
@@ -345,7 +345,7 @@ class CoreControllerTest {
       List<SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(satellites.size()).isEqualTo(1);
       assertThat(satellites.get(0).name()).isEqualTo("Satellite 1");
-      assertThat(satellites.get(0).area()).isNull();
+      assertThat(satellites.get(0).areaId()).isNull();
     }
 
     @Test
@@ -412,13 +412,13 @@ class CoreControllerTest {
       List<SatelliteMetadata> satellites = objectMapper.readValue(responseContent, new TypeReference<>() {});
       assertThat(satellites.size()).isEqualTo(2);
       assertThat(satellites.get(0).name()).isEqualTo("Satellite 1");
-      assertThat(satellites.get(0).area().name()).isEqualTo("Area 1");
-      assert satellites.get(0).deviceTypeMetadata() != null;
-      assertThat(satellites.get(0).deviceTypeMetadata().name()).isEqualTo("Device Type 1");
+      assertThat(satellites.get(0).areaId()).isEqualTo(area1.getId().toHexString());
+      assert satellites.get(0).deviceTypeId() != null;
+      assertThat(satellites.get(0).deviceTypeId()).isEqualTo(deviceType.getId().toHexString());
       assertThat(satellites.get(1).name()).isEqualTo("Satellite 2");
-      assertThat(satellites.get(1).area().name()).isEqualTo("Area 2");
-      assert satellites.get(1).deviceTypeMetadata() != null;
-      assertThat(satellites.get(1).deviceTypeMetadata().name()).isEqualTo("Device Type 1");
+      assertThat(satellites.get(1).areaId()).isEqualTo(area2.getId().toHexString());
+      assert satellites.get(1).deviceTypeId() != null;
+      assertThat(satellites.get(1).deviceTypeId()).isEqualTo(deviceType.getId().toHexString());
     }
 
     @Test
@@ -469,9 +469,9 @@ class CoreControllerTest {
       SatelliteMetadata
           returnedSatellite = objectMapper.readValue(responseContent, SatelliteMetadata.class);
       assertThat(returnedSatellite.name()).isEqualTo("Test Satellite");
-      assertThat(returnedSatellite.area().name()).isEqualTo("Test Area");
-      assert returnedSatellite.deviceTypeMetadata() != null;
-      assertThat(returnedSatellite.deviceTypeMetadata().name()).isEqualTo("Device Type");
+      assertThat(returnedSatellite.areaId()).isEqualTo(area.getId().toHexString());
+      assert returnedSatellite.deviceTypeId() != null;
+      assertThat(returnedSatellite.deviceTypeId()).isEqualTo(deviceType.getId().toHexString());
     }
 
     @Test
@@ -508,8 +508,8 @@ class CoreControllerTest {
           satellite.getId().toHexString(),
           "Updated Satellite",
           SatelliteStatus.PENDING_METADATA,
-          new AreaMetadata(area.getId().toHexString(), area.getName()),
-          new DeviceTypeMetadata(deviceType.getId().toHexString(), deviceType.getName())
+          area.getId().toHexString(),
+          deviceType.getId().toHexString()
       );
 
       // Act
@@ -576,8 +576,8 @@ class CoreControllerTest {
           ObjectId.get().toHexString(),
           "Updated Satellite",
           SatelliteStatus.PENDING_METADATA,
-          new AreaMetadata(ObjectId.get().toHexString(), "Invalid Area"),
-          new DeviceTypeMetadata(ObjectId.get().toHexString(), "Invalid Device Type")
+          ObjectId.get().toHexString(),
+          ObjectId.get().toHexString()
       );
 
       // Act

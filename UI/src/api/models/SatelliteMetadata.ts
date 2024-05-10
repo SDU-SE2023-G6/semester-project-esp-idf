@@ -10,14 +10,12 @@
  * Do not edit the class manually.
  */
 
-import { AreaMetadata } from '../models/AreaMetadata';
-import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 import { HttpFile } from '../http/http';
 
 export class SatelliteMetadata {
-    'area'?: AreaMetadata;
-    'deviceTypeMetadata'?: DeviceTypeMetadata;
+    'areaId'?: string;
+    'deviceTypeId'?: string;
     'id'?: string;
     'name'?: string;
     'status'?: SatelliteStatus;
@@ -26,15 +24,15 @@ export class SatelliteMetadata {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "area",
-            "baseName": "area",
-            "type": "AreaMetadata",
+            "name": "areaId",
+            "baseName": "areaId",
+            "type": "string",
             "format": ""
         },
         {
-            "name": "deviceTypeMetadata",
-            "baseName": "deviceTypeMetadata",
-            "type": "DeviceTypeMetadata",
+            "name": "deviceTypeId",
+            "baseName": "deviceTypeId",
+            "type": "string",
             "format": ""
         },
         {

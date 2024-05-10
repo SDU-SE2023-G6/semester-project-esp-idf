@@ -696,6 +696,37 @@ export class ObservableSatelliteApi {
     }
 
     /**
+     * Delete satellite by ID.
+     * @param satelliteId 
+     */
+    public deleteSatelliteByIdWithHttpInfo(satelliteId: string, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.deleteSatelliteById(satelliteId, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.deleteSatelliteByIdWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Delete satellite by ID.
+     * @param satelliteId 
+     */
+    public deleteSatelliteById(satelliteId: string, _options?: Configuration): Observable<void> {
+        return this.deleteSatelliteByIdWithHttpInfo(satelliteId, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    }
+
+    /**
      * Edit satellite.
      * @param satelliteMetadata 
      */

@@ -450,6 +450,24 @@ export class PromiseSatelliteApi {
     }
 
     /**
+     * Delete satellite by ID.
+     * @param satelliteId 
+     */
+    public deleteSatelliteByIdWithHttpInfo(satelliteId: string, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.deleteSatelliteByIdWithHttpInfo(satelliteId, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Delete satellite by ID.
+     * @param satelliteId 
+     */
+    public deleteSatelliteById(satelliteId: string, _options?: Configuration): Promise<void> {
+        const result = this.api.deleteSatelliteById(satelliteId, _options);
+        return result.toPromise();
+    }
+
+    /**
      * Edit satellite.
      * @param satelliteMetadata 
      */

@@ -127,23 +127,22 @@ public class CoreController {
             ? satelliteRepo.findAllByAreaIsNull()
             : satelliteRepo.findAllByArea_Id(new ObjectId(areaId));
     return satellites.stream()
-        .map(
-            satellite ->
-                new SatelliteMetadata(
-                    satellite.getId().toHexString(),
-                    satellite.getName(),
-                    satellite.getStatus(),
-                    satellite.getArea() == null
-                        ? null
-                        : new AreaMetadata(
-                            satellite.getArea().getId().toHexString(),
-                            satellite.getArea().getName()),
-                    satellite.getDeviceType() == null
-                        ? null
-                        : new DeviceTypeMetadata(
-                            satellite.getDeviceType().getId().toHexString(),
-                            satellite.getDeviceType().getName())))
+        .map(CoreController::mapSatelliteMetadata)
         .toList();
+  }
+
+  @NotNull
+  private static SatelliteMetadata mapSatelliteMetadata(Satellite satellite) {
+    return new SatelliteMetadata(
+        satellite.getId().toHexString(),
+        satellite.getName(),
+        satellite.getStatus(),
+        satellite.getArea() == null
+            ? null
+            : satellite.getArea().getId().toHexString(),
+        satellite.getDeviceType() == null
+            ? null
+            : satellite.getDeviceType().getId().toHexString());
   }
 
   @RequestMapping(
@@ -155,19 +154,7 @@ public class CoreController {
   @Operation(summary = "Get satellites")
   public List<SatelliteMetadata> getSatellites() {
     return satelliteRepo.findAll().stream()
-        .map(
-            x ->
-                new SatelliteMetadata(
-                    x.getId().toHexString(),
-                    x.getName(),
-                    x.getStatus(),
-                    x.getArea() == null
-                        ? null
-                        : new AreaMetadata(x.getId().toHexString(), x.getArea().getName()),
-                    x.getDeviceType() == null
-                        ? null
-                        : new DeviceTypeMetadata(
-                            x.getDeviceType().getId().toHexString(), x.getDeviceType().getName())))
+        .map(CoreController::mapSatelliteMetadata)
         .toList();
   }
 
@@ -178,19 +165,15 @@ public class CoreController {
   public SatelliteMetadata getSatelliteById(@PathVariable String satelliteId) {
     Satellite satellite =
         satelliteRepo.findById(new ObjectId(satelliteId)).orElseThrow(NotFoundException::new);
-    return new SatelliteMetadata(
-        satellite.getId().toHexString(),
-        satellite.getName(),
-        satellite.getStatus(),
-        satellite.getArea() == null
-            ? null
-            : new AreaMetadata(
-                satellite.getArea().getId().toHexString(), satellite.getArea().getName()),
-        satellite.getDeviceType() == null
-            ? null
-            : new DeviceTypeMetadata(
-                satellite.getDeviceType().getId().toHexString(),
-                satellite.getDeviceType().getName()));
+    return mapSatelliteMetadata(satellite);
+  }
+
+  @DeleteMapping("/satellite/{satelliteId}")
+  @Tag(name = "Satellite")
+  @ResponseBody
+  @Operation(summary = "Delete satellite by ID.")
+  public void deleteSatelliteById(@PathVariable String satelliteId) {
+    satelliteRepo.deleteById(new ObjectId(satelliteId));
   }
 
   @PutMapping("/satellite")
@@ -198,16 +181,16 @@ public class CoreController {
   @Operation(summary = "Edit satellite.")
   public void editSatellite(@RequestBody SatelliteMetadata satelliteMetadata) {
     final Area area =
-        satelliteMetadata.area() == null
+        satelliteMetadata.areaId() == null
             ? null
             : areaRepo
-                .findById(new ObjectId(satelliteMetadata.area().id()))
+                .findById(new ObjectId(satelliteMetadata.areaId()))
                 .orElseThrow(NotFoundException::new);
     final DeviceType type =
-        satelliteMetadata.deviceTypeMetadata() == null
+        satelliteMetadata.deviceTypeId() == null
             ? null
             : deviceTypeRepo
-                .findById(new ObjectId(satelliteMetadata.deviceTypeMetadata().id()))
+                .findById(new ObjectId(satelliteMetadata.deviceTypeId()))
                 .orElseThrow(NotFoundException::new);
 
     final Satellite satellite =
@@ -482,8 +465,8 @@ public class CoreController {
       String id,
       String name,
       Satellite.SatelliteStatus status,
-      AreaMetadata area,
-      @Nullable DeviceTypeMetadata deviceTypeMetadata) {}
+      String areaId,
+      String deviceTypeId) {}
 
   public record AreaMetadata(String id, @NotBlank @Parameter(required = true) String name) {}
 
