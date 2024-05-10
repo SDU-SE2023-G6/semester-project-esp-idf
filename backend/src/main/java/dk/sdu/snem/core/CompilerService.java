@@ -298,8 +298,7 @@ public class CompilerService {
         "shared_snem_library.c",
         "shared_snem_library.h",
         target.getName() + "_device_type.c",
-        target.getName() + "_device_type.h",
-        target.getName() + "_build.mk"
+        target.getName() + "_device_type.h"
         ));
 
     Set<String> readers = new HashSet<>();
