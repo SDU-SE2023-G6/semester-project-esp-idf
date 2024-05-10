@@ -140,7 +140,7 @@ export const useDataStore = defineStore('data', {
       return satellitesPendingMetadata;
     },
     getSatelliteById: async (id: SatelliteId) => SatelliteMetadataToSatellite(await SatelliteApi.getSatelliteById(id)),
-    getSatellitesByArea: async (area: Area) => SatelliteMetadatasToSatellites(await AreaApi.getSatellitesInArea(area.id)),
+    getSatellitesByArea: async (areaId: AreaId) => SatelliteMetadatasToSatellites(await AreaApi.getSatellitesInArea(areaId)),
     getSatellitesWithoutArea: async () => SatelliteMetadatasToSatellites(await AreaApi.getSatellitesInArea()),
     editSatellite: async (satellite: Satellite) => await SatelliteApi.editSatellite(satellite),
     deleteSatellite: async (satellite: Satellite) => await SatelliteApi.deleteSatelliteById(satellite.id),
