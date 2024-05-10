@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface SatelliteRepository extends MongoRepository<Satellite, ObjectId> {
   List<Satellite> findAllByArea_Id(ObjectId areaId);
+  List<Satellite> findAllByAreaIsNull();
 
   Satellite findByDeviceMACAddress(String address);
 

@@ -193,7 +193,7 @@ export class ObservableAreaApi {
      * Get all satellites in an area.
      * @param areaId 
      */
-    public getSatellitesInAreaWithHttpInfo(areaId: string, _options?: Configuration): Observable<HttpInfo<Array<SatelliteMetadata>>> {
+    public getSatellitesInAreaWithHttpInfo(areaId?: string, _options?: Configuration): Observable<HttpInfo<Array<SatelliteMetadata>>> {
         const requestContextPromise = this.requestFactory.getSatellitesInArea(areaId, _options);
 
         // build promise chain
@@ -216,7 +216,7 @@ export class ObservableAreaApi {
      * Get all satellites in an area.
      * @param areaId 
      */
-    public getSatellitesInArea(areaId: string, _options?: Configuration): Observable<Array<SatelliteMetadata>> {
+    public getSatellitesInArea(areaId?: string, _options?: Configuration): Observable<Array<SatelliteMetadata>> {
         return this.getSatellitesInAreaWithHttpInfo(areaId, _options).pipe(map((apiResponse: HttpInfo<Array<SatelliteMetadata>>) => apiResponse.data));
     }
 
@@ -390,6 +390,68 @@ export class ObservableLogsApi {
      */
     public getLogs(_options?: Configuration): Observable<Array<LogMetadata>> {
         return this.getLogsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Array<LogMetadata>>) => apiResponse.data));
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param source 
+     */
+    public getLogsBySatelliteWithHttpInfo(source?: string, _options?: Configuration): Observable<HttpInfo<Array<LogMetadata>>> {
+        const requestContextPromise = this.requestFactory.getLogsBySatellite(source, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getLogsBySatelliteWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param source 
+     */
+    public getLogsBySatellite(source?: string, _options?: Configuration): Observable<Array<LogMetadata>> {
+        return this.getLogsBySatelliteWithHttpInfo(source, _options).pipe(map((apiResponse: HttpInfo<Array<LogMetadata>>) => apiResponse.data));
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param hoursAgo 
+     */
+    public getLogsFromSometimeAgoWithHttpInfo(hoursAgo: number, _options?: Configuration): Observable<HttpInfo<Array<LogMetadata>>> {
+        const requestContextPromise = this.requestFactory.getLogsFromSometimeAgo(hoursAgo, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getLogsFromSometimeAgoWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param hoursAgo 
+     */
+    public getLogsFromSometimeAgo(hoursAgo: number, _options?: Configuration): Observable<Array<LogMetadata>> {
+        return this.getLogsFromSometimeAgoWithHttpInfo(hoursAgo, _options).pipe(map((apiResponse: HttpInfo<Array<LogMetadata>>) => apiResponse.data));
     }
 
 }
@@ -693,37 +755,6 @@ export class ObservableSatelliteApi {
      */
     public getDataPointsBySatellite(satelliteId: string, _options?: Configuration): Observable<Array<DataPointMetadata>> {
         return this.getDataPointsBySatelliteWithHttpInfo(satelliteId, _options).pipe(map((apiResponse: HttpInfo<Array<DataPointMetadata>>) => apiResponse.data));
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param satelliteId 
-     */
-    public getLogsBySatelliteWithHttpInfo(satelliteId: string, _options?: Configuration): Observable<HttpInfo<Array<LogMetadata>>> {
-        const requestContextPromise = this.requestFactory.getLogsBySatellite(satelliteId, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (let middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (let middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getLogsBySatelliteWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param satelliteId 
-     */
-    public getLogsBySatellite(satelliteId: string, _options?: Configuration): Observable<Array<LogMetadata>> {
-        return this.getLogsBySatelliteWithHttpInfo(satelliteId, _options).pipe(map((apiResponse: HttpInfo<Array<LogMetadata>>) => apiResponse.data));
     }
 
     /**

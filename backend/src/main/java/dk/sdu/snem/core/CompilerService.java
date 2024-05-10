@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +58,14 @@ public class CompilerService {
   private final ObjectMapper objectMapper;
   private final ReaderFunctionRepository readerRepo;
   private final String compilerFolder;
+  /**
+   * Base compiler project.
+   */
+  private final String baseCompilerProjectFolder;
+  /**
+   * Where to insert generated files into the base compiler project.
+   */
+  private final String baseCompilerProjectInsertLocation;
   private final String xtextHost;
 
   public CompilerService(
@@ -65,6 +75,8 @@ public class CompilerService {
       BinaryRepository binaryRepo,
       ObjectMapper objectMapper, ReaderFunctionRepository readerRepo,
       @Value("${compiler.folder}") String compilerFolder,
+      @Value("${compiler.project.location}") String baseCompilerProjectFolder,
+      @Value("${compiler.project.insert}") String baseCompilerProjectInsertLocation,
       @Value("${compiler.xtext.host}") String xtextHost
       ) {
     this.restTemplate = restTemplate;
@@ -74,6 +86,8 @@ public class CompilerService {
     this.objectMapper = objectMapper;
     this.readerRepo = readerRepo;
     this.compilerFolder = compilerFolder;
+    this.baseCompilerProjectFolder = baseCompilerProjectFolder;
+    this.baseCompilerProjectInsertLocation = baseCompilerProjectInsertLocation;
     this.xtextHost = xtextHost;
   }
 
@@ -188,8 +202,9 @@ public class CompilerService {
     }
 
     try {
-      byte[] compiledLibrary = Files.readAllBytes(Paths.get(destinationFolder+"/build/"+deviceType.getName()+"_device.so"));
-      binary.setCompiledBinary(compiledLibrary);
+      byte[] compiledBinary = Files.readAllBytes(Paths.get(destinationFolder+"/build/"+deviceType.getName()+"_device.so"));
+      binary.setCompiledBinary(compiledBinary);
+      binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
     } catch (IOException e) {
       return CompletableFuture.failedFuture(e);
     }
@@ -214,17 +229,17 @@ public class CompilerService {
     BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
     String line;
     while ((line = outputReader.readLine()) != null) {
-      System.out.println(line); // Print compiler output
+      System.out.println(line);
     }
 
     BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
     while ((line = errorReader.readLine()) != null) {
-      System.err.println("Error: " + line); // Print compilation errors
+      System.err.println(line);
     }
 
     int exitCode = process.waitFor();
 
-    if (exitCode == 0) {
+    if (exitCode != 0) {
       System.out.println("C program compiled successfully!");
     } else {
       throw new RuntimeException("Program failed unexpectedly");
@@ -346,6 +361,27 @@ public class CompilerService {
       // Handle error cases
       return null;
     }
+  }
+
+  private static String bytesToSha256Hash(byte[] bytes){
+    MessageDigest digest;
+    try {
+      digest = MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+
+    digest.update(bytes);
+    byte[] hash = digest.digest();
+
+    StringBuilder hexString = new StringBuilder();
+    for (byte b : hash) {
+      String hex = Integer.toHexString(0xff & b);
+      if (hex.length() == 1) hexString.append('0');
+      hexString.append(hex);
+    }
+
+    return hexString.toString();
   }
 
   record TargetFilesAndReaders(Set<String> files, Set<String> readers) {}

@@ -71,7 +71,7 @@ export interface AreaApiGetSatellitesInAreaRequest {
      * @type string
      * @memberof AreaApigetSatellitesInArea
      */
-    areaId: string
+    areaId?: string
 }
 
 export class ObjectAreaApi {
@@ -165,7 +165,7 @@ export class ObjectAreaApi {
      * Get all satellites in an area.
      * @param param the request object
      */
-    public getSatellitesInAreaWithHttpInfo(param: AreaApiGetSatellitesInAreaRequest, options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
+    public getSatellitesInAreaWithHttpInfo(param: AreaApiGetSatellitesInAreaRequest = {}, options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
         return this.api.getSatellitesInAreaWithHttpInfo(param.areaId,  options).toPromise();
     }
 
@@ -173,7 +173,7 @@ export class ObjectAreaApi {
      * Get all satellites in an area.
      * @param param the request object
      */
-    public getSatellitesInArea(param: AreaApiGetSatellitesInAreaRequest, options?: Configuration): Promise<Array<SatelliteMetadata>> {
+    public getSatellitesInArea(param: AreaApiGetSatellitesInAreaRequest = {}, options?: Configuration): Promise<Array<SatelliteMetadata>> {
         return this.api.getSatellitesInArea(param.areaId,  options).toPromise();
     }
 
@@ -272,6 +272,24 @@ import { LogsApiRequestFactory, LogsApiResponseProcessor} from "../apis/LogsApi"
 export interface LogsApiGetLogsRequest {
 }
 
+export interface LogsApiGetLogsBySatelliteRequest {
+    /**
+     * 
+     * @type string
+     * @memberof LogsApigetLogsBySatellite
+     */
+    source?: string
+}
+
+export interface LogsApiGetLogsFromSometimeAgoRequest {
+    /**
+     * 
+     * @type number
+     * @memberof LogsApigetLogsFromSometimeAgo
+     */
+    hoursAgo: number
+}
+
 export class ObjectLogsApi {
     private api: ObservableLogsApi
 
@@ -293,6 +311,38 @@ export class ObjectLogsApi {
      */
     public getLogs(param: LogsApiGetLogsRequest = {}, options?: Configuration): Promise<Array<LogMetadata>> {
         return this.api.getLogs( options).toPromise();
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param param the request object
+     */
+    public getLogsBySatelliteWithHttpInfo(param: LogsApiGetLogsBySatelliteRequest = {}, options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        return this.api.getLogsBySatelliteWithHttpInfo(param.source,  options).toPromise();
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param param the request object
+     */
+    public getLogsBySatellite(param: LogsApiGetLogsBySatelliteRequest = {}, options?: Configuration): Promise<Array<LogMetadata>> {
+        return this.api.getLogsBySatellite(param.source,  options).toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param param the request object
+     */
+    public getLogsFromSometimeAgoWithHttpInfo(param: LogsApiGetLogsFromSometimeAgoRequest, options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        return this.api.getLogsFromSometimeAgoWithHttpInfo(param.hoursAgo,  options).toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param param the request object
+     */
+    public getLogsFromSometimeAgo(param: LogsApiGetLogsFromSometimeAgoRequest, options?: Configuration): Promise<Array<LogMetadata>> {
+        return this.api.getLogsFromSometimeAgo(param.hoursAgo,  options).toPromise();
     }
 
 }
@@ -473,15 +523,6 @@ export interface SatelliteApiGetDataPointsBySatelliteRequest {
     satelliteId: string
 }
 
-export interface SatelliteApiGetLogsBySatelliteRequest {
-    /**
-     * 
-     * @type string
-     * @memberof SatelliteApigetLogsBySatellite
-     */
-    satelliteId: string
-}
-
 export interface SatelliteApiGetSatelliteByIdRequest {
     /**
      * 
@@ -549,22 +590,6 @@ export class ObjectSatelliteApi {
      */
     public getDataPointsBySatellite(param: SatelliteApiGetDataPointsBySatelliteRequest, options?: Configuration): Promise<Array<DataPointMetadata>> {
         return this.api.getDataPointsBySatellite(param.satelliteId,  options).toPromise();
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param param the request object
-     */
-    public getLogsBySatelliteWithHttpInfo(param: SatelliteApiGetLogsBySatelliteRequest, options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
-        return this.api.getLogsBySatelliteWithHttpInfo(param.satelliteId,  options).toPromise();
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param param the request object
-     */
-    public getLogsBySatellite(param: SatelliteApiGetLogsBySatelliteRequest, options?: Configuration): Promise<Array<LogMetadata>> {
-        return this.api.getLogsBySatellite(param.satelliteId,  options).toPromise();
     }
 
     /**

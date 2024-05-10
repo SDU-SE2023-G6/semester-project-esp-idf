@@ -10,6 +10,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DataPointRepository extends MongoRepository<DataPoint, ObjectId> {
-  List<DataPoint> findAllBySatellite_Id(ObjectId satelliteId);
-  List<DataPoint> findAllByTimestampAfter(@NotNull Instant timestamp);
+  List<DataPoint> findAllBySatellite_IdOrderByTimestampDesc(ObjectId satelliteId);
+  List<DataPoint> findAllByTimestampAfterOrderByTimestampDesc(@NotNull Instant timestamp);
 }

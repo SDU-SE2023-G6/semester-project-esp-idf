@@ -9,7 +9,7 @@ Method | HTTP request | Description
 [**editArea**](AreaApi.md#editArea) | **PUT** /area/{areaId} | Edit area.
 [**getAreaById**](AreaApi.md#getAreaById) | **GET** /area/{areaId} | Get area by ID.
 [**getAreas**](AreaApi.md#getAreas) | **GET** /areas | Get all areas.
-[**getSatellitesInArea**](AreaApi.md#getSatellitesInArea) | **GET** /area/{areaId}/satellites | Get all satellites in an area.
+[**getSatellitesInArea**](AreaApi.md#getSatellitesInArea) | **GET** /area/satellites | Get all satellites in an area.
 
 
 # **addArea**
@@ -300,7 +300,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .AreaApi(configuration);
 
 let body:.AreaApiGetSatellitesInAreaRequest = {
-  // string
+  // string (optional)
   areaId: "areaId_example",
 };
 
@@ -314,7 +314,7 @@ apiInstance.getSatellitesInArea(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **areaId** | [**string**] |  | defaults to undefined
+ **areaId** | [**string**] |  | (optional) defaults to undefined
 
 
 ### Return type

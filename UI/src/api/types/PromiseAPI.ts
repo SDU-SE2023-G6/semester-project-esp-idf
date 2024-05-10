@@ -124,7 +124,7 @@ export class PromiseAreaApi {
      * Get all satellites in an area.
      * @param areaId 
      */
-    public getSatellitesInAreaWithHttpInfo(areaId: string, _options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
+    public getSatellitesInAreaWithHttpInfo(areaId?: string, _options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
         const result = this.api.getSatellitesInAreaWithHttpInfo(areaId, _options);
         return result.toPromise();
     }
@@ -133,7 +133,7 @@ export class PromiseAreaApi {
      * Get all satellites in an area.
      * @param areaId 
      */
-    public getSatellitesInArea(areaId: string, _options?: Configuration): Promise<Array<SatelliteMetadata>> {
+    public getSatellitesInArea(areaId?: string, _options?: Configuration): Promise<Array<SatelliteMetadata>> {
         const result = this.api.getSatellitesInArea(areaId, _options);
         return result.toPromise();
     }
@@ -258,6 +258,42 @@ export class PromiseLogsApi {
      */
     public getLogs(_options?: Configuration): Promise<Array<LogMetadata>> {
         const result = this.api.getLogs(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param source 
+     */
+    public getLogsBySatelliteWithHttpInfo(source?: string, _options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        const result = this.api.getLogsBySatelliteWithHttpInfo(source, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param source 
+     */
+    public getLogsBySatellite(source?: string, _options?: Configuration): Promise<Array<LogMetadata>> {
+        const result = this.api.getLogsBySatellite(source, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param hoursAgo 
+     */
+    public getLogsFromSometimeAgoWithHttpInfo(hoursAgo: number, _options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        const result = this.api.getLogsFromSometimeAgoWithHttpInfo(hoursAgo, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param hoursAgo 
+     */
+    public getLogsFromSometimeAgo(hoursAgo: number, _options?: Configuration): Promise<Array<LogMetadata>> {
+        const result = this.api.getLogsFromSometimeAgo(hoursAgo, _options);
         return result.toPromise();
     }
 
@@ -446,24 +482,6 @@ export class PromiseSatelliteApi {
      */
     public getDataPointsBySatellite(satelliteId: string, _options?: Configuration): Promise<Array<DataPointMetadata>> {
         const result = this.api.getDataPointsBySatellite(satelliteId, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param satelliteId 
-     */
-    public getLogsBySatelliteWithHttpInfo(satelliteId: string, _options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
-        const result = this.api.getLogsBySatelliteWithHttpInfo(satelliteId, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param satelliteId 
-     */
-    public getLogsBySatellite(satelliteId: string, _options?: Configuration): Promise<Array<LogMetadata>> {
-        const result = this.api.getLogsBySatellite(satelliteId, _options);
         return result.toPromise();
     }
 

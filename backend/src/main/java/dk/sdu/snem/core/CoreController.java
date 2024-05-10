@@ -53,6 +53,18 @@ public class CoreController {
     this.binaryRepo = binaryRepo;
   }
 
+  @NotNull
+  private static LogMetadata mapLogMetadata(Log log) {
+    return new LogMetadata(
+        log.getId().toHexString(),
+        log.getTimestamp(),
+        log.getMessage(),
+        (log.getSatellite() == null || log.getSatellite().getId() == null)
+            ? null
+            : log.getSatellite().getId().toHexString(),
+        log.getType());
+  }
+
   @GetMapping("/areas")
   @Tag(name = "Area")
   @ResponseBody
@@ -105,12 +117,15 @@ public class CoreController {
     areaRepo.save(area);
   }
 
-  @GetMapping("/area/{areaId}/satellites")
+  @GetMapping("/area/satellites")
   @Tag(name = "Area")
   @ResponseBody
   @Operation(summary = "Get all satellites in an area.")
-  public List<SatelliteMetadata> getSatellitesInArea(@PathVariable String areaId) {
-    List<Satellite> satellites = satelliteRepo.findAllByArea_Id(new ObjectId(areaId));
+  public List<SatelliteMetadata> getSatellitesInArea(@RequestParam(required = false) @Nullable String areaId) {
+    List<Satellite> satellites =
+        areaId == null
+            ? satelliteRepo.findAllByAreaIsNull()
+            : satelliteRepo.findAllByArea_Id(new ObjectId(areaId));
     return satellites.stream()
         .map(
             satellite ->
@@ -212,7 +227,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get all data points for a satellite.")
   public List<DataPointMetadata> getDataPointsBySatellite(@PathVariable String satelliteId) {
-    return dataPointsRepo.findAllBySatellite_Id(new ObjectId(satelliteId)).stream()
+    return dataPointsRepo.findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(satelliteId)).stream()
         .map(
             dataPoint ->
                 new DataPointMetadata(
@@ -222,23 +237,6 @@ public class CoreController {
                     dataPoint.getMeasurement(),
                     satelliteId,
                     dataPoint.getSensor()))
-        .toList();
-  }
-
-  @GetMapping("/satellite/{satelliteId}/logs")
-  @Tag(name = "Satellite")
-  @ResponseBody
-  @Operation(summary = "Get all logs for a satellite.")
-  public List<LogMetadata> getLogsBySatellite(@PathVariable String satelliteId) {
-    return logsRepo.findAllBySatellite_Id(new ObjectId(satelliteId)).stream()
-        .map(
-            log ->
-                new LogMetadata(
-                    log.getId().toHexString(),
-                    log.getTimestamp(),
-                    log.getMessage(),
-                    satelliteId,
-                    log.getType()))
         .toList();
   }
 
@@ -302,16 +300,39 @@ public class CoreController {
   @Operation(summary = "Get all Logs.")
   public List<LogMetadata> getLogs() {
     return logsRepo.findAll().stream()
+        .map(CoreController::mapLogMetadata)
+        .toList();
+  }
+
+  @GetMapping("/logs/system")
+  @Tag(name = "Logs")
+  @ResponseBody
+  @Operation(summary = "Get all logs for a given source. Expects null or no input to get system logs.")
+  public List<LogMetadata> getLogsBySatellite(@RequestParam(required = false) @Nullable String source) {
+    List<Log> logs = source == null
+        ? logsRepo.findAllBySatelliteIsNullOrderByTimestampDesc()
+        : logsRepo.findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(source));
+    return logs.stream()
         .map(
             log ->
                 new LogMetadata(
                     log.getId().toHexString(),
                     log.getTimestamp(),
                     log.getMessage(),
-                    (log.getSatellite() == null || log.getSatellite().getId() == null)
-                        ? null
-                        : log.getSatellite().getId().toHexString(),
+                    source,
                     log.getType()))
+        .toList();
+  }
+
+  @GetMapping("/logs/hours/{hoursAgo}")
+  @Tag(name = "Logs")
+  @ResponseBody
+  @Operation(summary = "Get logs since some amount of hours ago.")
+  public List<LogMetadata> getLogsFromSometimeAgo(@PathVariable Integer hoursAgo) {
+    return logsRepo
+        .findAllByTimestampAfterOrderByTimestampDesc(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
+        .stream()
+        .map(CoreController::mapLogMetadata)
         .toList();
   }
 
@@ -339,7 +360,7 @@ public class CoreController {
   @Operation(summary = "Get all Data points.")
   public List<DataPointMetadata> getDataPointsFromSometimeAgo(@PathVariable Integer hoursAgo) {
     return dataPointsRepo
-        .findAllByTimestampAfter(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
+        .findAllByTimestampAfterOrderByTimestampDesc(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
         .stream()
         .map(
             dataPoint ->
@@ -375,8 +396,7 @@ public class CoreController {
         program.getCompiled(),
         program.getIteration(),
         program.getCreatedDate(),
-        program.getLastModifiedDate()
-    );
+        program.getLastModifiedDate());
   }
 
   @PutMapping("/program/content")
@@ -478,7 +498,7 @@ public class CoreController {
       String sensor) {}
 
   public record LogMetadata(
-      String id, Instant timestamp, String message, @Nullable String system, Log.LogType type) {}
+      String id, Instant timestamp, String message, @Nullable String source, Log.LogType type) {}
 
   public record SatelliteRegisterResponseDTO(boolean success) {}
 
