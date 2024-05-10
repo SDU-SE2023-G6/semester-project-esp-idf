@@ -16,38 +16,55 @@
   import type { Satellite } from '@/types/Satellite';
   import StatusCircle from './general/StatusCircle.vue';
   import MultiSelect from 'primevue/multiselect';
+  import type { Area } from '@/types/Area';
 
 
   const dataStore = useDataStore();
   const route = useRoute();
 
-  const id = ref(route.params.id);
-  const area = computed(() => dataStore.getAreaById(Number(id.value)));
+  const id = route.params.id as string;
+  let area: Area = { name: "", id: ""};
 
+  fetchArea();
 
-  const areas = dataStore.getAreas;
-  const satellites = ref(dataStore.getSatellitesByArea(Number(id.value)));
+  async function fetchArea() {
+    area = await dataStore.getAreaById(id);
+  }
+
+  const areas = await dataStore.getAreas();
+  let satellites = ref<Satellite[]>([]);
+
+  async function fetchSatellites() {
+    satellites.value = await dataStore.getSatellitesByArea(id);
+  }
+
+  setTimeout(() => {
+    fetchSatellites();
+  }, 1000);
 
   console.log("satellites", satellites.value);
 
 
-  const selectedSatellites = ref([]);
+  const selectedSatellites = ref<Satellite[]>([]);
   const selectedArea = ref();
-  const classes = dataStore.getClasses;
+  const classes = await dataStore.getSatelliteTypes();
 
-  const changeArea = () => {
+  const changeArea = async () => {
+    let promises = [];
+
     for(let satellite of selectedSatellites.value) {
       satellite.area = selectedArea.value;
-      dataStore.editSatellite(satellite);
+      promises.push(dataStore.editSatellite(satellite));
     }
-    satellites.value = dataStore.getSatellitesByArea(Number(id.value));
+
+    await Promise.all(promises);
+    await fetchSatellites();
   } 
 
-  const deleteSatellite = (satellite: Satellite) => {
+  const deleteSatellite = async (satellite: Satellite) => {
     if (!confirm("Are you sure you want to delete this area?")) return;
-    dataStore.deleteSatellite(satellite);
-    satellites.value = dataStore.getSatellitesByArea(Number(id.value));
-
+    await dataStore.deleteSatellite(satellite);
+    await fetchSatellites();
   }
 
   const isDialogShown = ref(false);
@@ -56,10 +73,6 @@
     name: "",
     id: 0
   }
-
-  watch(satellites.value, () => {
-    console.log("satellites", satellites.value)
-  })
 
   const editSatellite = (satellite: Satellite) => {
 
