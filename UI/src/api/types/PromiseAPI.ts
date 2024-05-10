@@ -211,6 +211,24 @@ export class PromiseDeviceTypeApi {
     }
 
     /**
+     * Get device types of satellites by ID.
+     * @param deviceTypeId 
+     */
+    public getDeviceTypeByIdWithHttpInfo(deviceTypeId: string, _options?: Configuration): Promise<HttpInfo<DeviceTypeMetadata>> {
+        const result = this.api.getDeviceTypeByIdWithHttpInfo(deviceTypeId, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param deviceTypeId 
+     */
+    public getDeviceTypeById(deviceTypeId: string, _options?: Configuration): Promise<DeviceTypeMetadata> {
+        const result = this.api.getDeviceTypeById(deviceTypeId, _options);
+        return result.toPromise();
+    }
+
+    /**
      * Get device types of satellites.
      */
     public getDeviceTypesWithHttpInfo(_options?: Configuration): Promise<HttpInfo<Array<DeviceTypeMetadata>>> {

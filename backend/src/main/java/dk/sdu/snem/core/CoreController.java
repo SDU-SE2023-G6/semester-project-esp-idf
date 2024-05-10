@@ -363,8 +363,21 @@ public class CoreController {
   @Operation(summary = "Get device types of satellites.")
   public List<DeviceTypeMetadata> getDeviceTypes() {
     return deviceTypeRepo.findAll().stream()
-        .map(x -> new DeviceTypeMetadata(x.getId().toHexString(), x.getName()))
+        .map(CoreController::mapDeviceType)
         .toList();
+  }
+
+  @NotNull
+  private static DeviceTypeMetadata mapDeviceType(DeviceType x) {
+    return new DeviceTypeMetadata(x.getId().toHexString(), x.getName(), x.isDeprecated());
+  }
+
+  @GetMapping("/device-type/{deviceTypeId}")
+  @Tag(name = "Device Type")
+  @ResponseBody
+  @Operation(summary = "Get device types of satellites by ID.")
+  public DeviceTypeMetadata getDeviceTypeById(@PathVariable String deviceTypeId) {
+    return mapDeviceType(deviceTypeRepo.findById(new ObjectId(deviceTypeId)).orElseThrow(NotFoundException::new));
   }
 
   @GetMapping("/program/metadata")
@@ -470,7 +483,7 @@ public class CoreController {
 
   public record AreaMetadata(String id, @NotBlank @Parameter(required = true) String name) {}
 
-  public record DeviceTypeMetadata(String id, String name) {}
+  public record DeviceTypeMetadata(String id, String name, boolean deprecated) {}
 
   public record DataPointMetadata(
       String id,

@@ -317,6 +317,37 @@ export class ObservableDeviceTypeApi {
     }
 
     /**
+     * Get device types of satellites by ID.
+     * @param deviceTypeId 
+     */
+    public getDeviceTypeByIdWithHttpInfo(deviceTypeId: string, _options?: Configuration): Observable<HttpInfo<DeviceTypeMetadata>> {
+        const requestContextPromise = this.requestFactory.getDeviceTypeById(deviceTypeId, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getDeviceTypeByIdWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param deviceTypeId 
+     */
+    public getDeviceTypeById(deviceTypeId: string, _options?: Configuration): Observable<DeviceTypeMetadata> {
+        return this.getDeviceTypeByIdWithHttpInfo(deviceTypeId, _options).pipe(map((apiResponse: HttpInfo<DeviceTypeMetadata>) => apiResponse.data));
+    }
+
+    /**
      * Get device types of satellites.
      */
     public getDeviceTypesWithHttpInfo(_options?: Configuration): Observable<HttpInfo<Array<DeviceTypeMetadata>>> {

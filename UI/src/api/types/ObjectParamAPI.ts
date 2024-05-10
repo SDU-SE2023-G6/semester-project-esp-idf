@@ -238,6 +238,15 @@ export class ObjectDataPointsApi {
 import { ObservableDeviceTypeApi } from "./ObservableAPI";
 import { DeviceTypeApiRequestFactory, DeviceTypeApiResponseProcessor} from "../apis/DeviceTypeApi";
 
+export interface DeviceTypeApiGetDeviceTypeByIdRequest {
+    /**
+     * 
+     * @type string
+     * @memberof DeviceTypeApigetDeviceTypeById
+     */
+    deviceTypeId: string
+}
+
 export interface DeviceTypeApiGetDeviceTypesRequest {
 }
 
@@ -246,6 +255,22 @@ export class ObjectDeviceTypeApi {
 
     public constructor(configuration: Configuration, requestFactory?: DeviceTypeApiRequestFactory, responseProcessor?: DeviceTypeApiResponseProcessor) {
         this.api = new ObservableDeviceTypeApi(configuration, requestFactory, responseProcessor);
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param param the request object
+     */
+    public getDeviceTypeByIdWithHttpInfo(param: DeviceTypeApiGetDeviceTypeByIdRequest, options?: Configuration): Promise<HttpInfo<DeviceTypeMetadata>> {
+        return this.api.getDeviceTypeByIdWithHttpInfo(param.deviceTypeId,  options).toPromise();
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param param the request object
+     */
+    public getDeviceTypeById(param: DeviceTypeApiGetDeviceTypeByIdRequest, options?: Configuration): Promise<DeviceTypeMetadata> {
+        return this.api.getDeviceTypeById(param.deviceTypeId,  options).toPromise();
     }
 
     /**
