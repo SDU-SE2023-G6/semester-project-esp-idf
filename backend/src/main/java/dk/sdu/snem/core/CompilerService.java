@@ -106,7 +106,7 @@ public class CompilerService {
 
     final byte[] generatedZipFile;
     try {
-      generatedZipFile = generateCodeFromDSL(program.getDslCode());
+      generatedZipFile = generateCodeFromDsl(program.getDslCode());
     } catch (Exception e) {
       program.setStatus(ERROR_GENERATING_CODE);
       programRepo.save(program);
@@ -391,7 +391,7 @@ public class CompilerService {
     return null;
   }
 
-  private byte[] generateCodeFromDSL(String dslContent) {
+  private byte[] generateCodeFromDsl(String dslContent) {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.TEXT_PLAIN);
 

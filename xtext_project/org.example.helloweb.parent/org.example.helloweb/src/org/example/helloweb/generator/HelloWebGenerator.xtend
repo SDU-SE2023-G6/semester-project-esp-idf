@@ -27,17 +27,13 @@ import org.example.helloweb.helloWeb.ValueRef
 class HelloWebGenerator extends AbstractGenerator {
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-    	// Generate shared library code
         generateSharedLibraryCode(fsa)
         
-        // Iterate through all SensorConfig instances in the resource
         for (sensorConfig : resource.contents.filter(SensorConfig)) {
 	        generateJsonLogs(sensorConfig.deviceTypes, sensorConfig.sensors, fsa);
-            // Generate code for each Sensor
             sensorConfig.sensors.forEach [ sensor |
                 generateSensorCode(sensor, fsa)
             ]
-            // Generate code for each DeviceType
             sensorConfig.deviceTypes.forEach [ deviceType |
                 generateDeviceTypeCode(deviceType, fsa)
             ]
@@ -93,7 +89,7 @@ class HelloWebGenerator extends AbstractGenerator {
     var readingIncrement = 0;
     var deviceTypeCode = 
     '''
-	#include "«deviceType.name»_device_type.h"
+	#include "target_device_type.h"
 	
 	«FOR instantiation : deviceType.sensorInstantiations»
 	SensorInstantiation «deviceType.name»_«instantiation.sensor.name»_«instantiation.name» = {
@@ -105,8 +101,7 @@ class HelloWebGenerator extends AbstractGenerator {
 	};
 	«ENDFOR»
 	
-	// Define DeviceType constant
-	DeviceType «deviceType.name»_device_type = {
+	DeviceType base_device_type = {
 	    .name = "«deviceType.name»",
 	    .sensorInstantiations = {«deviceType.sensorInstantiations.map[instantiation | '''&«deviceType.name»_«instantiation.sensor.name»_«instantiation.name»'''].join(', ')»},
 	    .sensorCount = «deviceType.sensorInstantiations.size»,
@@ -115,8 +110,8 @@ class HelloWebGenerator extends AbstractGenerator {
 	    .heartBeatPolicy = «mapXTextTimeUnitToC(deviceType.heartBeatPolicy)»
 	};
 	
-	DeviceType* «deviceType.name»_device_applyConstraints(double* readings) {
-		DeviceType* modified = duplicateDeviceType(&«deviceType.name»_device_type);
+	DeviceType* get_device_type_constrained(double* readings) {
+		DeviceType* modified = duplicateDeviceType(&base_device_type);
 		«FOR instantiation: deviceType.sensorInstantiations»
 		«FOR output : instantiation.sensor.out»
 		double «instantiation.name»_«output.name» = readings[«readingIncrement++»];
@@ -138,50 +133,23 @@ class HelloWebGenerator extends AbstractGenerator {
 	'''
 	
 	val headerFile = '''
-		#ifndef «deviceType.name.toUpperCase»_DEVICE_TYPE_H
-		#define «deviceType.name.toUpperCase»_DEVICE_TYPE_H
+		#ifndef TARGET_DEVICE_TYPE_H
+		#define TARGET_DEVICE_TYPE_H
 		#include <stdio.h>
 		#include "shared_snem_library.h"
 		«FOR instantiation : deviceType.sensorInstantiations»
 		#include "«instantiation.sensor.name»_sensor.h"
 		«ENDFOR»
+		extern DeviceType base_device_type;
+		DeviceType* get_device_type_constrained(double* readings);
 		
-		DeviceType* «deviceType.name»_device_applyConstraints(double* readings);
-		
-		#endif /* «deviceType.name.toUpperCase»_DEVICE_TYPE_H */
-	'''
-
-	val buildFile = '''
-	CC = gcc
-	CFLAGS = -Wall -Wextra -fPIC
-	LDFLAGS = -shared
-	SRC_DIR = .
-	BUILD_DIR = build
-	SRC = $(wildcard $(SRC_DIR)/*.c)
-	OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC))
-	INC = -I.
-
-	.PHONY: all clean
-
-	all: $(BUILD_DIR)/«deviceType.name»_device.so
-
-	$(BUILD_DIR)/«deviceType.name»_device.so: $(OBJ)
-		$(CC) $(LDFLAGS) -o $@ $^
-
-	$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-		@mkdir -p $(BUILD_DIR)
-		$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-	clean:
-		rm -rf $(BUILD_DIR)
+		#endif /* TARGET_DEVICE_TYPE_H */
 	'''
 
 	
     // Write the device type configuration to a C file
     fsa.generateFile(deviceType.name + "_device_type.c", deviceTypeCode)
     fsa.generateFile(deviceType.name + "_device_type.h", headerFile)
-	fsa.generateFile(deviceType.name + "_build.mk", buildFile)
-
 	
     }
 		
@@ -376,15 +344,19 @@ class HelloWebGenerator extends AbstractGenerator {
 	 	if (timeDuration === null || timeDuration.isEmpty()) {
         	return "1"
     	}
-    	timeDuration.replaceAll("\\D", "")
+	    val count = timeDuration.replaceAll("\\D", "")
+	    val unit = timeDuration.replaceAll("\\d", "")
+		
+		count
 	}
 	def String extractXTextTimeUnit(String timeDuration) {
 	    if (timeDuration === null || timeDuration.isEmpty()) {
 	        return "SECOND"
 	    }
-	    timeDuration.replaceAll("\\d", "")
+	    val count = timeDuration.replaceAll("\\D", "")
+	    val unit = timeDuration.replaceAll("\\d", "")
 	    
-	    switch (timeDuration) {
+	    switch (unit) {
 	        case "s": return "SECOND"
 	        case "m": return "MINUTE"
 	        case "h": return "HOUR"
