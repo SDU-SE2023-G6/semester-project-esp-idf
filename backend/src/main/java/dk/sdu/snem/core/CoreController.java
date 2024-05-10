@@ -444,23 +444,32 @@ public class CoreController {
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
 
-  @GetMapping("/program/binary/{deviceMac}")
+  @GetMapping("/program/binary-discovery/{deviceMac}")
   @Tag(name = "Program")
   @ResponseBody
   @Operation
-  public ResponseEntity<byte[]> downloadBinary(@PathVariable String deviceMac) {
+  public ResponseEntity<BinaryVersion> provideBinaryVersion(@PathVariable String deviceMac) {
     Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(deviceMac);
     DeviceType currentDeviceType = currentSatellite.getDeviceType();
       assert currentDeviceType != null;
       Binary currentBinary = currentDeviceType.getBinary();
 
-      assert currentBinary != null;
-      String binaryId = String.valueOf(currentBinary.getId());
+   return ResponseEntity.ok()
+           .contentType(MediaType.APPLICATION_JSON)
+           .body(new BinaryVersion(currentBinary.getId(), currentBinary.getBinaryHash()));
+  }
+
+  @GetMapping("/program/binary/{binaryId}")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation
+  public ResponseEntity<byte[]> downloadBinary(@PathVariable String binaryId) {
+    Binary binary = binaryRepo.findById(new ObjectId(binaryId)).orElseThrow(NotFoundException::new);
 
     return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_OCTET_STREAM)
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
-            .body(currentBinary.getCompiledBinary());
+            .body(binary.getCompiledBinary());
   }
 
   @NotNull
@@ -493,6 +502,8 @@ public class CoreController {
       String deviceTypeId) {}
 
   public record AreaMetadata(String id, @NotBlank @Parameter(required = true) String name) {}
+
+  public record BinaryVersion(ObjectId binaryId, String binaryIdHash) {}
 
   public record DeviceTypeMetadata(String id, String name, boolean deprecated) {}
 

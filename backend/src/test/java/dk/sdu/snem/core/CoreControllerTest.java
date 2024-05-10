@@ -276,9 +276,8 @@ class CoreControllerTest {
   @Nested
   class GetBinaryTests {
     @Test
-    void getBinarySuccessfully() throws Exception {
+    void getBinaryByMacAdressSuccessfully() throws Exception {
       // Arrange
-
       DeviceType deviceType = new DeviceType();
       deviceType.setName("Device Type 1");
 
@@ -296,8 +295,7 @@ class CoreControllerTest {
 
 
       // Act
-      MvcResult result = mockMvc.perform(get("/program/binary/{deviceMac}", satellite1.getDeviceMACAddress())
-                      .contentType(MediaType.APPLICATION_OCTET_STREAM))
+      MvcResult result = mockMvc.perform(get("/program/binary-discovery/{deviceMac}", satellite1.getDeviceMACAddress()))
               .andExpect(status().isOk())
               .andReturn();
 
@@ -305,57 +303,40 @@ class CoreControllerTest {
       List<Binary> binaries = binaryRepo.findAll();
       assertThat(binaries.size()).isEqualTo(1);
       assertThat(binaries.get(0).getBinaryHash()).isEqualTo("1234");
+      assertThat(binaries.get(0).getId()).isEqualTo(newBinary.getId());
+
+      String responseContent = result.getResponse().getContentAsString();
+      BinaryVersion version = objectMapper.readValue(responseContent, new TypeReference<>() {});
+      assertThat(version).isNotNull();
+      assertThat(version.binaryId()).isEqualTo(newBinary.getId());
+      assertThat(version.binaryIdHash()).isEqualTo("1234");
+    }
+
+    @Test
+    void getBinarySuccessfully() throws Exception {
+      // Arrange
+      DeviceType deviceType = new DeviceType();
+      deviceType.setName("Device Type 1");
+      Binary newBinary = createAndSaveBinary("1234", new byte[]{1, 2, 3, 4}, deviceType);
+
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/program/binary/{binaryId}", newBinary.getId().toString())
+                      .contentType(MediaType.APPLICATION_OCTET_STREAM))
+              .andExpect(status().isOk())
+              .andReturn();
+
+
+      // Assert
+      List<Binary> binaries = binaryRepo.findAll();
+      assertThat(binaries.size()).isEqualTo(1);
+      assertThat(binaries.get(0).getBinaryHash()).isEqualTo("1234");
+
 
       // Verify returned binary
       byte[] responseBytes = result.getResponse().getContentAsByteArray();
       assertThat(responseBytes).isEqualTo(new byte[]{1, 2, 3, 4});
     }
-
-
-    @Test
-    void addingAreaWithEmptyNameFails() throws Exception {
-      // Arrange
-      AreaMetadata newArea = new AreaMetadata(null, "");
-
-      // Act
-      mockMvc.perform(post("/area")
-                      .contentType(MediaType.APPLICATION_JSON)
-                      .content(objectMapper.writeValueAsString(newArea)))
-              .andExpect(status().isUnprocessableEntity()); // Expecting bad request due to empty name
-    }
-
-    @Test
-    void addingAreaWithExistingNameSucceeds() throws Exception {
-      // Arrange
-      AreaMetadata existingArea = new AreaMetadata(null, "Existing Area");
-      Area area = new Area();
-      area.setName(existingArea.name());
-      areaRepo.save(area);
-
-      AreaMetadata newArea = new AreaMetadata(null, existingArea.name());
-
-      // Act
-      MvcResult result = mockMvc.perform(post("/area")
-                      .contentType(MediaType.APPLICATION_JSON)
-                      .content(objectMapper.writeValueAsString(newArea)))
-              .andExpect(status().isOk())
-              .andReturn();
-
-      // Assert
-      List<Area> areas = areaRepo.findAll();
-      assertThat(areas.size()).isEqualTo(2); // Expecting 2 areas with the same name
-      assertThat(areas.stream().map(Area::getName).collect(Collectors.toList()))
-              .contains(existingArea.name());
-
-      // Verify returned AreaMetadata
-      String responseContent = result.getResponse().getContentAsString();
-      AreaMetadata returnedArea = objectMapper.readValue(responseContent, AreaMetadata.class);
-      assertThat(returnedArea.name()).isEqualTo(existingArea.name());
-      assertThat(returnedArea.id()).isNotNull();
-      assertThat(returnedArea.id()).isNotEqualTo(existingArea.id());
-    }
-
-
   }
 
   @Nested
