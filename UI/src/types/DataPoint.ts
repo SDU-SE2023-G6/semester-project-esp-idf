@@ -2,7 +2,7 @@ import type { SatelliteId } from "./Satellite";
 
 export type DataPoint = {
     value: number;
-    timestamp: string;
+    timestamp: Date;
     satellite: SatelliteId;
     sensor: string;
     unit: string;

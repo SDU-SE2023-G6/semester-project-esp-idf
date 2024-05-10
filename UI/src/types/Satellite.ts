@@ -1,11 +1,20 @@
-export type SatelliteId = number | string;
-export type SatelliteStatus = 'online' | 'offline' | 'error' | 'pending';
+export type SatelliteId = string;
+
+export enum SatelliteStatus {
+    Online = 'ONLINE',
+    Offline = 'OFFLINE',
+    Error = 'ERROR',
+    Updating = 'UPDATING',
+    PendingMetadata = 'PENDING_METADATA'
+}
+
 import type { AreaId } from '@/types/Area'
+import type { SatelliteType } from './SatelliteType';
 
 export type Satellite = {
     id: SatelliteId;
-    name: string;
-    area: AreaId;
-    class: string;
+    type?: SatelliteType;
+    name?: string;
+    area?: AreaId;
     status: SatelliteStatus;
 }
