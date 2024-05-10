@@ -57,7 +57,7 @@
 		    newValue = dslText;  
 		    newValueJSON = JSON.stringify(dslText);  
 		    
-		    fetch('http://localhost:8080/program', {
+		    fetch('http://localhost:8080/program/content', {
 		      method: 'PUT',
 		      headers: {
 		        'Content-Type': 'application/json',
@@ -67,7 +67,7 @@
 		}
 		
 		function loadDsl() {
-			fetch('http://localhost:8080/program')
+			fetch('http://localhost:8080/program/content')
 				.then(response => response.json())
 				.then(data => {
 					if (data.dslText) {
