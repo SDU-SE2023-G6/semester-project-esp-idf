@@ -5,9 +5,13 @@ export * from '../models/ErrorResponse';
 export * from '../models/LogMetadata';
 export * from '../models/LogType';
 export * from '../models/ProgramDslContent';
+export * from '../models/ProgramMetadata';
 export * from '../models/ProgramStatus';
 export * from '../models/ProgramStatusProjection';
+export * from '../models/SatelliteDeviceTypeId';
 export * from '../models/SatelliteMetadata';
+export * from '../models/SatelliteRegisterDTO';
+export * from '../models/SatelliteRegisterResponseDTO';
 export * from '../models/SatelliteStatus';
 
 import { AreaMetadata } from '../models/AreaMetadata';
@@ -17,9 +21,13 @@ import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata      } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
 import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramMetadata       } from '../models/ProgramMetadata';
 import { ProgramStatus } from '../models/ProgramStatus';
 import { ProgramStatusProjection   } from '../models/ProgramStatusProjection';
+import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
 import { SatelliteMetadata      } from '../models/SatelliteMetadata';
+import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
+import { SatelliteRegisterResponseDTO } from '../models/SatelliteRegisterResponseDTO';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 
 /* tslint:disable:no-unused-variable */
@@ -47,8 +55,12 @@ let typeMap: {[index: string]: any} = {
     "ErrorResponse": ErrorResponse,
     "LogMetadata": LogMetadata,
     "ProgramDslContent": ProgramDslContent,
+    "ProgramMetadata": ProgramMetadata,
     "ProgramStatusProjection": ProgramStatusProjection,
+    "SatelliteDeviceTypeId": SatelliteDeviceTypeId,
     "SatelliteMetadata": SatelliteMetadata,
+    "SatelliteRegisterDTO": SatelliteRegisterDTO,
+    "SatelliteRegisterResponseDTO": SatelliteRegisterResponseDTO,
 }
 
 type MimeTypeDescriptor = {

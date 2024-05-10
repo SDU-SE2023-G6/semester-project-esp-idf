@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ProgramStatus } from '@/api';
 import { ProgramApi } from '@/stores/api';
-import type { compile } from 'vue';
 import { computed, ref } from 'vue';
 
 

@@ -12,28 +12,21 @@
 
 import { HttpFile } from '../http/http';
 
-export class AreaMetadata {
-    'id'?: string;
-    'name': string;
+export class SatelliteRegisterResponseDTO {
+    'success'?: boolean;
 
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "id",
-            "baseName": "id",
-            "type": "string",
-            "format": ""
-        },
-        {
-            "name": "name",
-            "baseName": "name",
-            "type": "string",
+            "name": "success",
+            "baseName": "success",
+            "type": "boolean",
             "format": ""
         }    ];
 
     static getAttributeTypeMap() {
-        return AreaMetadata.attributeTypeMap;
+        return SatelliteRegisterResponseDTO.attributeTypeMap;
     }
 
     public constructor() {

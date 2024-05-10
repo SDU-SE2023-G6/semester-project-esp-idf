@@ -21,14 +21,13 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 public class Program {
   private @MongoId ObjectId id;
   private @NotNull String dslCode = defaultStartDslCode;
-  /** Last compiled DSL code */
-  private @Nullable String dslCodeCompiled;
   /** Code and metadata generated from DSL as zip file. */
   private @Nullable byte[] generatedCodeAsZipFile;
   /** Metadata from code generation. */
   private @Nullable GeneratedCodeMetadata generatedCodeMetadata;
   private @NotNull ProgramStatus status = ProgramStatus.UNCHANGED;
-  private @Nullable Instant lastCompiled;
+  private @Nullable Instant compiled;
+  private Long iteration = 1L;
 
   /** Version used for concurrency validation. */
   private @Version Long version;
@@ -108,17 +107,5 @@ deviceType HTL {
 }
   """;
 
-  /*
-  private CompilationState compileState = CompilationState.NOT_STARTED;
-  private String compileLog;
-
-  @Schema(enumAsRef = true)
-  public enum CompilationState {
-    NOT_STARTED,
-    COMPILING,
-    ERROR,
-    FINISHED
-  }
-   */
 
 }

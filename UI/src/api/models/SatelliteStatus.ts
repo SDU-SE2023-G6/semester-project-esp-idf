@@ -16,5 +16,5 @@ export enum SatelliteStatus {
     Online = 'ONLINE',
     Offline = 'OFFLINE',
     Error = 'ERROR',
-    Pending = 'PENDING'
+    PendingMetadata = 'PENDING_METADATA'
 }

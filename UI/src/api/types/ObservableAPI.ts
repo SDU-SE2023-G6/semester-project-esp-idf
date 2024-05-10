@@ -9,9 +9,13 @@ import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
 import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramMetadata } from '../models/ProgramMetadata';
 import { ProgramStatus } from '../models/ProgramStatus';
 import { ProgramStatusProjection } from '../models/ProgramStatusProjection';
+import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
+import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
+import { SatelliteRegisterResponseDTO } from '../models/SatelliteRegisterResponseDTO';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 
 import { AreaApiRequestFactory, AreaApiResponseProcessor} from "../apis/AreaApi";
@@ -263,6 +267,37 @@ export class ObservableDataPointsApi {
         return this.getDataPointsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Array<DataPointMetadata>>) => apiResponse.data));
     }
 
+    /**
+     * Get all Data points.
+     * @param hoursAgo 
+     */
+    public getDataPointsFromSometimeAgoWithHttpInfo(hoursAgo: number, _options?: Configuration): Observable<HttpInfo<Array<DataPointMetadata>>> {
+        const requestContextPromise = this.requestFactory.getDataPointsFromSometimeAgo(hoursAgo, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getDataPointsFromSometimeAgoWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get all Data points.
+     * @param hoursAgo 
+     */
+    public getDataPointsFromSometimeAgo(hoursAgo: number, _options?: Configuration): Observable<Array<DataPointMetadata>> {
+        return this.getDataPointsFromSometimeAgoWithHttpInfo(hoursAgo, _options).pipe(map((apiResponse: HttpInfo<Array<DataPointMetadata>>) => apiResponse.data));
+    }
+
 }
 
 import { DeviceTypeApiRequestFactory, DeviceTypeApiResponseProcessor} from "../apis/DeviceTypeApi";
@@ -434,6 +469,35 @@ export class ObservableProgramApi {
     }
 
     /**
+     * @param binaryId 
+     */
+    public downloadBinaryWithHttpInfo(binaryId: string, _options?: Configuration): Observable<HttpInfo<Array<string>>> {
+        const requestContextPromise = this.requestFactory.downloadBinary(binaryId, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.downloadBinaryWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * @param binaryId 
+     */
+    public downloadBinary(binaryId: string, _options?: Configuration): Observable<Array<string>> {
+        return this.downloadBinaryWithHttpInfo(binaryId, _options).pipe(map((apiResponse: HttpInfo<Array<string>>) => apiResponse.data));
+    }
+
+    /**
      * Get program DSL definition
      */
     public getProgramDslContentWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ProgramDslContent>> {
@@ -460,6 +524,35 @@ export class ObservableProgramApi {
      */
     public getProgramDslContent(_options?: Configuration): Observable<ProgramDslContent> {
         return this.getProgramDslContentWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ProgramDslContent>) => apiResponse.data));
+    }
+
+    /**
+     * Get program metadata
+     */
+    public getProgramMetadataWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ProgramMetadata>> {
+        const requestContextPromise = this.requestFactory.getProgramMetadata(_options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getProgramMetadataWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get program metadata
+     */
+    public getProgramMetadata(_options?: Configuration): Observable<ProgramMetadata> {
+        return this.getProgramMetadataWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ProgramMetadata>) => apiResponse.data));
     }
 
     /**
@@ -665,6 +758,37 @@ export class ObservableSatelliteApi {
     }
 
     /**
+     * Get satellite device type id.
+     * @param satelliteId 
+     */
+    public getSatelliteDeviceTypeWithHttpInfo(satelliteId: string, _options?: Configuration): Observable<HttpInfo<SatelliteDeviceTypeId>> {
+        const requestContextPromise = this.requestFactory.getSatelliteDeviceType(satelliteId, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getSatelliteDeviceTypeWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Get satellite device type id.
+     * @param satelliteId 
+     */
+    public getSatelliteDeviceType(satelliteId: string, _options?: Configuration): Observable<SatelliteDeviceTypeId> {
+        return this.getSatelliteDeviceTypeWithHttpInfo(satelliteId, _options).pipe(map((apiResponse: HttpInfo<SatelliteDeviceTypeId>) => apiResponse.data));
+    }
+
+    /**
      * Get satellites
      */
     public getSatellitesWithHttpInfo(_options?: Configuration): Observable<HttpInfo<Array<SatelliteMetadata>>> {
@@ -691,6 +815,37 @@ export class ObservableSatelliteApi {
      */
     public getSatellites(_options?: Configuration): Observable<Array<SatelliteMetadata>> {
         return this.getSatellitesWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Array<SatelliteMetadata>>) => apiResponse.data));
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param satelliteRegisterDTO 
+     */
+    public satelliteRegisterWithHttpInfo(satelliteRegisterDTO: SatelliteRegisterDTO, _options?: Configuration): Observable<HttpInfo<SatelliteRegisterResponseDTO>> {
+        const requestContextPromise = this.requestFactory.satelliteRegister(satelliteRegisterDTO, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.satelliteRegisterWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param satelliteRegisterDTO 
+     */
+    public satelliteRegister(satelliteRegisterDTO: SatelliteRegisterDTO, _options?: Configuration): Observable<SatelliteRegisterResponseDTO> {
+        return this.satelliteRegisterWithHttpInfo(satelliteRegisterDTO, _options).pipe(map((apiResponse: HttpInfo<SatelliteRegisterResponseDTO>) => apiResponse.data));
     }
 
 }

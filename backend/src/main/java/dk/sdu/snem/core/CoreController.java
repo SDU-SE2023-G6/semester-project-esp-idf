@@ -5,26 +5,21 @@ import dk.sdu.snem.core.repo.*;
 import dk.sdu.snem.exceptions.ConflictException;
 import dk.sdu.snem.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
 
 @RequestMapping("")
 @RestController
@@ -37,6 +32,7 @@ public class CoreController {
   private final LogRepository logsRepo;
   private final ProgramRepository programRepo;
   private final CompilerService compilerService;
+  private final BinaryRepository binaryRepo;
 
   public CoreController(
       SatelliteRepository deviceRepo,
@@ -44,7 +40,9 @@ public class CoreController {
       DataPointRepository dataPointsRepo,
       LogRepository logsRepo,
       DeviceTypeRepository deviceTypeRepo,
-      ProgramRepository programRepo, CompilerService compilerService) {
+      ProgramRepository programRepo,
+      CompilerService compilerService,
+      BinaryRepository binaryRepo) {
     this.satelliteRepo = deviceRepo;
     this.areaRepo = areaRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -52,6 +50,7 @@ public class CoreController {
     this.logsRepo = logsRepo;
     this.programRepo = programRepo;
     this.compilerService = compilerService;
+    this.binaryRepo = binaryRepo;
   }
 
   @GetMapping("/areas")
@@ -243,21 +242,43 @@ public class CoreController {
         .toList();
   }
 
+  @GetMapping("/satellite/{satelliteId}/device-type-id")
+  @Tag(name = "Satellite")
+  @ResponseBody
+  @Operation(summary = "Get satellite device type id.")
+  public SatelliteDeviceTypeId getSatelliteDeviceType(@PathVariable String satelliteId) {
+    DeviceType deviceType =
+        satelliteRepo
+            .findById(new ObjectId(satelliteId))
+            .orElseThrow(NotFoundException::new)
+            .getDeviceType();
+    if (deviceType == null) {
+      throw new NotFoundException("Satellite does not have a device type set.");
+    }
+    return new SatelliteDeviceTypeId(deviceType.getName());
+  }
+
   @PostMapping("/satellite/register")
   @Tag(name = "Satellite")
   @ResponseBody
   @Operation(summary = "Register a ESP Satellite.")
-  @ApiResponses(value = {
-          @ApiResponse(responseCode = "200", description = "Device has already been registered."),
-          @ApiResponse(responseCode = "201", description = "Device has been registered for the first time."),
-          @ApiResponse(responseCode = "400", description = "Error creating satellite.")
-  })
-  public ResponseEntity<SatelliteRegisterResponseDTO> satelliteRegister(@RequestBody SatelliteRegisterDTO satellite) {
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Device has already been registered."),
+        @ApiResponse(
+            responseCode = "201",
+            description = "Device has been registered for the first time."),
+        @ApiResponse(responseCode = "400", description = "Error creating satellite.")
+      })
+  public ResponseEntity<SatelliteRegisterResponseDTO> satelliteRegister(
+      @RequestBody SatelliteRegisterDTO satellite) {
     try {
-      Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(satellite.deviceMACAddress());
+      Satellite currentSatellite =
+          satelliteRepo.findByDeviceMACAddress(satellite.deviceMACAddress());
 
       // Device exists
-      SatelliteRegisterResponseDTO satelliteRegisterResponseDTO = new SatelliteRegisterResponseDTO(true);
+      SatelliteRegisterResponseDTO satelliteRegisterResponseDTO =
+          new SatelliteRegisterResponseDTO(true);
 
       if (currentSatellite != null) {
         // TODO: Decide if there should be more actions for when a device registers itself.
@@ -271,12 +292,9 @@ public class CoreController {
     } catch (Exception e) {
       System.out.println("Failed to add Satellite.");
       return new ResponseEntity<>(
-              new SatelliteRegisterResponseDTO(false),
-              HttpStatusCode.valueOf(400)
-      );
+          new SatelliteRegisterResponseDTO(false), HttpStatusCode.valueOf(400));
     }
   }
-
 
   @GetMapping("/logs")
   @Tag(name = "Logs")
@@ -315,6 +333,25 @@ public class CoreController {
         .toList();
   }
 
+  @GetMapping("/data-points/hours/{hoursAgo}")
+  @Tag(name = "Data points")
+  @ResponseBody
+  @Operation(summary = "Get all Data points.")
+  public List<DataPointMetadata> getDataPointsFromSometimeAgo(@PathVariable Integer hoursAgo) {
+    return dataPointsRepo
+        .findAllByTimestampAfter(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
+        .stream()
+        .map(
+            dataPoint ->
+                new DataPointMetadata(
+                    dataPoint.getId().toHexString(),
+                    dataPoint.getTimestamp(),
+                    dataPoint.getUnit(),
+                    dataPoint.getMeasurement(),
+                    dataPoint.getSatellite().getId().toHexString(),
+                    dataPoint.getSensor()))
+        .toList();
+  }
 
   @GetMapping("/device-types")
   @Tag(name = "Device Type")
@@ -326,54 +363,46 @@ public class CoreController {
         .toList();
   }
 
-  @GetMapping("/binary/{binaryName}")
-  @Tag(name = "Download a binary")
+  @GetMapping("/program/metadata")
+  @Tag(name = "Program")
   @ResponseBody
-  @Operation
-  public ResponseEntity<byte[]> downloadBinary() {
-    Path p = Paths.get("/home/henriko/Documents/courses/semester-project-esp-idf/_old/bins/hello-world.bin");
-    File file = new File(p.toUri());
-    if (!file.exists()) {
-      return new ResponseEntity<>(null, HttpStatusCode.valueOf(404));
-    }
-    byte[] byteArray = new byte[(int) file.length()];
-    try (FileInputStream inputStream = new FileInputStream(file)) {
-      inputStream.read(byteArray);
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"" + file.getName() + "\"").body(byteArray);
+  @Operation(summary = "Get program metadata")
+  public ProgramMetadata getProgramMetadata() {
+    var program = getLatestProgramOrCreateOne();
+    return new ProgramMetadata(
+        program.getId().toHexString(),
+        program.getStatus(),
+        program.getCompiled(),
+        program.getIteration(),
+        program.getCreatedDate(),
+        program.getLastModifiedDate()
+    );
   }
 
-  @PutMapping("/program")
+  @PutMapping("/program/content")
   @Tag(name = "Program")
   @ResponseBody
   @Operation(summary = "Update program DSL definition")
   public void saveProgramDslContent(@RequestBody ProgramDslContent dslCode) {
-    Program program = getFirstProgramOrCreate();
+    Program program = getLatestProgramOrCreateOne();
     program.setDslCode(dslCode.dslText());
     programRepo.save(program);
   }
 
-  @GetMapping("/program")
+  @GetMapping("/program/content")
   @Tag(name = "Program")
   @ResponseBody
   @Operation(summary = "Get program DSL definition")
   public ProgramDslContent getProgramDslContent() {
-    return new ProgramDslContent(getFirstProgramOrCreate().getDslCode());
+    return new ProgramDslContent(getLatestProgramOrCreateOne().getDslCode());
   }
-  public record ProgramDslContent(String dslText) {};
 
   @GetMapping("/program/status")
   @Tag(name = "Program")
   @ResponseBody
   @Operation(summary = "Get program status")
   public ProgramStatusProjection getProgramStatus() {
-    var program = getFirstProgramOrCreate();
+    var program = getLatestProgramOrCreateOne();
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
 
@@ -382,7 +411,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get program DSL definition")
   public ProgramStatusProjection compileProgram() {
-    var program = getFirstProgramOrCreate();
+    var program = getLatestProgramOrCreateOne();
     compilerService.compileProgramSafely(program);
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
@@ -392,23 +421,42 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Continue compilation despite warnings")
   public ProgramStatusProjection compileProgramContinueDestructively() {
-    var program = getFirstProgramOrCreate();
+    var program = getLatestProgramOrCreateOne();
     compilerService.compileProgramDestructively(program);
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
-  public record ProgramStatusProjection(String id, Program.ProgramStatus status) {};
+
+  @GetMapping("/program/binary/{binaryId}")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation
+  public ResponseEntity<byte[]> downloadBinary(@PathVariable String binaryId) {
+    Binary binary = binaryRepo.findById(new ObjectId(binaryId)).orElseThrow(NotFoundException::new);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
+        .body(binary.getCompiledBinary());
+  }
 
   @NotNull
-  private Program getFirstProgramOrCreate() {
-    // TODO: 5/9/24 Doesn't support more users or programs for now lmaooo
-    Optional<Program> programOpt = programRepo.findAll().stream().findFirst();
-    if (programOpt.isEmpty()) {
-      var program = new Program();
-      programRepo.save(program);
-      programOpt = Optional.of(program);
-    }
-    return programOpt.get();
+  private Program getLatestProgramOrCreateOne() {
+    return programRepo
+        .findFirstByOrderByCreatedDateDesc()
+        .orElseGet(() -> programRepo.save(new Program()));
   }
+
+  public record ProgramMetadata(
+      String id,
+      Program.ProgramStatus status,
+      @Nullable Instant compiled,
+      Long iteration,
+      Instant createdDate,
+      Instant lastModifiedDate) {}
+
+  public record SatelliteDeviceTypeId(String id) {}
+
+  public record ProgramDslContent(String dslText) {}
+
+  public record ProgramStatusProjection(String id, Program.ProgramStatus status) {}
 
   public record SatelliteMetadata(
       String id,
@@ -417,7 +465,7 @@ public class CoreController {
       AreaMetadata area,
       @Nullable DeviceTypeMetadata deviceTypeMetadata) {}
 
-  public record AreaMetadata(String id, String name) {}
+  public record AreaMetadata(String id, @NotBlank @Parameter(required = true) String name) {}
 
   public record DeviceTypeMetadata(String id, String name) {}
 
@@ -430,19 +478,9 @@ public class CoreController {
       String sensor) {}
 
   public record LogMetadata(
-      String id,
-      Instant timestamp,
-      String message,
-      @Nullable String satelliteId,
-      Log.LogType type) {}
+      String id, Instant timestamp, String message, @Nullable String system, Log.LogType type) {}
 
+  public record SatelliteRegisterResponseDTO(boolean success) {}
 
-  public record SatelliteRegisterResponseDTO(
-          boolean success
-  ) {}
-
-  public record SatelliteRegisterDTO(
-          String deviceName,
-          String deviceMACAddress) {}
+  public record SatelliteRegisterDTO(String deviceName, String deviceMACAddress) {}
 }
-

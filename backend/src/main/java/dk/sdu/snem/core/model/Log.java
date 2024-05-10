@@ -31,6 +31,7 @@ public class Log {
   @Schema(enumAsRef = true)
   public enum LogType {
     UNSPECIFIED("UNSPECIFIED"),
+    ERROR("ERROR"),
     INFO("INFO"),
     WARNING("WARNING"),
     HEARTBEAT("HEARTBEAT");

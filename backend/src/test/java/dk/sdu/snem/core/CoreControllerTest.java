@@ -13,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dk.sdu.snem.core.model.Log;
 import dk.sdu.snem.core.model.Log.LogType;
+import dk.sdu.snem.core.model.Program;
+import dk.sdu.snem.core.repo.ProgramRepository;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,6 +63,8 @@ class CoreControllerTest {
   @Autowired
   private ObjectMapper objectMapper;
   @Autowired
+  private ProgramRepository programRepo;
+  @Autowired
   private MockMvc mockMvc;
 
   @BeforeEach
@@ -70,6 +74,7 @@ class CoreControllerTest {
     satelliteRepo.deleteAll();
     logRepo.deleteAll();;
     dataPointRepo.deleteAll();
+    programRepo.deleteAll();
   }
 
   @AfterEach
@@ -79,6 +84,7 @@ class CoreControllerTest {
     satelliteRepo.deleteAll();
     logRepo.deleteAll();;
     dataPointRepo.deleteAll();
+    programRepo.deleteAll();
   }
 
   @Nested
@@ -260,6 +266,7 @@ class CoreControllerTest {
       Satellite satellite = new Satellite();
       satellite.setName("Test Satellite");
       satellite.setArea(area);
+      satellite.setDeviceMACAddress(ObjectId.get().toHexString());
       satelliteRepo.save(satellite);
 
       // Act
@@ -282,11 +289,13 @@ class CoreControllerTest {
       Satellite satellite1 = new Satellite();
       satellite1.setName("Satellite 1");
       satellite1.setArea(area);
+      satellite1.setDeviceMACAddress(ObjectId.get().toHexString());
       satelliteRepo.save(satellite1);
 
       Satellite satellite2 = new Satellite();
       satellite2.setName("Satellite 2");
       satellite2.setArea(area);
+      satellite2.setDeviceMACAddress(ObjectId.get().toHexString());
       satelliteRepo.save(satellite2);
 
       // Act
@@ -347,12 +356,14 @@ class CoreControllerTest {
       satellite1.setName("Satellite 1");
       satellite1.setArea(area1);
       satellite1.setDeviceType(deviceType);
+      satellite1.setDeviceMACAddress(ObjectId.get().toHexString());
       satelliteRepo.save(satellite1);
 
       Satellite satellite2 = new Satellite();
       satellite2.setName("Satellite 2");
       satellite2.setArea(area2);
       satellite2.setDeviceType(deviceType);
+      satellite2.setDeviceMACAddress(ObjectId.get().toHexString());
       satelliteRepo.save(satellite2);
 
       // Act
@@ -409,6 +420,7 @@ class CoreControllerTest {
       satellite.setName("Test Satellite");
       satellite.setArea(area);
       satellite.setDeviceType(deviceType);
+      satellite.setDeviceMACAddress(ObjectId.get().toHexString());
       satellite = satelliteRepo.save(satellite);
 
       // Act
@@ -453,13 +465,14 @@ class CoreControllerTest {
       Satellite satellite = new Satellite();
       satellite.setName("Original Satellite");
       satellite.setArea(area);
+      satellite.setDeviceMACAddress(ObjectId.get().toHexString());
       satellite.setDeviceType(deviceType);
       satellite = satelliteRepo.save(satellite);
 
       SatelliteMetadata updatedMetadata = new SatelliteMetadata(
           satellite.getId().toHexString(),
           "Updated Satellite",
-          SatelliteStatus.PENDING,
+          SatelliteStatus.PENDING_METADATA,
           new AreaMetadata(area.getId().toHexString(), area.getName()),
           new DeviceTypeMetadata(deviceType.getId().toHexString(), deviceType.getName())
       );
@@ -495,6 +508,7 @@ class CoreControllerTest {
       satellite.setName("Original Satellite");
       satellite.setArea(area);
       satellite.setDeviceType(deviceType);
+      satellite.setDeviceMACAddress(ObjectId.get().toHexString());
       satellite = satelliteRepo.save(satellite);
 
       SatelliteMetadata updatedMetadata = new SatelliteMetadata(
@@ -526,7 +540,7 @@ class CoreControllerTest {
       SatelliteMetadata invalidMetadata = new SatelliteMetadata(
           ObjectId.get().toHexString(),
           "Updated Satellite",
-          SatelliteStatus.PENDING,
+          SatelliteStatus.PENDING_METADATA,
           new AreaMetadata(ObjectId.get().toHexString(), "Invalid Area"),
           new DeviceTypeMetadata(ObjectId.get().toHexString(), "Invalid Device Type")
       );
@@ -655,7 +669,7 @@ class CoreControllerTest {
         Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
         assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
         assertThat(metadata.message()).isEqualTo(log.getMessage());
-        assertThat(metadata.satelliteId()).isEqualTo(satellite.getId().toHexString());
+        assertThat(metadata.system()).isEqualTo(satellite.getId().toHexString());
         assertThat(metadata.type()).isEqualTo(log.getType());
       }
     }
@@ -667,7 +681,7 @@ class CoreControllerTest {
       createAndSaveLog(satelliteUnrelated, Instant.now(), "Log message 1", LogType.INFO);
       createAndSaveLog(satelliteUnrelated, Instant.now(), "Log message 2", LogType.WARNING);
 
-      Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
+      Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type 2");
       Log log1 = createAndSaveLog(satellite, Instant.now(), "Log message 1", LogType.INFO);
       Log log2 = createAndSaveLog(satellite, Instant.now(), "Log message 2", LogType.WARNING);
 
@@ -692,7 +706,7 @@ class CoreControllerTest {
         Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
         assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
         assertThat(metadata.message()).isEqualTo(log.getMessage());
-        assertThat(metadata.satelliteId()).isEqualTo(satellite.getId().toHexString());
+        assertThat(metadata.system()).isEqualTo(satellite.getId().toHexString());
         assertThat(metadata.type()).isEqualTo(log.getType());
       }
     }
@@ -735,10 +749,10 @@ class CoreControllerTest {
         assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
         assertThat(metadata.message()).isEqualTo(log.getMessage());
         if(log.getSatellite() != null) {
-          assert metadata.satelliteId() != null;
-          assertThat(metadata.satelliteId()).isEqualTo(log.getSatellite().getId().toHexString());
+          assert metadata.system() != null;
+          assertThat(metadata.system()).isEqualTo(log.getSatellite().getId().toHexString());
         } else {
-          assertThat(metadata.satelliteId()).isNull();
+          assertThat(metadata.system()).isNull();
         }
         assertThat(metadata.type()).isEqualTo(log.getType());
       }
@@ -787,6 +801,66 @@ class CoreControllerTest {
 
   }
 
+  @Nested
+  class GetDataPointsFromSometimeAgoTests {
+
+    @Test
+    void getDataPointsFromSometimeAgo_ReturnsDataPointsWithinGivenTimeframe() throws Exception {
+      // Arrange
+      Satellite satellite = createAndSaveSatellite("Satellite 1", "Area 1", "Device type 1"); // Create a satellite
+      Instant now = Instant.now();
+      int hoursAgo = 24; // Example: retrieving data points from the last 24 hours
+
+      DataPoint dataPointWithinRange = createAndSaveDataPoint(satellite, now.minus(12, ChronoUnit.HOURS), "m/s", 10.0, "Sensor 1");
+      DataPoint dataPointOutOfRange = createAndSaveDataPoint(satellite, now.minus(25, ChronoUnit.HOURS), "m/s", 10.0, "Sensor 2");
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/data-points/hours/{hoursAgo}", hoursAgo)
+              .contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk())
+          .andReturn();
+
+      // Assert
+      String responseContent = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+      List<DataPointMetadata> dataPoints = objectMapper.readValue(responseContent, new TypeReference<>() {});
+
+      assertThat(dataPoints.size()).isEqualTo(1); // Only one data point within the last 24 hours
+      assertThat(dataPoints.get(0).id()).isEqualTo(dataPointWithinRange.getId().toHexString());
+    }
+
+  }
+
+  @Nested
+  class GetProgramTests {
+    @Test
+    void getProgramMetadata_ReturnsProgramMetadata() throws Exception {
+      // Arrange
+      Program program = new Program(); // Create a program object
+      program.setStatus(Program.ProgramStatus.CHANGED);
+      program.setCompiled(Instant.now());
+      program.setIteration(10L);
+      programRepo.save(program);
+
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/program/metadata")
+              .contentType(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk())
+          .andReturn();
+
+      // Assert
+      String responseContent = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+      ProgramMetadata programMetadata = objectMapper.readValue(responseContent, ProgramMetadata.class);
+
+      assertThat(programMetadata.id()).isEqualTo(program.getId().toHexString());
+      assertThat(programMetadata.status()).isEqualTo(program.getStatus());
+      assert programMetadata.compiled() != null;
+      assert program.getCompiled() != null;
+      assertThat(programMetadata.compiled().truncatedTo(ChronoUnit.MILLIS)).isEqualTo(program.getCompiled().truncatedTo(ChronoUnit.MILLIS));
+      assertThat(programMetadata.iteration()).isEqualTo(program.getIteration());
+    }
+  }
+
   Satellite createAndSaveSatellite(String name, String areaName, String deviceTypeName) {
     Area area = new Area();
     area.setName(areaName);
@@ -800,6 +874,7 @@ class CoreControllerTest {
     satellite.setName(name);
     satellite.setArea(area);
     satellite.setDeviceType(deviceType);
+    satellite.setDeviceMACAddress(ObjectId.get().toHexString());
     return satelliteRepo.save(satellite);
   }
 

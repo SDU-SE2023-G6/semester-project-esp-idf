@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.apache.commons.lang3.NotImplementedException;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -77,7 +78,10 @@ public class CompilerService {
   }
 
   @Async
-  public void compileProgramSafely(Program program) {
+  public void compileProgramSafely(Program programInput) {
+    Program program = new Program();
+    program.setDslCode(programInput.getDslCode());
+    program.setIteration(program.getIteration() + 1);
     program.setStatus(GENERATING_CODE);
     programRepo.save(program);
 
@@ -119,8 +123,7 @@ public class CompilerService {
       return;
     }
 
-    program.setLastCompiled(Instant.now());
-    program.setDslCodeCompiled(program.getDslCode());
+    program.setCompiled(Instant.now());
     program.setStatus(COMPILED_COMPLETELY);
     programRepo.save(program);
   }
@@ -130,6 +133,7 @@ public class CompilerService {
     if (program.getStatus() != CODE_GENERATED_REQUIRES_OVERRIDE) {
       throw new RuntimeException("Can't override when not required.");
     }
+    throw new NotImplementedException("Override not yet implemented.");
   }
 
   private CompletableFuture<Void> compileBinary(

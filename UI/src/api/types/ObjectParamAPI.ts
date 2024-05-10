@@ -8,9 +8,13 @@ import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
 import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramMetadata } from '../models/ProgramMetadata';
 import { ProgramStatus } from '../models/ProgramStatus';
 import { ProgramStatusProjection } from '../models/ProgramStatusProjection';
+import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
+import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
+import { SatelliteRegisterResponseDTO } from '../models/SatelliteRegisterResponseDTO';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 
 import { ObservableAreaApi } from "./ObservableAPI";
@@ -181,6 +185,15 @@ import { DataPointsApiRequestFactory, DataPointsApiResponseProcessor} from "../a
 export interface DataPointsApiGetDataPointsRequest {
 }
 
+export interface DataPointsApiGetDataPointsFromSometimeAgoRequest {
+    /**
+     * 
+     * @type number
+     * @memberof DataPointsApigetDataPointsFromSometimeAgo
+     */
+    hoursAgo: number
+}
+
 export class ObjectDataPointsApi {
     private api: ObservableDataPointsApi
 
@@ -202,6 +215,22 @@ export class ObjectDataPointsApi {
      */
     public getDataPoints(param: DataPointsApiGetDataPointsRequest = {}, options?: Configuration): Promise<Array<DataPointMetadata>> {
         return this.api.getDataPoints( options).toPromise();
+    }
+
+    /**
+     * Get all Data points.
+     * @param param the request object
+     */
+    public getDataPointsFromSometimeAgoWithHttpInfo(param: DataPointsApiGetDataPointsFromSometimeAgoRequest, options?: Configuration): Promise<HttpInfo<Array<DataPointMetadata>>> {
+        return this.api.getDataPointsFromSometimeAgoWithHttpInfo(param.hoursAgo,  options).toPromise();
+    }
+
+    /**
+     * Get all Data points.
+     * @param param the request object
+     */
+    public getDataPointsFromSometimeAgo(param: DataPointsApiGetDataPointsFromSometimeAgoRequest, options?: Configuration): Promise<Array<DataPointMetadata>> {
+        return this.api.getDataPointsFromSometimeAgo(param.hoursAgo,  options).toPromise();
     }
 
 }
@@ -277,7 +306,19 @@ export interface ProgramApiCompileProgramRequest {
 export interface ProgramApiCompileProgramContinueDestructivelyRequest {
 }
 
+export interface ProgramApiDownloadBinaryRequest {
+    /**
+     * 
+     * @type string
+     * @memberof ProgramApidownloadBinary
+     */
+    binaryId: string
+}
+
 export interface ProgramApiGetProgramDslContentRequest {
+}
+
+export interface ProgramApiGetProgramMetadataRequest {
 }
 
 export interface ProgramApiGetProgramStatusRequest {
@@ -332,6 +373,20 @@ export class ObjectProgramApi {
     }
 
     /**
+     * @param param the request object
+     */
+    public downloadBinaryWithHttpInfo(param: ProgramApiDownloadBinaryRequest, options?: Configuration): Promise<HttpInfo<Array<string>>> {
+        return this.api.downloadBinaryWithHttpInfo(param.binaryId,  options).toPromise();
+    }
+
+    /**
+     * @param param the request object
+     */
+    public downloadBinary(param: ProgramApiDownloadBinaryRequest, options?: Configuration): Promise<Array<string>> {
+        return this.api.downloadBinary(param.binaryId,  options).toPromise();
+    }
+
+    /**
      * Get program DSL definition
      * @param param the request object
      */
@@ -345,6 +400,22 @@ export class ObjectProgramApi {
      */
     public getProgramDslContent(param: ProgramApiGetProgramDslContentRequest = {}, options?: Configuration): Promise<ProgramDslContent> {
         return this.api.getProgramDslContent( options).toPromise();
+    }
+
+    /**
+     * Get program metadata
+     * @param param the request object
+     */
+    public getProgramMetadataWithHttpInfo(param: ProgramApiGetProgramMetadataRequest = {}, options?: Configuration): Promise<HttpInfo<ProgramMetadata>> {
+        return this.api.getProgramMetadataWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get program metadata
+     * @param param the request object
+     */
+    public getProgramMetadata(param: ProgramApiGetProgramMetadataRequest = {}, options?: Configuration): Promise<ProgramMetadata> {
+        return this.api.getProgramMetadata( options).toPromise();
     }
 
     /**
@@ -420,7 +491,25 @@ export interface SatelliteApiGetSatelliteByIdRequest {
     satelliteId: string
 }
 
+export interface SatelliteApiGetSatelliteDeviceTypeRequest {
+    /**
+     * 
+     * @type string
+     * @memberof SatelliteApigetSatelliteDeviceType
+     */
+    satelliteId: string
+}
+
 export interface SatelliteApiGetSatellitesRequest {
+}
+
+export interface SatelliteApiSatelliteRegisterRequest {
+    /**
+     * 
+     * @type SatelliteRegisterDTO
+     * @memberof SatelliteApisatelliteRegister
+     */
+    satelliteRegisterDTO: SatelliteRegisterDTO
 }
 
 export class ObjectSatelliteApi {
@@ -495,6 +584,22 @@ export class ObjectSatelliteApi {
     }
 
     /**
+     * Get satellite device type id.
+     * @param param the request object
+     */
+    public getSatelliteDeviceTypeWithHttpInfo(param: SatelliteApiGetSatelliteDeviceTypeRequest, options?: Configuration): Promise<HttpInfo<SatelliteDeviceTypeId>> {
+        return this.api.getSatelliteDeviceTypeWithHttpInfo(param.satelliteId,  options).toPromise();
+    }
+
+    /**
+     * Get satellite device type id.
+     * @param param the request object
+     */
+    public getSatelliteDeviceType(param: SatelliteApiGetSatelliteDeviceTypeRequest, options?: Configuration): Promise<SatelliteDeviceTypeId> {
+        return this.api.getSatelliteDeviceType(param.satelliteId,  options).toPromise();
+    }
+
+    /**
      * Get satellites
      * @param param the request object
      */
@@ -508,6 +613,22 @@ export class ObjectSatelliteApi {
      */
     public getSatellites(param: SatelliteApiGetSatellitesRequest = {}, options?: Configuration): Promise<Array<SatelliteMetadata>> {
         return this.api.getSatellites( options).toPromise();
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param param the request object
+     */
+    public satelliteRegisterWithHttpInfo(param: SatelliteApiSatelliteRegisterRequest, options?: Configuration): Promise<HttpInfo<SatelliteRegisterResponseDTO>> {
+        return this.api.satelliteRegisterWithHttpInfo(param.satelliteRegisterDTO,  options).toPromise();
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param param the request object
+     */
+    public satelliteRegister(param: SatelliteApiSatelliteRegisterRequest, options?: Configuration): Promise<SatelliteRegisterResponseDTO> {
+        return this.api.satelliteRegister(param.satelliteRegisterDTO,  options).toPromise();
     }
 
 }
