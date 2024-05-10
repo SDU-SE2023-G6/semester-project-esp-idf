@@ -88,7 +88,7 @@ const overrideCompile = async () => {
 
 <style scoped>
 .wrapper {
-    height: calc(100% - 5em);
+    height: calc(100vh - 4em);
     display: flex;
     flex-direction: column;
 }

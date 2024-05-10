@@ -3,17 +3,57 @@
     <div class="configuration-step">
       <h2>Intitial firmware flashing</h2>
       <p>To a new satellite, first connect a new ESP32 with USB to your computer, and install the intitial mesh frimware by clicking the "Initialize" button below, then select your device.</p>
-      <ABtn id="initialize">Initialize</ABtn>
+      <ABtn class="button" id="initialize">Initialize</ABtn>
       <esp-web-install-button id="esp-web-install-button" 
           :manifest="`esp-web-install/manifest.json`"
           ></esp-web-install-button>
     </div>
     <br>
-    <div class="configuration-step">
+    <!--<div class="configuration-step">
         <h2>Configuration and connection to the network</h2>
         <p>To a new satellite, first connect a new ESP32 with USB to your computer, and install the intitial mesh frimware by clicking the "Initialize" button below, then select your device.</p>
-        <ABtn id="connect" @click="handleConnectButtonClick">Configure and connect</ABtn>
-    </div>
+        <ABtn class="button" id="connect" @click="handleConnectButtonClick">Configure and connect</ABtn>
+    </div>-->
+
+
+
+
+    <ADialog
+      v-model="isDialogShown"
+      title="Fill satellite metadata"
+    >
+      <div class="a-card-body">
+        <AInput
+            type="text"
+            placeholder="Enter satellite name"
+            required
+            v-model="selectedName"
+            class="input"
+        />
+
+        <Dropdown v-model="selectedClass" :options="classes"  placeholder="Select a class" />
+
+        <Dropdown v-model="selectedArea" :options="areas" optionLabel="name" placeholder="Select an area" />
+        
+
+        <div class="buttons">
+            <ABtn
+                color="success"
+                @click="saveMetadata()"
+            >
+                Confirm
+            </ABtn>
+            <ABtn
+                variant="light"
+                color="danger"
+                @click="isDialogShown = false"
+            >
+                Cancel
+            </ABtn>
+        </div>
+        
+      </div>
+    </ADialog>
 
 </template>
 
@@ -45,6 +85,22 @@
 </script>
 
 <script setup>
+import { ref } from 'vue';
+import Dropdown from 'primevue/dropdown';
+import { useDataStore } from '@/stores/dataStore';
+
+const dataStore = useDataStore();
+
+const selectedClass = ref();
+const selectedArea = ref();
+const selectedName = ref();
+
+const areas = dataStore.getAreas;
+const classes = dataStore.getClasses;
+
+const isDialogShown = ref(true);
+
+const pendingDevices = dataStore.getDevidesPendingMetadata;
 
 let connectedPort = null;
 
@@ -93,9 +149,32 @@ async function handleConnectButtonClick() {
         });
 }
 
+const saveMetadata = () => {
+    console.log("Save metadata");
+    console.log(selectedName.value, selectedClass.value, selectedArea.value);
+
+
+};
+
 </script>
 
 <style scoped>
+.a-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    max-width: 500px;
+}
+.a-card-body .input {
+    background-color: #09090b;
+    border-radius: 8px;
+}
+
+.buttons {
+    display: flex;
+    gap: 0.5em;
+}
+
 .configuration-step{
     width: 500px;
 }

@@ -115,6 +115,13 @@ const filters = ref({
 
   <div v-if="area" class="body-wrapper">
     <h1>{{ area.name }}</h1> 
+
+    <ABtn class="button">
+      <a href="/new-device">
+        <i class="i-bx-plus-circle" />
+      Add New Device
+      </a>
+    </ABtn>
   
     <div class="flex menu-wrapper">
       <div :class="{ visible: selectedSatellites.length > 0 }" class="area-menu">
@@ -204,9 +211,13 @@ const filters = ref({
     background: var(--color-background-soft) !important;
   }
 
+  .button a{
+    color: white;
+  }
+
   .menu-wrapper {
     justify-content: space-between;
-    margin-bottom: 1em;
+    margin: 1em 0;
     position: relative
   }
 

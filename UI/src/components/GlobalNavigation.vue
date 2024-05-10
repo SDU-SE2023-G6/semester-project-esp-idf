@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faHouse, faCode, faFile, faMountainCity, faChartLine,faMicrochip } from '@fortawesome/free-solid-svg-icons'
+import { faHouse, faCode, faFile, faMountainCity, faChartLine,faMicrochip, faPlus } from '@fortawesome/free-solid-svg-icons'
 
 
 const route = useRoute();
@@ -26,14 +26,18 @@ const isActive = (path: string) => {
                 <FontAwesomeIcon :icon="faMountainCity" /> 
                 <span>Areas</span>
             </router-link>
-            <router-link to="/editor">
-                <FontAwesomeIcon :icon="faCode" /> 
-                <span>DSL Editor</span>
-            </router-link>
             <router-link to="/data-monitoring">
                 <FontAwesomeIcon :icon="faChartLine" />
                 <span>Data Monitoring</span>
             </router-link>
+            <router-link to="/editor">
+                <FontAwesomeIcon :icon="faCode" /> 
+                <span>DSL Editor</span>
+            </router-link>
+            <a href="/new-device">
+                <FontAwesomeIcon :icon="faPlus" />
+                <span>New Device</span>
+            </a>
         </nav>
     </div>
 </template>
