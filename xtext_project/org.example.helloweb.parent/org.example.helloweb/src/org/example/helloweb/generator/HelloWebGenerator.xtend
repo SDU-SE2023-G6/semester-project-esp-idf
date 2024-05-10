@@ -75,7 +75,7 @@ class HelloWebGenerator extends AbstractGenerator {
 	#define «sensor.name.toUpperCase»_SENSOR_H
 	#include <stdio.h>
 	#include "shared_snem_library.h"
-	#include "«sensor.reader»_sensor_reader.h"
+	#include "«sensor.reader»_reader.h"
 	
 	extern Sensor «sensor.name»_sensor;
 
@@ -151,10 +151,37 @@ class HelloWebGenerator extends AbstractGenerator {
 		#endif /* «deviceType.name.toUpperCase»_DEVICE_TYPE_H */
 	'''
 
+	val buildFile = '''
+	CC = gcc
+	CFLAGS = -Wall -Wextra -fPIC
+	LDFLAGS = -shared
+	SRC_DIR = .
+	BUILD_DIR = build
+	SRC = $(wildcard $(SRC_DIR)/*.c)
+	OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC))
+	INC = -I.
+
+	.PHONY: all clean
+
+	all: $(BUILD_DIR)/«deviceType.name»_device.so
+
+	$(BUILD_DIR)/«deviceType.name»_device.so: $(OBJ)
+		$(CC) $(LDFLAGS) -o $@ $^
+
+	$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+		@mkdir -p $(BUILD_DIR)
+		$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+	clean:
+		rm -rf $(BUILD_DIR)
+	'''
+
 	
     // Write the device type configuration to a C file
     fsa.generateFile(deviceType.name + "_device_type.c", deviceTypeCode)
     fsa.generateFile(deviceType.name + "_device_type.h", headerFile)
+	fsa.generateFile(deviceType.name + "_build.mk", buildFile)
+
 	
     }
 		
@@ -386,7 +413,7 @@ class HelloWebGenerator extends AbstractGenerator {
         // Initialize JSON object
         var json = '''
         {
-            "DeviceTypes": [
+            "deviceTypes": [
                 «FOR deviceType : deviceTypes»
                 {
                     "name": "«deviceType.name»",
@@ -403,7 +430,7 @@ class HelloWebGenerator extends AbstractGenerator {
                 }«IF deviceType != deviceTypes.last»,«ENDIF»
                 «ENDFOR»
             ],
-            "Sensors": [
+            "sensors": [
                 «FOR sensor : sensors»
                 {
                     "name": "«sensor.name»",

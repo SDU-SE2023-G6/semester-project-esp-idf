@@ -3,12 +3,14 @@ AreaApi.md
 DataPointsApi.md
 DeviceTypeApi.md
 LogsApi.md
+ProgramApi.md
 README.md
 SatelliteApi.md
 apis/AreaApi.ts
 apis/DataPointsApi.ts
 apis/DeviceTypeApi.ts
 apis/LogsApi.ts
+apis/ProgramApi.ts
 apis/SatelliteApi.ts
 apis/baseapi.ts
 apis/exception.ts
@@ -26,6 +28,9 @@ models/ErrorResponse.ts
 models/LogMetadata.ts
 models/LogType.ts
 models/ObjectSerializer.ts
+models/ProgramDslContent.ts
+models/ProgramStatus.ts
+models/ProgramStatusProjection.ts
 models/SatelliteMetadata.ts
 models/SatelliteStatus.ts
 models/all.ts

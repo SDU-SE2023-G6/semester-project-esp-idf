@@ -21,6 +21,7 @@ services:
       - SPRING_MONGODB_DATABASE=snemdb
       - SPRING_MONGODB_HOST=mongodb_container
       - MQTT_HOST=mqtt_broker
+      - XTEXT_HOST=xtext_backend
     command: "java -jar /app.jar"
 
   xtext_backend:

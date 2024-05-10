@@ -7,6 +7,9 @@ import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
+import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramStatus } from '../models/ProgramStatus';
+import { ProgramStatusProjection } from '../models/ProgramStatusProjection';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 import { ObservableAreaApi } from './ObservableAPI';
@@ -233,6 +236,107 @@ export class PromiseLogsApi {
      */
     public getLogs(_options?: Configuration): Promise<Array<LogMetadata>> {
         const result = this.api.getLogs(_options);
+        return result.toPromise();
+    }
+
+
+}
+
+
+
+import { ObservableProgramApi } from './ObservableAPI';
+
+import { ProgramApiRequestFactory, ProgramApiResponseProcessor} from "../apis/ProgramApi";
+export class PromiseProgramApi {
+    private api: ObservableProgramApi
+
+    public constructor(
+        configuration: Configuration,
+        requestFactory?: ProgramApiRequestFactory,
+        responseProcessor?: ProgramApiResponseProcessor
+    ) {
+        this.api = new ObservableProgramApi(configuration, requestFactory, responseProcessor);
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public compileProgramWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ProgramStatusProjection>> {
+        const result = this.api.compileProgramWithHttpInfo(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public compileProgram(_options?: Configuration): Promise<ProgramStatusProjection> {
+        const result = this.api.compileProgram(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Continue compilation despite warnings
+     */
+    public compileProgramContinueDestructivelyWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ProgramStatusProjection>> {
+        const result = this.api.compileProgramContinueDestructivelyWithHttpInfo(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Continue compilation despite warnings
+     */
+    public compileProgramContinueDestructively(_options?: Configuration): Promise<ProgramStatusProjection> {
+        const result = this.api.compileProgramContinueDestructively(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public getProgramDslContentWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ProgramDslContent>> {
+        const result = this.api.getProgramDslContentWithHttpInfo(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get program DSL definition
+     */
+    public getProgramDslContent(_options?: Configuration): Promise<ProgramDslContent> {
+        const result = this.api.getProgramDslContent(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get program status
+     */
+    public getProgramStatusWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ProgramStatusProjection>> {
+        const result = this.api.getProgramStatusWithHttpInfo(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get program status
+     */
+    public getProgramStatus(_options?: Configuration): Promise<ProgramStatusProjection> {
+        const result = this.api.getProgramStatus(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Update program DSL definition
+     * @param programDslContent 
+     */
+    public saveProgramDslContentWithHttpInfo(programDslContent: ProgramDslContent, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.saveProgramDslContentWithHttpInfo(programDslContent, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Update program DSL definition
+     * @param programDslContent 
+     */
+    public saveProgramDslContent(programDslContent: ProgramDslContent, _options?: Configuration): Promise<void> {
+        const result = this.api.saveProgramDslContent(programDslContent, _options);
         return result.toPromise();
     }
 

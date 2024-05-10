@@ -1,14 +1,7 @@
 package dk.sdu.snem.core;
 
-import dk.sdu.snem.core.model.Area;
-import dk.sdu.snem.core.model.DeviceType;
-import dk.sdu.snem.core.model.Log;
-import dk.sdu.snem.core.model.Satellite;
-import dk.sdu.snem.core.repo.AreaRepository;
-import dk.sdu.snem.core.repo.DataPointRepository;
-import dk.sdu.snem.core.repo.DeviceTypeRepository;
-import dk.sdu.snem.core.repo.LogRepository;
-import dk.sdu.snem.core.repo.SatelliteRepository;
+import dk.sdu.snem.core.model.*;
+import dk.sdu.snem.core.repo.*;
 import dk.sdu.snem.exceptions.ConflictException;
 import dk.sdu.snem.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,20 +9,22 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.List;
-
+import jakarta.validation.constraints.NotNull;
 import org.bson.types.ObjectId;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 
 @RequestMapping("")
 @RestController
@@ -40,18 +35,23 @@ public class CoreController {
   private final DeviceTypeRepository deviceTypeRepo;
   private final DataPointRepository dataPointsRepo;
   private final LogRepository logsRepo;
+  private final ProgramRepository programRepo;
+  private final CompilerService compilerService;
 
   public CoreController(
       SatelliteRepository deviceRepo,
       AreaRepository areaRepo,
       DataPointRepository dataPointsRepo,
       LogRepository logsRepo,
-      DeviceTypeRepository deviceTypeRepo) {
+      DeviceTypeRepository deviceTypeRepo,
+      ProgramRepository programRepo, CompilerService compilerService) {
     this.satelliteRepo = deviceRepo;
     this.areaRepo = areaRepo;
     this.deviceTypeRepo = deviceTypeRepo;
     this.dataPointsRepo = dataPointsRepo;
     this.logsRepo = logsRepo;
+    this.programRepo = programRepo;
+    this.compilerService = compilerService;
   }
 
   @GetMapping("/areas")
@@ -347,6 +347,67 @@ public class CoreController {
 
     return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
             "attachment; filename=\"" + file.getName() + "\"").body(byteArray);
+  }
+
+  @PutMapping("/program")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation(summary = "Update program DSL definition")
+  public void saveProgramDslContent(@RequestBody ProgramDslContent dslCode) {
+    Program program = getFirstProgramOrCreate();
+    program.setDslCode(dslCode.dslText());
+    programRepo.save(program);
+  }
+
+  @GetMapping("/program")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation(summary = "Get program DSL definition")
+  public ProgramDslContent getProgramDslContent() {
+    return new ProgramDslContent(getFirstProgramOrCreate().getDslCode());
+  }
+  public record ProgramDslContent(String dslText) {};
+
+  @GetMapping("/program/status")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation(summary = "Get program status")
+  public ProgramStatusProjection getProgramStatus() {
+    var program = getFirstProgramOrCreate();
+    return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
+  }
+
+  @PostMapping("/program/compile")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation(summary = "Get program DSL definition")
+  public ProgramStatusProjection compileProgram() {
+    var program = getFirstProgramOrCreate();
+    compilerService.compileProgramSafely(program);
+    return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
+  }
+
+  @PostMapping("/program/compile/override")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation(summary = "Continue compilation despite warnings")
+  public ProgramStatusProjection compileProgramContinueDestructively() {
+    var program = getFirstProgramOrCreate();
+    compilerService.compileProgramDestructively(program);
+    return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
+  }
+  public record ProgramStatusProjection(String id, Program.ProgramStatus status) {};
+
+  @NotNull
+  private Program getFirstProgramOrCreate() {
+    // TODO: 5/9/24 Doesn't support more users or programs for now lmaooo
+    Optional<Program> programOpt = programRepo.findAll().stream().findFirst();
+    if (programOpt.isEmpty()) {
+      var program = new Program();
+      programRepo.save(program);
+      programOpt = Optional.of(program);
+    }
+    return programOpt.get();
   }
 
   public record SatelliteMetadata(

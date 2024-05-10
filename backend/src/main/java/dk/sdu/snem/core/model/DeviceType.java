@@ -15,7 +15,9 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @Data
 public class DeviceType {
   private @MongoId ObjectId id;
+  @Indexed(unique = true)
   private @NotBlank String name;
   @DocumentReference(lazy = true)
-  private @Indexed @Nullable Program program;
+  private @Nullable Binary binary;
 }
+

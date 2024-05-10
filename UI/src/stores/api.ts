@@ -14,4 +14,5 @@ export const DataPointsApi = new backendAPI.DataPointsApi(createAPIConfiguration
 export const DeviceTypeApi = new backendAPI.DeviceTypeApi(createAPIConfiguration());
 export const LogsApi = new backendAPI.LogsApi(createAPIConfiguration());
 export const SatelliteApi = new backendAPI.SatelliteApi(createAPIConfiguration());
+export const ProgramApi = new backendAPI.ProgramApi(createAPIConfiguration());
 

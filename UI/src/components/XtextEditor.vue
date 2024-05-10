@@ -36,7 +36,7 @@
     const dslText = editor.getValue();
     console.log(JSON.stringify(dslText));    
 
-    fetch('http://localhost:8081/saveDsl', {
+    fetch('http://localhost:8081/save-dsl', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
