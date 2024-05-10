@@ -22,7 +22,11 @@ services:
       - SPRING_MONGODB_HOST=mongodb_container
       - MQTT_HOST=mqtt_broker
       - XTEXT_HOST=xtext_backend
+      - COMPILER_BASE_PROJECT_PATH=/compiler/base
+      - COMPILER_BASE_PROJECT_INSERT_PATH=/lol
     command: "java -jar /app.jar"
+    volumes:
+      - ./ESP-OTA-MQTT:/compiler/base
 
   xtext_backend:
     build: ./xtext_project/org.example.helloweb.parent

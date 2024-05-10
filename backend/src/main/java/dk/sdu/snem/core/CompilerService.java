@@ -154,7 +154,7 @@ public class CompilerService {
       Program program,
     byte[] codeGeneratedZipFile, GeneratedCodeMetadata metadata, DeviceTypeMetadata target) {
 
-    DeviceType deviceType =
+    final DeviceType deviceType =
         deviceTypeRepo
             .findByName(target.getName())
             .orElseGet(
@@ -165,7 +165,7 @@ public class CompilerService {
                   return newDeviceType;
                 });
 
-    Binary binary = new Binary();
+    final Binary binary = new Binary();
     binary.setId(ObjectId.get());
     binary.setProgram(program);
     binary.setDeviceType(deviceType);
@@ -174,22 +174,36 @@ public class CompilerService {
     oldBinary.ifPresent(value -> binary.setVersion(value.getVersion() + 1));
 
 
+
+
     TargetFilesAndReaders targets = extractTargetFilesAndReaders(metadata, target);
     List<ReaderFunction> readers = readerRepo.findByNameIn(targets.readers());
     if (readers.size() != targets.readers().size()) {
       return CompletableFuture.failedFuture(new RuntimeException("Unable to find reader function"));
     }
 
+    File baseCompilerProjectFolderFile = new File(baseCompilerProjectFolder);
+    boolean baseProjectExists = baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
+    final String destinationFolder = compilerFolder+binary.getId().toHexString();
+    final String generatedCodeInsertFolder = baseProjectExists ? destinationFolder+baseCompilerProjectInsertLocation : destinationFolder;
+    if (baseProjectExists) {
+      try {
+        copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
+      } catch (IOException e) {
+        File folderToDelete = new File(destinationFolder);
+        FileSystemUtils.deleteRecursively(folderToDelete);
+        return CompletableFuture.failedFuture(e);
+      }
+    }
 
-    String destinationFolder = compilerFolder+binary.getId().toHexString();
-    int filesFound = extractFilesToFolder(codeGeneratedZipFile, targets.files.stream().toList(), destinationFolder);
+    int filesFound = extractFilesToFolder(codeGeneratedZipFile, targets.files.stream().toList(), generatedCodeInsertFolder);
     if (filesFound != targets.files().size()) {
       return CompletableFuture.failedFuture(new RuntimeException("Was unable to find all expected files"));
     }
     readers.forEach(x -> extractFilesToFolder(x.getSourceFiles(), List.of(
         x.getName()+"_reader.h",
         x.getName()+"_reader.c"
-    ), destinationFolder));
+    ), generatedCodeInsertFolder));
 
 
 
@@ -201,11 +215,14 @@ public class CompilerService {
       return CompletableFuture.failedFuture(e);
     }
 
+
     try {
       byte[] compiledBinary = Files.readAllBytes(Paths.get(destinationFolder+"/build/"+deviceType.getName()+"_device.so"));
       binary.setCompiledBinary(compiledBinary);
       binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
     } catch (IOException e) {
+      File folderToDelete = new File(destinationFolder);
+      FileSystemUtils.deleteRecursively(folderToDelete);
       return CompletableFuture.failedFuture(e);
     }
 
@@ -222,9 +239,15 @@ public class CompilerService {
   }
 
   public static void compile(String directory, String targetMakefile) throws IOException, InterruptedException {
-    ProcessBuilder processBuilder = new ProcessBuilder(List.of("make", "-f", targetMakefile));
+    ProcessBuilder processBuilder = new ProcessBuilder(List.of("./nix-build.sh"));
     processBuilder.directory(new File(directory));
-    Process process = processBuilder.start();
+    Process process;
+    try{
+      process =  processBuilder.start();
+    } catch (Exception e){
+      e.printStackTrace();
+      throw e;
+    }
 
     BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
     String line;
@@ -240,9 +263,27 @@ public class CompilerService {
     int exitCode = process.waitFor();
 
     if (exitCode != 0) {
-      System.out.println("C program compiled successfully!");
-    } else {
       throw new RuntimeException("Program failed unexpectedly");
+    }
+  }
+
+  private static void copyFolderAndContents(File source, File destination) throws IOException {
+    if (source.isDirectory()) {
+      if (!destination.exists()) {
+        destination.mkdirs();
+      }
+
+      String[] files = source.list();
+      if (files == null) {
+        return;
+      }
+      for (String file : files) {
+        File srcFile = new File(source, file);
+        File destFile = new File(destination, file);
+        copyFolderAndContents(srcFile, destFile);
+      }
+    } else {
+      Files.copy(source.toPath(), destination.toPath());
     }
   }
 

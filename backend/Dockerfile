@@ -1,4 +1,18 @@
 #
+# Nix dependencies stage
+#
+FROM nixos/nix:2.22.1 AS nixDependencies
+RUN nix-channel --add https://nixos.org/channels/nixos-23.11 nixpkgs && \
+    nix-channel --update && \
+    nix-env -iA nixpkgs.jdk21 && \
+    nix --experimental-features 'nix-command flakes' develop github:mirrexagon/nixpkgs-esp-dev#esp32-idf -c ls
+
+
+#RUN mkdir /tmp/nix-store-closure
+#RUN echo "Output references (Runtime dependencies):" $(nix-store -qR result/)
+#RUN cp -R $(nix-store -qR result/) /tmp/nix-store-closure
+
+#
 # Dependencies stage
 #
 FROM maven:3.9.4-eclipse-temurin-21-alpine AS dependencies
@@ -18,25 +32,15 @@ WORKDIR /build/
 RUN mvn -B -Dmaven.test.skip clean package spring-boot:repackage
 
 #
-# Build Tools stage
-#
-FROM alpine:latest AS build-tools
-RUN apk add --no-cache gcc make
-
-#
 # Runtime 
 #
-FROM eclipse-temurin:21-jre-alpine
+FROM nixos/nix:2.22.1
 COPY --from=builder /build/target/*.jar /app.jar
-RUN apk add --no-cache build-base
+COPY --from=nixDependencies /nix /nix
 
-ARG buildVersion
-ENV APP_BUILD_VERSION $buildVersion
 ENV JAVA_TOOL_OPTIONS --enable-preview
 EXPOSE 8080
 EXPOSE 80
 
-COPY --from=build-tools /usr/bin/gcc /usr/bin/gcc
-COPY --from=build-tools /usr/bin/make /usr/bin/make
 
 CMD ["java", "-jar", "/app.jar"]
