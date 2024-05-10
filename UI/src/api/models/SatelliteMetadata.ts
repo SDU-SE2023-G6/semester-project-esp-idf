@@ -17,6 +17,7 @@ export class SatelliteMetadata {
     'areaId'?: string;
     'deviceTypeId'?: string;
     'id'?: string;
+    'macAddress'?: string;
     'name'?: string;
     'status'?: SatelliteStatus;
 
@@ -38,6 +39,12 @@ export class SatelliteMetadata {
         {
             "name": "id",
             "baseName": "id",
+            "type": "string",
+            "format": ""
+        },
+        {
+            "name": "macAddress",
+            "baseName": "macAddress",
             "type": "string",
             "format": ""
         },

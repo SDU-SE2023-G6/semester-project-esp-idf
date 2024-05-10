@@ -47,7 +47,8 @@ async function SatelliteMetadataToSatellite(satelliteMetadata: SatelliteMetadata
     name: satelliteMetadata.name,
     area: satelliteMetadata.areaId,
     type: satelliteMetadata.deviceTypeId ? await DeviceTypeMetadataToSatelliteType(await DeviceTypeApi.getDeviceTypeById(satelliteMetadata.deviceTypeId)) : undefined,
-    status: satelliteMetadata.status
+    status: satelliteMetadata.status,
+    macAddress: satelliteMetadata.macAddress
   };
 }
 

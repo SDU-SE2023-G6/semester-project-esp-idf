@@ -40,7 +40,7 @@
             color="danger"
             @click="isDialogShown = false"
           >
-            Close
+            Cancel
           </ABtn>
         </div>
         
@@ -54,7 +54,8 @@ import HomeSatellite from '@/components/HomeSatellite.vue';
 import {useDataStore} from '@/stores/dataStore';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faTrash, faPencil, faList } from '@fortawesome/free-solid-svg-icons'
-import { defineProps, ref } from 'vue';
+import { defineProps, defineEmits, ref } from 'vue';
+import type { Satellite } from '@/types/Satellite';
 
 const dataStore = useDataStore();
 
@@ -64,27 +65,42 @@ interface Props {
   details: Boolean;
 }
 
-const props = defineProps<Props>();
+interface Emit {
+  (event: 'UpdatedArea'): void;
+}
 
-const satellites = dataStore.getSatellitesByArea(props.area.id);
+const props = defineProps<Props>();
+const emit = defineEmits<Emit>();
+
+let satellites = [] as Satellite[];
+
+async function fetchSatellites() {
+  satellites = await dataStore.getSatellitesByArea(props.area.id);
+}
+
+setTimeout(() => {
+  fetchSatellites();
+}, 1000);
 
 const isDialogShown = ref(false)
 const tempAreaName = ref(props.area.name);
 
 
-const removeArea = () => {
+const removeArea = async () => {
   if(!confirm("are you sure you want to delete this area?")) return
-  dataStore.removeArea(props.area)
+  await dataStore.deleteArea(props.area);
+  emit('UpdatedArea');
 }
 
-const editArea = (area: Area) => {
+const editArea = async (area: Area) => {
   console.log("area", area)
   if(area.name === "") {
     return
   }
   area.name = tempAreaName.value;
-  dataStore.editArea(area) 
+  await dataStore.editArea(area) 
   isDialogShown.value = false;
+  emit('UpdatedArea');
 }
 </script>
 
