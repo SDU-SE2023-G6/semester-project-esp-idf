@@ -18,6 +18,7 @@ import java.util.List;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -443,15 +444,23 @@ public class CoreController {
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
 
-  @GetMapping("/program/binary/{binaryId}")
+  @GetMapping("/program/binary/{deviceMac}")
   @Tag(name = "Program")
   @ResponseBody
   @Operation
-  public ResponseEntity<byte[]> downloadBinary(@PathVariable String binaryId) {
-    Binary binary = binaryRepo.findById(new ObjectId(binaryId)).orElseThrow(NotFoundException::new);
+  public ResponseEntity<byte[]> downloadBinary(@PathVariable String deviceMac) {
+    Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(deviceMac);
+    DeviceType currentDeviceType = currentSatellite.getDeviceType();
+      assert currentDeviceType != null;
+      Binary currentBinary = currentDeviceType.getBinary();
+
+      assert currentBinary != null;
+      String binaryId = String.valueOf(currentBinary.getId());
+
     return ResponseEntity.ok()
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
-        .body(binary.getCompiledBinary());
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
+            .body(currentBinary.getCompiledBinary());
   }
 
   @NotNull
@@ -501,4 +510,6 @@ public class CoreController {
   public record SatelliteRegisterResponseDTO(boolean success) {}
 
   public record SatelliteRegisterDTO(String deviceName, String deviceMACAddress) {}
+
+  public record BinaryMetadata(String hash) {}
 }

@@ -11,24 +11,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import dk.sdu.snem.core.model.Log;
+import dk.sdu.snem.core.model.*;
 import dk.sdu.snem.core.model.Log.LogType;
-import dk.sdu.snem.core.model.Program;
-import dk.sdu.snem.core.repo.ProgramRepository;
+import dk.sdu.snem.core.repo.*;
+
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dk.sdu.snem.core.CoreController.AreaMetadata;
-import dk.sdu.snem.core.model.Area;
-import dk.sdu.snem.core.model.DataPoint;
-import dk.sdu.snem.core.model.DeviceType;
-import dk.sdu.snem.core.model.Satellite;
 import dk.sdu.snem.core.model.Satellite.SatelliteStatus;
-import dk.sdu.snem.core.repo.AreaRepository;
-import dk.sdu.snem.core.repo.DataPointRepository;
-import dk.sdu.snem.core.repo.DeviceTypeRepository;
-import dk.sdu.snem.core.repo.LogRepository;
-import dk.sdu.snem.core.repo.SatelliteRepository;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -61,6 +53,8 @@ class CoreControllerTest {
   @Autowired
   private DataPointRepository dataPointRepo;
   @Autowired
+  private BinaryRepository binaryRepo;
+  @Autowired
   private ObjectMapper objectMapper;
   @Autowired
   private ProgramRepository programRepo;
@@ -75,6 +69,7 @@ class CoreControllerTest {
     logRepo.deleteAll();;
     dataPointRepo.deleteAll();
     programRepo.deleteAll();
+    binaryRepo.deleteAll();
   }
 
   @AfterEach
@@ -85,6 +80,7 @@ class CoreControllerTest {
     logRepo.deleteAll();;
     dataPointRepo.deleteAll();
     programRepo.deleteAll();
+    binaryRepo.deleteAll();
   }
 
   @Nested
@@ -274,6 +270,91 @@ class CoreControllerTest {
               .contentType(MediaType.APPLICATION_JSON))
           .andExpect(status().isConflict());
     }
+
+  }
+
+  @Nested
+  class GetBinaryTests {
+    @Test
+    void getBinarySuccessfully() throws Exception {
+      // Arrange
+
+      DeviceType deviceType = new DeviceType();
+      deviceType.setName("Device Type 1");
+
+      Binary newBinary = createAndSaveBinary("1234", new byte[]{1, 2, 3, 4}, deviceType);
+
+
+      deviceType.setBinary(newBinary);
+      deviceType = deviceTypeRepo.save(deviceType);
+
+      Satellite satellite1 = new Satellite();
+      satellite1.setName("Satellite 1");
+      satellite1.setDeviceType(deviceType);
+      satellite1.setDeviceMACAddress(ObjectId.get().toHexString());
+      satelliteRepo.save(satellite1);
+
+
+      // Act
+      MvcResult result = mockMvc.perform(get("/program/binary/{deviceMac}", satellite1.getDeviceMACAddress())
+                      .contentType(MediaType.APPLICATION_OCTET_STREAM))
+              .andExpect(status().isOk())
+              .andReturn();
+
+      // Assert
+      List<Binary> binaries = binaryRepo.findAll();
+      assertThat(binaries.size()).isEqualTo(1);
+      assertThat(binaries.get(0).getBinaryHash()).isEqualTo("1234");
+
+      // Verify returned binary
+      byte[] responseBytes = result.getResponse().getContentAsByteArray();
+      assertThat(responseBytes).isEqualTo(new byte[]{1, 2, 3, 4});
+    }
+
+
+    @Test
+    void addingAreaWithEmptyNameFails() throws Exception {
+      // Arrange
+      AreaMetadata newArea = new AreaMetadata(null, "");
+
+      // Act
+      mockMvc.perform(post("/area")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(newArea)))
+              .andExpect(status().isUnprocessableEntity()); // Expecting bad request due to empty name
+    }
+
+    @Test
+    void addingAreaWithExistingNameSucceeds() throws Exception {
+      // Arrange
+      AreaMetadata existingArea = new AreaMetadata(null, "Existing Area");
+      Area area = new Area();
+      area.setName(existingArea.name());
+      areaRepo.save(area);
+
+      AreaMetadata newArea = new AreaMetadata(null, existingArea.name());
+
+      // Act
+      MvcResult result = mockMvc.perform(post("/area")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(newArea)))
+              .andExpect(status().isOk())
+              .andReturn();
+
+      // Assert
+      List<Area> areas = areaRepo.findAll();
+      assertThat(areas.size()).isEqualTo(2); // Expecting 2 areas with the same name
+      assertThat(areas.stream().map(Area::getName).collect(Collectors.toList()))
+              .contains(existingArea.name());
+
+      // Verify returned AreaMetadata
+      String responseContent = result.getResponse().getContentAsString();
+      AreaMetadata returnedArea = objectMapper.readValue(responseContent, AreaMetadata.class);
+      assertThat(returnedArea.name()).isEqualTo(existingArea.name());
+      assertThat(returnedArea.id()).isNotNull();
+      assertThat(returnedArea.id()).isNotEqualTo(existingArea.id());
+    }
+
 
   }
 
@@ -975,4 +1056,15 @@ class CoreControllerTest {
     return dataPointRepo.save(dataPoint);
   }
 
+  private Binary createAndSaveBinary(String hash, byte[] compiledBinary, DeviceType deviceType) {
+    Binary binary = new Binary();
+    binary.setId(ObjectId.get());
+    binary.setBinaryHash(hash);
+    binary.setCompiledBinary(compiledBinary);
+    binary.setDeviceType(deviceType);
+
+    Instant compilationTime = Instant.now();
+    binary.setCompilationTime(compilationTime);
+    return binaryRepo.save(binary);
+  }
 }
