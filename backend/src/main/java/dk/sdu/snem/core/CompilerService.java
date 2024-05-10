@@ -36,7 +36,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.commons.lang3.NotImplementedException;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -50,7 +53,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class CompilerService {
-
+  private static Logger log = LoggerFactory.getLogger(CompilerService.class);
   private final RestTemplate restTemplate;
   private final ProgramRepository programRepo;
   private final DeviceTypeRepository deviceTypeRepo;
@@ -67,6 +70,7 @@ public class CompilerService {
    */
   private final String baseCompilerProjectInsertLocation;
   private final String xtextHost;
+  private final CompilerService asyncSelf;
 
   public CompilerService(
       RestTemplate restTemplate,
@@ -77,8 +81,8 @@ public class CompilerService {
       @Value("${compiler.folder}") String compilerFolder,
       @Value("${compiler.project.location}") String baseCompilerProjectFolder,
       @Value("${compiler.project.insert}") String baseCompilerProjectInsertLocation,
-      @Value("${compiler.xtext.host}") String xtextHost
-      ) {
+      @Value("${compiler.xtext.host}") String xtextHost,
+      @Lazy CompilerService asyncSelf) {
     this.restTemplate = restTemplate;
     this.programRepo = programRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -89,6 +93,7 @@ public class CompilerService {
     this.baseCompilerProjectFolder = baseCompilerProjectFolder;
     this.baseCompilerProjectInsertLocation = baseCompilerProjectInsertLocation;
     this.xtextHost = xtextHost;
+    this.asyncSelf = asyncSelf;
   }
 
   @Async
@@ -126,7 +131,7 @@ public class CompilerService {
     programRepo.save(program);
     List<CompletableFuture<Void>> compileFutures =
         metadata.getDeviceTypes().stream()
-            .map(x -> compileBinary(program, generatedZipFile, metadata, x))
+            .map(x -> asyncSelf.compileBinary(program, generatedZipFile, metadata, x))
             .toList();
 
     try {
@@ -150,10 +155,11 @@ public class CompilerService {
     throw new NotImplementedException("Override not yet implemented.");
   }
 
-  private CompletableFuture<Void> compileBinary(
+  @Async
+  public CompletableFuture<Void> compileBinary(
       Program program,
     byte[] codeGeneratedZipFile, GeneratedCodeMetadata metadata, DeviceTypeMetadata target) {
-
+    log.info("Starting compile");
     final DeviceType deviceType =
         deviceTypeRepo
             .findByName(target.getName())
@@ -208,7 +214,7 @@ public class CompilerService {
 
 
     try {
-      compile(destinationFolder, deviceType.getName()+"_build.mk");
+      compile(destinationFolder);
     } catch (IOException | InterruptedException | RuntimeException e) {
       File folderToDelete = new File(destinationFolder);
       FileSystemUtils.deleteRecursively(folderToDelete);
@@ -217,7 +223,7 @@ public class CompilerService {
 
 
     try {
-      byte[] compiledBinary = Files.readAllBytes(Paths.get(destinationFolder+"/build/"+deviceType.getName()+"_device.so"));
+      byte[] compiledBinary = Files.readAllBytes(Paths.get(destinationFolder+"/ESP-OTA-MQTT.bin"));
       binary.setCompiledBinary(compiledBinary);
       binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
     } catch (IOException e) {
@@ -238,7 +244,7 @@ public class CompilerService {
     return CompletableFuture.completedFuture(null);
   }
 
-  public static void compile(String directory, String targetMakefile) throws IOException, InterruptedException {
+  public static void compile(String directory) throws IOException, InterruptedException {
     ProcessBuilder processBuilder = new ProcessBuilder(List.of("./nix-build.sh"));
     processBuilder.directory(new File(directory));
     Process process;
@@ -252,12 +258,12 @@ public class CompilerService {
     BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
     String line;
     while ((line = outputReader.readLine()) != null) {
-      System.out.println(line);
+      log.info(line);
     }
 
     BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
     while ((line = errorReader.readLine()) != null) {
-      System.err.println(line);
+      log.info(line);
     }
 
     int exitCode = process.waitFor();
