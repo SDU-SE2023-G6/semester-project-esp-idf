@@ -87,6 +87,7 @@ let body:.SatelliteApiEditSatelliteRequest = {
     areaId: "areaId_example",
     deviceTypeId: "deviceTypeId_example",
     id: "id_example",
+    macAddress: "macAddress_example",
     name: "name_example",
     status: "ONLINE",
   },

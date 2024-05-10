@@ -135,6 +135,7 @@ public class CoreController {
   private static SatelliteMetadata mapSatelliteMetadata(Satellite satellite) {
     return new SatelliteMetadata(
         satellite.getId().toHexString(),
+        satellite.getDeviceMACAddress(),
         satellite.getName(),
         satellite.getStatus(),
         satellite.getArea() == null
@@ -476,6 +477,7 @@ public class CoreController {
 
   public record SatelliteMetadata(
       String id,
+      String macAddress,
       String name,
       Satellite.SatelliteStatus status,
       String areaId,

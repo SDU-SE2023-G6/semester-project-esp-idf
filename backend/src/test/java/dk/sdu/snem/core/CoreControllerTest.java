@@ -452,6 +452,7 @@ class CoreControllerTest {
       deviceType = deviceTypeRepo.save(deviceType);
 
       Satellite satellite = new Satellite();
+      satellite.setDeviceMACAddress(ObjectId.get().toHexString());
       satellite.setName("Test Satellite");
       satellite.setArea(area);
       satellite.setDeviceType(deviceType);
@@ -469,6 +470,7 @@ class CoreControllerTest {
       SatelliteMetadata
           returnedSatellite = objectMapper.readValue(responseContent, SatelliteMetadata.class);
       assertThat(returnedSatellite.name()).isEqualTo("Test Satellite");
+      assertThat(returnedSatellite.macAddress()).isEqualTo(satellite.getDeviceMACAddress());
       assertThat(returnedSatellite.areaId()).isEqualTo(area.getId().toHexString());
       assert returnedSatellite.deviceTypeId() != null;
       assertThat(returnedSatellite.deviceTypeId()).isEqualTo(deviceType.getId().toHexString());
@@ -506,6 +508,7 @@ class CoreControllerTest {
 
       SatelliteMetadata updatedMetadata = new SatelliteMetadata(
           satellite.getId().toHexString(),
+          satellite.getDeviceMACAddress(),
           "Updated Satellite",
           SatelliteStatus.PENDING_METADATA,
           area.getId().toHexString(),
@@ -548,6 +551,7 @@ class CoreControllerTest {
 
       SatelliteMetadata updatedMetadata = new SatelliteMetadata(
           satellite.getId().toHexString(),
+          satellite.getDeviceMACAddress(),
           "Updated Satellite",
           satellite.getStatus(),
           null, // Unset area
@@ -573,6 +577,7 @@ class CoreControllerTest {
     void editSatelliteWithInvalidId() throws Exception {
       // Arrange
       SatelliteMetadata invalidMetadata = new SatelliteMetadata(
+          ObjectId.get().toHexString(),
           ObjectId.get().toHexString(),
           "Updated Satellite",
           SatelliteStatus.PENDING_METADATA,

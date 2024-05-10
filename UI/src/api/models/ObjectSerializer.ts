@@ -25,7 +25,7 @@ import { ProgramMetadata       } from '../models/ProgramMetadata';
 import { ProgramStatus } from '../models/ProgramStatus';
 import { ProgramStatusProjection   } from '../models/ProgramStatusProjection';
 import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
-import { SatelliteMetadata      } from '../models/SatelliteMetadata';
+import { SatelliteMetadata       } from '../models/SatelliteMetadata';
 import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
 import { SatelliteRegisterResponseDTO } from '../models/SatelliteRegisterResponseDTO';
 import { SatelliteStatus } from '../models/SatelliteStatus';
