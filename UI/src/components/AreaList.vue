@@ -2,9 +2,20 @@
 import { ref } from 'vue'
 import { useDataStore } from '@/stores/dataStore';
 import HomeArea from './HomeArea.vue';
+import type {Area} from '@/types/Area';
 
 const dataStore = useDataStore();
-const areas = dataStore.areas;
+
+let areas: Area[] = [];
+
+async function fetchAreas() {
+  areas = await dataStore.getAreas();
+}
+
+setTimeout(() => {
+  fetchAreas();
+}, 1000);
+
 
 const isDialogShown = ref(false)
 
@@ -17,14 +28,13 @@ const isEditMode = ref(false)
 
 const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
 
-  console.log("area", area)
   if(area.name === "") {
     return
   }
 
   dataStore.addArea({
       name: area.name,
-      id: 69
+      id: ''
   })
 
   isDialogShown.value = false;
@@ -46,8 +56,6 @@ const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
     <div class="flex area-wrapper">
       <HomeArea v-for="area in areas" :key="area.id" :area="area" :details="true"/>
     </div>
-
-    
 
 
     <ADialog

@@ -15,6 +15,19 @@
         <ABtn class="button" id="connect" @click="handleConnectButtonClick">Configure and connect</ABtn>
     </div>-->
 
+    <div>
+        <h2>Unregistered satellites</h2>
+        <div class="unregistered-wrapper">
+            <div v-for="device in pendingDevices" :key="device.id" class="configuration-step">
+            <p>{{device.mac}}</p>
+            <ABtn class="button" @click="isDialogShown = true">Fill metadata</ABtn>
+        </div>
+        </div>
+        
+    </div>    
+    
+
+
 
 
 
@@ -95,12 +108,16 @@ const selectedClass = ref();
 const selectedArea = ref();
 const selectedName = ref();
 
-const areas = dataStore.getAreas;
-const classes = dataStore.getClasses;
+const areas = dataStore.getAreas();
+const classes = dataStore.getSatelliteTypes();
 
-const isDialogShown = ref(true);
+const isDialogShown = ref(false);
 
-const pendingDevices = dataStore.getDevidesPendingMetadata;
+//let pendingDevices = dataStore.getDevidesPendingMetadata;
+
+let pendingDevices = [{mac: "64:33:4e:20:5e:13"}, {mac: "cc:7e:09:7e:1f:c6"}, {mac: "8a:db:fa:20:ca:74"}];
+
+console.log("pendingDevices", pendingDevices);
 
 let connectedPort = null;
 
@@ -159,6 +176,17 @@ const saveMetadata = () => {
 </script>
 
 <style scoped>
+.unregistered-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 1em;
+}
+.unregistered-wrapper > * {
+    text-align: center;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1em;
+}
 .a-card-body {
     display: flex;
     flex-direction: column;
