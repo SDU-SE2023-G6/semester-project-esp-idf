@@ -196,22 +196,21 @@ export class AreaApiRequestFactory extends BaseAPIRequestFactory {
      * Get all satellites in an area.
      * @param areaId 
      */
-    public async getSatellitesInArea(areaId: string, _options?: Configuration): Promise<RequestContext> {
+    public async getSatellitesInArea(areaId?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'areaId' is not null or undefined
-        if (areaId === null || areaId === undefined) {
-            throw new RequiredError("AreaApi", "getSatellitesInArea", "areaId");
-        }
 
 
         // Path Params
-        const localVarPath = '/area/{areaId}/satellites'
-            .replace('{' + 'areaId' + '}', encodeURIComponent(String(areaId)));
+        const localVarPath = '/area/satellites';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
         requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
+
+        // Query Params
+        if (areaId !== undefined) {
+            requestContext.setQueryParam("areaId", ObjectSerializer.serialize(areaId, "string", ""));
+        }
 
 
         

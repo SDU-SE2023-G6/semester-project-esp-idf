@@ -5,26 +5,21 @@ import dk.sdu.snem.core.repo.*;
 import dk.sdu.snem.exceptions.ConflictException;
 import dk.sdu.snem.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
 
 @RequestMapping("")
 @RestController
@@ -37,6 +32,7 @@ public class CoreController {
   private final LogRepository logsRepo;
   private final ProgramRepository programRepo;
   private final CompilerService compilerService;
+  private final BinaryRepository binaryRepo;
 
   public CoreController(
       SatelliteRepository deviceRepo,
@@ -44,7 +40,9 @@ public class CoreController {
       DataPointRepository dataPointsRepo,
       LogRepository logsRepo,
       DeviceTypeRepository deviceTypeRepo,
-      ProgramRepository programRepo, CompilerService compilerService) {
+      ProgramRepository programRepo,
+      CompilerService compilerService,
+      BinaryRepository binaryRepo) {
     this.satelliteRepo = deviceRepo;
     this.areaRepo = areaRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -52,6 +50,19 @@ public class CoreController {
     this.logsRepo = logsRepo;
     this.programRepo = programRepo;
     this.compilerService = compilerService;
+    this.binaryRepo = binaryRepo;
+  }
+
+  @NotNull
+  private static LogMetadata mapLogMetadata(Log log) {
+    return new LogMetadata(
+        log.getId().toHexString(),
+        log.getTimestamp(),
+        log.getMessage(),
+        (log.getSatellite() == null || log.getSatellite().getId() == null)
+            ? null
+            : log.getSatellite().getId().toHexString(),
+        log.getType());
   }
 
   @GetMapping("/areas")
@@ -106,30 +117,32 @@ public class CoreController {
     areaRepo.save(area);
   }
 
-  @GetMapping("/area/{areaId}/satellites")
+  @GetMapping("/area/satellites")
   @Tag(name = "Area")
   @ResponseBody
   @Operation(summary = "Get all satellites in an area.")
-  public List<SatelliteMetadata> getSatellitesInArea(@PathVariable String areaId) {
-    List<Satellite> satellites = satelliteRepo.findAllByArea_Id(new ObjectId(areaId));
+  public List<SatelliteMetadata> getSatellitesInArea(@RequestParam(required = false) @Nullable String areaId) {
+    List<Satellite> satellites =
+        areaId == null
+            ? satelliteRepo.findAllByAreaIsNull()
+            : satelliteRepo.findAllByArea_Id(new ObjectId(areaId));
     return satellites.stream()
-        .map(
-            satellite ->
-                new SatelliteMetadata(
-                    satellite.getId().toHexString(),
-                    satellite.getName(),
-                    satellite.getStatus(),
-                    satellite.getArea() == null
-                        ? null
-                        : new AreaMetadata(
-                            satellite.getArea().getId().toHexString(),
-                            satellite.getArea().getName()),
-                    satellite.getDeviceType() == null
-                        ? null
-                        : new DeviceTypeMetadata(
-                            satellite.getDeviceType().getId().toHexString(),
-                            satellite.getDeviceType().getName())))
+        .map(CoreController::mapSatelliteMetadata)
         .toList();
+  }
+
+  @NotNull
+  private static SatelliteMetadata mapSatelliteMetadata(Satellite satellite) {
+    return new SatelliteMetadata(
+        satellite.getId().toHexString(),
+        satellite.getName(),
+        satellite.getStatus(),
+        satellite.getArea() == null
+            ? null
+            : satellite.getArea().getId().toHexString(),
+        satellite.getDeviceType() == null
+            ? null
+            : satellite.getDeviceType().getId().toHexString());
   }
 
   @RequestMapping(
@@ -141,19 +154,7 @@ public class CoreController {
   @Operation(summary = "Get satellites")
   public List<SatelliteMetadata> getSatellites() {
     return satelliteRepo.findAll().stream()
-        .map(
-            x ->
-                new SatelliteMetadata(
-                    x.getId().toHexString(),
-                    x.getName(),
-                    x.getStatus(),
-                    x.getArea() == null
-                        ? null
-                        : new AreaMetadata(x.getId().toHexString(), x.getArea().getName()),
-                    x.getDeviceType() == null
-                        ? null
-                        : new DeviceTypeMetadata(
-                            x.getDeviceType().getId().toHexString(), x.getDeviceType().getName())))
+        .map(CoreController::mapSatelliteMetadata)
         .toList();
   }
 
@@ -164,19 +165,15 @@ public class CoreController {
   public SatelliteMetadata getSatelliteById(@PathVariable String satelliteId) {
     Satellite satellite =
         satelliteRepo.findById(new ObjectId(satelliteId)).orElseThrow(NotFoundException::new);
-    return new SatelliteMetadata(
-        satellite.getId().toHexString(),
-        satellite.getName(),
-        satellite.getStatus(),
-        satellite.getArea() == null
-            ? null
-            : new AreaMetadata(
-                satellite.getArea().getId().toHexString(), satellite.getArea().getName()),
-        satellite.getDeviceType() == null
-            ? null
-            : new DeviceTypeMetadata(
-                satellite.getDeviceType().getId().toHexString(),
-                satellite.getDeviceType().getName()));
+    return mapSatelliteMetadata(satellite);
+  }
+
+  @DeleteMapping("/satellite/{satelliteId}")
+  @Tag(name = "Satellite")
+  @ResponseBody
+  @Operation(summary = "Delete satellite by ID.")
+  public void deleteSatelliteById(@PathVariable String satelliteId) {
+    satelliteRepo.deleteById(new ObjectId(satelliteId));
   }
 
   @PutMapping("/satellite")
@@ -184,16 +181,16 @@ public class CoreController {
   @Operation(summary = "Edit satellite.")
   public void editSatellite(@RequestBody SatelliteMetadata satelliteMetadata) {
     final Area area =
-        satelliteMetadata.area() == null
+        satelliteMetadata.areaId() == null
             ? null
             : areaRepo
-                .findById(new ObjectId(satelliteMetadata.area().id()))
+                .findById(new ObjectId(satelliteMetadata.areaId()))
                 .orElseThrow(NotFoundException::new);
     final DeviceType type =
-        satelliteMetadata.deviceTypeMetadata() == null
+        satelliteMetadata.deviceTypeId() == null
             ? null
             : deviceTypeRepo
-                .findById(new ObjectId(satelliteMetadata.deviceTypeMetadata().id()))
+                .findById(new ObjectId(satelliteMetadata.deviceTypeId()))
                 .orElseThrow(NotFoundException::new);
 
     final Satellite satellite =
@@ -213,7 +210,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get all data points for a satellite.")
   public List<DataPointMetadata> getDataPointsBySatellite(@PathVariable String satelliteId) {
-    return dataPointsRepo.findAllBySatellite_Id(new ObjectId(satelliteId)).stream()
+    return dataPointsRepo.findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(satelliteId)).stream()
         .map(
             dataPoint ->
                 new DataPointMetadata(
@@ -226,38 +223,43 @@ public class CoreController {
         .toList();
   }
 
-  @GetMapping("/satellite/{satelliteId}/logs")
+  @GetMapping("/satellite/{satelliteId}/device-type-id")
   @Tag(name = "Satellite")
   @ResponseBody
-  @Operation(summary = "Get all logs for a satellite.")
-  public List<LogMetadata> getLogsBySatellite(@PathVariable String satelliteId) {
-    return logsRepo.findAllBySatellite_Id(new ObjectId(satelliteId)).stream()
-        .map(
-            log ->
-                new LogMetadata(
-                    log.getId().toHexString(),
-                    log.getTimestamp(),
-                    log.getMessage(),
-                    satelliteId,
-                    log.getType()))
-        .toList();
+  @Operation(summary = "Get satellite device type id.")
+  public SatelliteDeviceTypeId getSatelliteDeviceType(@PathVariable String satelliteId) {
+    DeviceType deviceType =
+        satelliteRepo
+            .findById(new ObjectId(satelliteId))
+            .orElseThrow(NotFoundException::new)
+            .getDeviceType();
+    if (deviceType == null) {
+      throw new NotFoundException("Satellite does not have a device type set.");
+    }
+    return new SatelliteDeviceTypeId(deviceType.getName());
   }
 
   @PostMapping("/satellite/register")
   @Tag(name = "Satellite")
   @ResponseBody
   @Operation(summary = "Register a ESP Satellite.")
-  @ApiResponses(value = {
-          @ApiResponse(responseCode = "200", description = "Device has already been registered."),
-          @ApiResponse(responseCode = "201", description = "Device has been registered for the first time."),
-          @ApiResponse(responseCode = "400", description = "Error creating satellite.")
-  })
-  public ResponseEntity<SatelliteRegisterResponseDTO> satelliteRegister(@RequestBody SatelliteRegisterDTO satellite) {
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Device has already been registered."),
+        @ApiResponse(
+            responseCode = "201",
+            description = "Device has been registered for the first time."),
+        @ApiResponse(responseCode = "400", description = "Error creating satellite.")
+      })
+  public ResponseEntity<SatelliteRegisterResponseDTO> satelliteRegister(
+      @RequestBody SatelliteRegisterDTO satellite) {
     try {
-      Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(satellite.deviceMACAddress());
+      Satellite currentSatellite =
+          satelliteRepo.findByDeviceMACAddress(satellite.deviceMACAddress());
 
       // Device exists
-      SatelliteRegisterResponseDTO satelliteRegisterResponseDTO = new SatelliteRegisterResponseDTO(true);
+      SatelliteRegisterResponseDTO satelliteRegisterResponseDTO =
+          new SatelliteRegisterResponseDTO(true);
 
       if (currentSatellite != null) {
         // TODO: Decide if there should be more actions for when a device registers itself.
@@ -271,12 +273,9 @@ public class CoreController {
     } catch (Exception e) {
       System.out.println("Failed to add Satellite.");
       return new ResponseEntity<>(
-              new SatelliteRegisterResponseDTO(false),
-              HttpStatusCode.valueOf(400)
-      );
+          new SatelliteRegisterResponseDTO(false), HttpStatusCode.valueOf(400));
     }
   }
-
 
   @GetMapping("/logs")
   @Tag(name = "Logs")
@@ -284,16 +283,39 @@ public class CoreController {
   @Operation(summary = "Get all Logs.")
   public List<LogMetadata> getLogs() {
     return logsRepo.findAll().stream()
+        .map(CoreController::mapLogMetadata)
+        .toList();
+  }
+
+  @GetMapping("/logs/system")
+  @Tag(name = "Logs")
+  @ResponseBody
+  @Operation(summary = "Get all logs for a given source. Expects null or no input to get system logs.")
+  public List<LogMetadata> getLogsBySatellite(@RequestParam(required = false) @Nullable String source) {
+    List<Log> logs = source == null
+        ? logsRepo.findAllBySatelliteIsNullOrderByTimestampDesc()
+        : logsRepo.findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(source));
+    return logs.stream()
         .map(
             log ->
                 new LogMetadata(
                     log.getId().toHexString(),
                     log.getTimestamp(),
                     log.getMessage(),
-                    (log.getSatellite() == null || log.getSatellite().getId() == null)
-                        ? null
-                        : log.getSatellite().getId().toHexString(),
+                    source,
                     log.getType()))
+        .toList();
+  }
+
+  @GetMapping("/logs/hours/{hoursAgo}")
+  @Tag(name = "Logs")
+  @ResponseBody
+  @Operation(summary = "Get logs since some amount of hours ago.")
+  public List<LogMetadata> getLogsFromSometimeAgo(@PathVariable Integer hoursAgo) {
+    return logsRepo
+        .findAllByTimestampAfterOrderByTimestampDesc(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
+        .stream()
+        .map(CoreController::mapLogMetadata)
         .toList();
   }
 
@@ -315,6 +337,25 @@ public class CoreController {
         .toList();
   }
 
+  @GetMapping("/data-points/hours/{hoursAgo}")
+  @Tag(name = "Data points")
+  @ResponseBody
+  @Operation(summary = "Get all Data points.")
+  public List<DataPointMetadata> getDataPointsFromSometimeAgo(@PathVariable Integer hoursAgo) {
+    return dataPointsRepo
+        .findAllByTimestampAfterOrderByTimestampDesc(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
+        .stream()
+        .map(
+            dataPoint ->
+                new DataPointMetadata(
+                    dataPoint.getId().toHexString(),
+                    dataPoint.getTimestamp(),
+                    dataPoint.getUnit(),
+                    dataPoint.getMeasurement(),
+                    dataPoint.getSatellite().getId().toHexString(),
+                    dataPoint.getSensor()))
+        .toList();
+  }
 
   @GetMapping("/device-types")
   @Tag(name = "Device Type")
@@ -322,58 +363,62 @@ public class CoreController {
   @Operation(summary = "Get device types of satellites.")
   public List<DeviceTypeMetadata> getDeviceTypes() {
     return deviceTypeRepo.findAll().stream()
-        .map(x -> new DeviceTypeMetadata(x.getId().toHexString(), x.getName()))
+        .map(CoreController::mapDeviceType)
         .toList();
   }
 
-  @GetMapping("/binary/{binaryName}")
-  @Tag(name = "Download a binary")
-  @ResponseBody
-  @Operation
-  public ResponseEntity<byte[]> downloadBinary() {
-    Path p = Paths.get("/home/henriko/Documents/courses/semester-project-esp-idf/_old/bins/hello-world.bin");
-    File file = new File(p.toUri());
-    if (!file.exists()) {
-      return new ResponseEntity<>(null, HttpStatusCode.valueOf(404));
-    }
-    byte[] byteArray = new byte[(int) file.length()];
-    try (FileInputStream inputStream = new FileInputStream(file)) {
-      inputStream.read(byteArray);
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"" + file.getName() + "\"").body(byteArray);
+  @NotNull
+  private static DeviceTypeMetadata mapDeviceType(DeviceType x) {
+    return new DeviceTypeMetadata(x.getId().toHexString(), x.getName(), x.isDeprecated());
   }
 
-  @PutMapping("/program")
+  @GetMapping("/device-type/{deviceTypeId}")
+  @Tag(name = "Device Type")
+  @ResponseBody
+  @Operation(summary = "Get device types of satellites by ID.")
+  public DeviceTypeMetadata getDeviceTypeById(@PathVariable String deviceTypeId) {
+    return mapDeviceType(deviceTypeRepo.findById(new ObjectId(deviceTypeId)).orElseThrow(NotFoundException::new));
+  }
+
+  @GetMapping("/program/metadata")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation(summary = "Get program metadata")
+  public ProgramMetadata getProgramMetadata() {
+    var program = getLatestProgramOrCreateOne();
+    return new ProgramMetadata(
+        program.getId().toHexString(),
+        program.getStatus(),
+        program.getCompiled(),
+        program.getIteration(),
+        program.getCreatedDate(),
+        program.getLastModifiedDate());
+  }
+
+  @PutMapping("/program/content")
   @Tag(name = "Program")
   @ResponseBody
   @Operation(summary = "Update program DSL definition")
   public void saveProgramDslContent(@RequestBody ProgramDslContent dslCode) {
-    Program program = getFirstProgramOrCreate();
+    Program program = getLatestProgramOrCreateOne();
     program.setDslCode(dslCode.dslText());
     programRepo.save(program);
   }
 
-  @GetMapping("/program")
+  @GetMapping("/program/content")
   @Tag(name = "Program")
   @ResponseBody
   @Operation(summary = "Get program DSL definition")
   public ProgramDslContent getProgramDslContent() {
-    return new ProgramDslContent(getFirstProgramOrCreate().getDslCode());
+    return new ProgramDslContent(getLatestProgramOrCreateOne().getDslCode());
   }
-  public record ProgramDslContent(String dslText) {};
 
   @GetMapping("/program/status")
   @Tag(name = "Program")
   @ResponseBody
   @Operation(summary = "Get program status")
   public ProgramStatusProjection getProgramStatus() {
-    var program = getFirstProgramOrCreate();
+    var program = getLatestProgramOrCreateOne();
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
 
@@ -382,7 +427,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get program DSL definition")
   public ProgramStatusProjection compileProgram() {
-    var program = getFirstProgramOrCreate();
+    var program = getLatestProgramOrCreateOne();
     compilerService.compileProgramSafely(program);
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
@@ -392,34 +437,53 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Continue compilation despite warnings")
   public ProgramStatusProjection compileProgramContinueDestructively() {
-    var program = getFirstProgramOrCreate();
+    var program = getLatestProgramOrCreateOne();
     compilerService.compileProgramDestructively(program);
     return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
   }
-  public record ProgramStatusProjection(String id, Program.ProgramStatus status) {};
+
+  @GetMapping("/program/binary/{binaryId}")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation
+  public ResponseEntity<byte[]> downloadBinary(@PathVariable String binaryId) {
+    Binary binary = binaryRepo.findById(new ObjectId(binaryId)).orElseThrow(NotFoundException::new);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
+        .body(binary.getCompiledBinary());
+  }
 
   @NotNull
-  private Program getFirstProgramOrCreate() {
-    // TODO: 5/9/24 Doesn't support more users or programs for now lmaooo
-    Optional<Program> programOpt = programRepo.findAll().stream().findFirst();
-    if (programOpt.isEmpty()) {
-      var program = new Program();
-      programRepo.save(program);
-      programOpt = Optional.of(program);
-    }
-    return programOpt.get();
+  private Program getLatestProgramOrCreateOne() {
+    return programRepo
+        .findFirstByOrderByCreatedDateDesc()
+        .orElseGet(() -> programRepo.save(new Program()));
   }
+
+  public record ProgramMetadata(
+      String id,
+      Program.ProgramStatus status,
+      @Nullable Instant compiled,
+      Long iteration,
+      Instant createdDate,
+      Instant lastModifiedDate) {}
+
+  public record SatelliteDeviceTypeId(String id) {}
+
+  public record ProgramDslContent(String dslText) {}
+
+  public record ProgramStatusProjection(String id, Program.ProgramStatus status) {}
 
   public record SatelliteMetadata(
       String id,
       String name,
       Satellite.SatelliteStatus status,
-      AreaMetadata area,
-      @Nullable DeviceTypeMetadata deviceTypeMetadata) {}
+      String areaId,
+      String deviceTypeId) {}
 
-  public record AreaMetadata(String id, String name) {}
+  public record AreaMetadata(String id, @NotBlank @Parameter(required = true) String name) {}
 
-  public record DeviceTypeMetadata(String id, String name) {}
+  public record DeviceTypeMetadata(String id, String name, boolean deprecated) {}
 
   public record DataPointMetadata(
       String id,
@@ -430,19 +494,9 @@ public class CoreController {
       String sensor) {}
 
   public record LogMetadata(
-      String id,
-      Instant timestamp,
-      String message,
-      @Nullable String satelliteId,
-      Log.LogType type) {}
+      String id, Instant timestamp, String message, @Nullable String source, Log.LogType type) {}
 
+  public record SatelliteRegisterResponseDTO(boolean success) {}
 
-  public record SatelliteRegisterResponseDTO(
-          boolean success
-  ) {}
-
-  public record SatelliteRegisterDTO(
-          String deviceName,
-          String deviceMACAddress) {}
+  public record SatelliteRegisterDTO(String deviceName, String deviceMACAddress) {}
 }
-

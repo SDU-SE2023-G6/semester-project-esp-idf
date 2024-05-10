@@ -18,14 +18,15 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @Data
 public class Satellite {
   private @MongoId ObjectId id;
-  private @NotBlank String name;
+  private @Nullable String name;
+  @Indexed(unique = true)
   private @NotBlank String deviceMACAddress;
 
   @DocumentReference
   private  @Indexed @Nullable Area area;
   @DocumentReference
   private @Indexed @Nullable DeviceType deviceType;
-  private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING;
+  private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING_METADATA;
 
   public Satellite(String name, String deviceMACAddress) {
     this.name = name;
@@ -38,7 +39,8 @@ public class Satellite {
     ONLINE("ONLINE"),
     OFFLINE("OFFLINE"),
     ERROR("ERROR"),
-    PENDING("PENDING");
+    UPDATING("UPDATING"),
+    PENDING_METADATA("PENDING_METADATA");
 
     private final String value;
 

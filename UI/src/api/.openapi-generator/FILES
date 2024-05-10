@@ -29,9 +29,13 @@ models/LogMetadata.ts
 models/LogType.ts
 models/ObjectSerializer.ts
 models/ProgramDslContent.ts
+models/ProgramMetadata.ts
 models/ProgramStatus.ts
 models/ProgramStatusProjection.ts
+models/SatelliteDeviceTypeId.ts
 models/SatelliteMetadata.ts
+models/SatelliteRegisterDTO.ts
+models/SatelliteRegisterResponseDTO.ts
 models/SatelliteStatus.ts
 models/all.ts
 package.json

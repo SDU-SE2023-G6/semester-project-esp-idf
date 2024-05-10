@@ -12,28 +12,28 @@
 
 import { HttpFile } from '../http/http';
 
-export class AreaMetadata {
-    'id'?: string;
-    'name': string;
+export class SatelliteRegisterDTO {
+    'deviceMACAddress'?: string;
+    'deviceName'?: string;
 
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "id",
-            "baseName": "id",
+            "name": "deviceMACAddress",
+            "baseName": "deviceMACAddress",
             "type": "string",
             "format": ""
         },
         {
-            "name": "name",
-            "baseName": "name",
+            "name": "deviceName",
+            "baseName": "deviceName",
             "type": "string",
             "format": ""
         }    ];
 
     static getAttributeTypeMap() {
-        return AreaMetadata.attributeTypeMap;
+        return SatelliteRegisterDTO.attributeTypeMap;
     }
 
     public constructor() {

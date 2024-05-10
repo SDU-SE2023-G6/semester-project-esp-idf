@@ -10,13 +10,46 @@ import {SecurityAuthentication} from '../auth/auth';
 
 import { DataPointMetadata } from '../models/DataPointMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
-import { LogMetadata } from '../models/LogMetadata';
+import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
+import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
+import { SatelliteRegisterResponseDTO } from '../models/SatelliteRegisterResponseDTO';
 
 /**
  * no description
  */
 export class SatelliteApiRequestFactory extends BaseAPIRequestFactory {
+
+    /**
+     * Delete satellite by ID.
+     * @param satelliteId 
+     */
+    public async deleteSatelliteById(satelliteId: string, _options?: Configuration): Promise<RequestContext> {
+        let _config = _options || this.configuration;
+
+        // verify required parameter 'satelliteId' is not null or undefined
+        if (satelliteId === null || satelliteId === undefined) {
+            throw new RequiredError("SatelliteApi", "deleteSatelliteById", "satelliteId");
+        }
+
+
+        // Path Params
+        const localVarPath = '/satellite/{satelliteId}'
+            .replace('{' + 'satelliteId' + '}', encodeURIComponent(String(satelliteId)));
+
+        // Make Request Context
+        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.DELETE);
+        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
+
+
+        
+        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
+        if (defaultAuth?.applySecurityAuthentication) {
+            await defaultAuth?.applySecurityAuthentication(requestContext);
+        }
+
+        return requestContext;
+    }
 
     /**
      * Edit satellite.
@@ -91,20 +124,20 @@ export class SatelliteApiRequestFactory extends BaseAPIRequestFactory {
     }
 
     /**
-     * Get all logs for a satellite.
+     * Get satellite by ID.
      * @param satelliteId 
      */
-    public async getLogsBySatellite(satelliteId: string, _options?: Configuration): Promise<RequestContext> {
+    public async getSatelliteById(satelliteId: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
         // verify required parameter 'satelliteId' is not null or undefined
         if (satelliteId === null || satelliteId === undefined) {
-            throw new RequiredError("SatelliteApi", "getLogsBySatellite", "satelliteId");
+            throw new RequiredError("SatelliteApi", "getSatelliteById", "satelliteId");
         }
 
 
         // Path Params
-        const localVarPath = '/satellite/{satelliteId}/logs'
+        const localVarPath = '/satellite/{satelliteId}'
             .replace('{' + 'satelliteId' + '}', encodeURIComponent(String(satelliteId)));
 
         // Make Request Context
@@ -122,20 +155,20 @@ export class SatelliteApiRequestFactory extends BaseAPIRequestFactory {
     }
 
     /**
-     * Get satellite by ID.
+     * Get satellite device type id.
      * @param satelliteId 
      */
-    public async getSatelliteById(satelliteId: string, _options?: Configuration): Promise<RequestContext> {
+    public async getSatelliteDeviceType(satelliteId: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
         // verify required parameter 'satelliteId' is not null or undefined
         if (satelliteId === null || satelliteId === undefined) {
-            throw new RequiredError("SatelliteApi", "getSatelliteById", "satelliteId");
+            throw new RequiredError("SatelliteApi", "getSatelliteDeviceType", "satelliteId");
         }
 
 
         // Path Params
-        const localVarPath = '/satellite/{satelliteId}'
+        const localVarPath = '/satellite/{satelliteId}/device-type-id'
             .replace('{' + 'satelliteId' + '}', encodeURIComponent(String(satelliteId)));
 
         // Make Request Context
@@ -175,9 +208,82 @@ export class SatelliteApiRequestFactory extends BaseAPIRequestFactory {
         return requestContext;
     }
 
+    /**
+     * Register a ESP Satellite.
+     * @param satelliteRegisterDTO 
+     */
+    public async satelliteRegister(satelliteRegisterDTO: SatelliteRegisterDTO, _options?: Configuration): Promise<RequestContext> {
+        let _config = _options || this.configuration;
+
+        // verify required parameter 'satelliteRegisterDTO' is not null or undefined
+        if (satelliteRegisterDTO === null || satelliteRegisterDTO === undefined) {
+            throw new RequiredError("SatelliteApi", "satelliteRegister", "satelliteRegisterDTO");
+        }
+
+
+        // Path Params
+        const localVarPath = '/satellite/register';
+
+        // Make Request Context
+        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
+        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
+
+
+        // Body Params
+        const contentType = ObjectSerializer.getPreferredMediaType([
+            "application/json"
+        ]);
+        requestContext.setHeaderParam("Content-Type", contentType);
+        const serializedBody = ObjectSerializer.stringify(
+            ObjectSerializer.serialize(satelliteRegisterDTO, "SatelliteRegisterDTO", ""),
+            contentType
+        );
+        requestContext.setBody(serializedBody);
+
+        
+        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
+        if (defaultAuth?.applySecurityAuthentication) {
+            await defaultAuth?.applySecurityAuthentication(requestContext);
+        }
+
+        return requestContext;
+    }
+
 }
 
 export class SatelliteApiResponseProcessor {
+
+    /**
+     * Unwraps the actual response sent by the server from the response context and deserializes the response content
+     * to the expected objects
+     *
+     * @params response Response returned by the server for a request to deleteSatelliteById
+     * @throws ApiException if the response code was not in [200, 299]
+     */
+     public async deleteSatelliteByIdWithHttpInfo(response: ResponseContext): Promise<HttpInfo<void >> {
+        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
+        }
+        if (isCodeInRange("422", response.httpStatusCode)) {
+            const body: ErrorResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ErrorResponse", ""
+            ) as ErrorResponse;
+            throw new ApiException<ErrorResponse>(response.httpStatusCode, "Unprocessable Entity", body, response.headers);
+        }
+
+        // Work around for missing responses in specification, e.g. for petstore.yaml
+        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
+            const body: void = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "void", ""
+            ) as void;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+
+        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
+    }
 
     /**
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
@@ -251,42 +357,6 @@ export class SatelliteApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
-     * @params response Response returned by the server for a request to getLogsBySatellite
-     * @throws ApiException if the response code was not in [200, 299]
-     */
-     public async getLogsBySatelliteWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Array<LogMetadata> >> {
-        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: Array<LogMetadata> = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "Array<LogMetadata>", ""
-            ) as Array<LogMetadata>;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-        if (isCodeInRange("422", response.httpStatusCode)) {
-            const body: ErrorResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ErrorResponse", ""
-            ) as ErrorResponse;
-            throw new ApiException<ErrorResponse>(response.httpStatusCode, "Unprocessable Entity", body, response.headers);
-        }
-
-        // Work around for missing responses in specification, e.g. for petstore.yaml
-        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: Array<LogMetadata> = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "Array<LogMetadata>", ""
-            ) as Array<LogMetadata>;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-
-        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
-    }
-
-    /**
-     * Unwraps the actual response sent by the server from the response context and deserializes the response content
-     * to the expected objects
-     *
      * @params response Response returned by the server for a request to getSatelliteById
      * @throws ApiException if the response code was not in [200, 299]
      */
@@ -323,6 +393,42 @@ export class SatelliteApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
+     * @params response Response returned by the server for a request to getSatelliteDeviceType
+     * @throws ApiException if the response code was not in [200, 299]
+     */
+     public async getSatelliteDeviceTypeWithHttpInfo(response: ResponseContext): Promise<HttpInfo<SatelliteDeviceTypeId >> {
+        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: SatelliteDeviceTypeId = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "SatelliteDeviceTypeId", ""
+            ) as SatelliteDeviceTypeId;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+        if (isCodeInRange("422", response.httpStatusCode)) {
+            const body: ErrorResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ErrorResponse", ""
+            ) as ErrorResponse;
+            throw new ApiException<ErrorResponse>(response.httpStatusCode, "Unprocessable Entity", body, response.headers);
+        }
+
+        // Work around for missing responses in specification, e.g. for petstore.yaml
+        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
+            const body: SatelliteDeviceTypeId = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "SatelliteDeviceTypeId", ""
+            ) as SatelliteDeviceTypeId;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+
+        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
+    }
+
+    /**
+     * Unwraps the actual response sent by the server from the response context and deserializes the response content
+     * to the expected objects
+     *
      * @params response Response returned by the server for a request to getSatellites
      * @throws ApiException if the response code was not in [200, 299]
      */
@@ -349,6 +455,56 @@ export class SatelliteApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<SatelliteMetadata>", ""
             ) as Array<SatelliteMetadata>;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+
+        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
+    }
+
+    /**
+     * Unwraps the actual response sent by the server from the response context and deserializes the response content
+     * to the expected objects
+     *
+     * @params response Response returned by the server for a request to satelliteRegister
+     * @throws ApiException if the response code was not in [200, 299]
+     */
+     public async satelliteRegisterWithHttpInfo(response: ResponseContext): Promise<HttpInfo<SatelliteRegisterResponseDTO >> {
+        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: SatelliteRegisterResponseDTO = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "SatelliteRegisterResponseDTO", ""
+            ) as SatelliteRegisterResponseDTO;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+        if (isCodeInRange("201", response.httpStatusCode)) {
+            const body: SatelliteRegisterResponseDTO = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "SatelliteRegisterResponseDTO", ""
+            ) as SatelliteRegisterResponseDTO;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+        if (isCodeInRange("400", response.httpStatusCode)) {
+            const body: SatelliteRegisterResponseDTO = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "SatelliteRegisterResponseDTO", ""
+            ) as SatelliteRegisterResponseDTO;
+            throw new ApiException<SatelliteRegisterResponseDTO>(response.httpStatusCode, "Error creating satellite.", body, response.headers);
+        }
+        if (isCodeInRange("422", response.httpStatusCode)) {
+            const body: ErrorResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ErrorResponse", ""
+            ) as ErrorResponse;
+            throw new ApiException<ErrorResponse>(response.httpStatusCode, "Unprocessable Entity", body, response.headers);
+        }
+
+        // Work around for missing responses in specification, e.g. for petstore.yaml
+        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
+            const body: SatelliteRegisterResponseDTO = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "SatelliteRegisterResponseDTO", ""
+            ) as SatelliteRegisterResponseDTO;
             return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 

@@ -16,7 +16,7 @@ import { HttpFile } from '../http/http';
 export class LogMetadata {
     'id'?: string;
     'message'?: string;
-    'satelliteId'?: string;
+    'source'?: string;
     'timestamp'?: Date;
     'type'?: LogType;
 
@@ -36,8 +36,8 @@ export class LogMetadata {
             "format": ""
         },
         {
-            "name": "satelliteId",
-            "baseName": "satelliteId",
+            "name": "source",
+            "baseName": "source",
             "type": "string",
             "format": ""
         },

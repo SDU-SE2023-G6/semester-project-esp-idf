@@ -19,5 +19,6 @@ public class DeviceType {
   private @NotBlank String name;
   @DocumentReference(lazy = true)
   private @Nullable Binary binary;
+  private boolean deprecated = false;
 }
 

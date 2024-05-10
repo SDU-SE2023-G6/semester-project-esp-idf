@@ -13,12 +13,19 @@
 import { HttpFile } from '../http/http';
 
 export class DeviceTypeMetadata {
+    'deprecated'?: boolean;
     'id'?: string;
     'name'?: string;
 
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
+        {
+            "name": "deprecated",
+            "baseName": "deprecated",
+            "type": "boolean",
+            "format": ""
+        },
         {
             "name": "id",
             "baseName": "id",

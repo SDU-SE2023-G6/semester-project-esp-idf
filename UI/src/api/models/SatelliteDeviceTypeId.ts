@@ -12,9 +12,8 @@
 
 import { HttpFile } from '../http/http';
 
-export class AreaMetadata {
+export class SatelliteDeviceTypeId {
     'id'?: string;
-    'name': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -24,16 +23,10 @@ export class AreaMetadata {
             "baseName": "id",
             "type": "string",
             "format": ""
-        },
-        {
-            "name": "name",
-            "baseName": "name",
-            "type": "string",
-            "format": ""
         }    ];
 
     static getAttributeTypeMap() {
-        return AreaMetadata.attributeTypeMap;
+        return SatelliteDeviceTypeId.attributeTypeMap;
     }
 
     public constructor() {

@@ -1,11 +1,17 @@
 import type { SatelliteId } from "./Satellite";
 
 export type LogSource = SatelliteId | 'system';
-export type LogType = 'info' | 'warning' | 'error' | 'success' | 'status';
+export enum LogType {
+    Unspecified = 'UNSPECIFIED',
+    Info = 'INFO',
+    Warning = 'WARNING',
+    Error = 'ERROR',
+    Heartbeat = 'HEARTBEAT'
+}
 
 export type Log = {
     type: LogType;
-    timestamp: string;
+    timestamp: Date;
     source: LogSource;
     message: string;
 }

@@ -10,30 +10,31 @@
  * Do not edit the class manually.
  */
 
-import { SatelliteStatus } from '../models/SatelliteStatus';
+import { ProgramStatus } from '../models/ProgramStatus';
 import { HttpFile } from '../http/http';
 
-export class SatelliteMetadata {
-    'areaId'?: string;
-    'deviceTypeId'?: string;
+export class ProgramMetadata {
+    'compiled'?: Date;
+    'createdDate'?: Date;
     'id'?: string;
-    'name'?: string;
-    'status'?: SatelliteStatus;
+    'iteration'?: number;
+    'lastModifiedDate'?: Date;
+    'status'?: ProgramStatus;
 
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "areaId",
-            "baseName": "areaId",
-            "type": "string",
-            "format": ""
+            "name": "compiled",
+            "baseName": "compiled",
+            "type": "Date",
+            "format": "date-time"
         },
         {
-            "name": "deviceTypeId",
-            "baseName": "deviceTypeId",
-            "type": "string",
-            "format": ""
+            "name": "createdDate",
+            "baseName": "createdDate",
+            "type": "Date",
+            "format": "date-time"
         },
         {
             "name": "id",
@@ -42,20 +43,26 @@ export class SatelliteMetadata {
             "format": ""
         },
         {
-            "name": "name",
-            "baseName": "name",
-            "type": "string",
-            "format": ""
+            "name": "iteration",
+            "baseName": "iteration",
+            "type": "number",
+            "format": "int64"
+        },
+        {
+            "name": "lastModifiedDate",
+            "baseName": "lastModifiedDate",
+            "type": "Date",
+            "format": "date-time"
         },
         {
             "name": "status",
             "baseName": "status",
-            "type": "SatelliteStatus",
+            "type": "ProgramStatus",
             "format": ""
         }    ];
 
     static getAttributeTypeMap() {
-        return SatelliteMetadata.attributeTypeMap;
+        return ProgramMetadata.attributeTypeMap;
     }
 
     public constructor() {

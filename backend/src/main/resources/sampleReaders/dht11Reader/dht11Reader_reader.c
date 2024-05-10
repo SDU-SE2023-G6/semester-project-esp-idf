@@ -10,7 +10,6 @@ double* dht11Reader_ReaderFunction(int *pin, int count) {
         return NULL;
     }
 
-
     static double result[2];
 
     result[0] = 25.5;

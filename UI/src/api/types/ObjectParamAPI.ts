@@ -8,9 +8,13 @@ import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
 import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramMetadata } from '../models/ProgramMetadata';
 import { ProgramStatus } from '../models/ProgramStatus';
 import { ProgramStatusProjection } from '../models/ProgramStatusProjection';
+import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
+import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
+import { SatelliteRegisterResponseDTO } from '../models/SatelliteRegisterResponseDTO';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 
 import { ObservableAreaApi } from "./ObservableAPI";
@@ -67,7 +71,7 @@ export interface AreaApiGetSatellitesInAreaRequest {
      * @type string
      * @memberof AreaApigetSatellitesInArea
      */
-    areaId: string
+    areaId?: string
 }
 
 export class ObjectAreaApi {
@@ -161,7 +165,7 @@ export class ObjectAreaApi {
      * Get all satellites in an area.
      * @param param the request object
      */
-    public getSatellitesInAreaWithHttpInfo(param: AreaApiGetSatellitesInAreaRequest, options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
+    public getSatellitesInAreaWithHttpInfo(param: AreaApiGetSatellitesInAreaRequest = {}, options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
         return this.api.getSatellitesInAreaWithHttpInfo(param.areaId,  options).toPromise();
     }
 
@@ -169,7 +173,7 @@ export class ObjectAreaApi {
      * Get all satellites in an area.
      * @param param the request object
      */
-    public getSatellitesInArea(param: AreaApiGetSatellitesInAreaRequest, options?: Configuration): Promise<Array<SatelliteMetadata>> {
+    public getSatellitesInArea(param: AreaApiGetSatellitesInAreaRequest = {}, options?: Configuration): Promise<Array<SatelliteMetadata>> {
         return this.api.getSatellitesInArea(param.areaId,  options).toPromise();
     }
 
@@ -179,6 +183,15 @@ import { ObservableDataPointsApi } from "./ObservableAPI";
 import { DataPointsApiRequestFactory, DataPointsApiResponseProcessor} from "../apis/DataPointsApi";
 
 export interface DataPointsApiGetDataPointsRequest {
+}
+
+export interface DataPointsApiGetDataPointsFromSometimeAgoRequest {
+    /**
+     * 
+     * @type number
+     * @memberof DataPointsApigetDataPointsFromSometimeAgo
+     */
+    hoursAgo: number
 }
 
 export class ObjectDataPointsApi {
@@ -204,10 +217,35 @@ export class ObjectDataPointsApi {
         return this.api.getDataPoints( options).toPromise();
     }
 
+    /**
+     * Get all Data points.
+     * @param param the request object
+     */
+    public getDataPointsFromSometimeAgoWithHttpInfo(param: DataPointsApiGetDataPointsFromSometimeAgoRequest, options?: Configuration): Promise<HttpInfo<Array<DataPointMetadata>>> {
+        return this.api.getDataPointsFromSometimeAgoWithHttpInfo(param.hoursAgo,  options).toPromise();
+    }
+
+    /**
+     * Get all Data points.
+     * @param param the request object
+     */
+    public getDataPointsFromSometimeAgo(param: DataPointsApiGetDataPointsFromSometimeAgoRequest, options?: Configuration): Promise<Array<DataPointMetadata>> {
+        return this.api.getDataPointsFromSometimeAgo(param.hoursAgo,  options).toPromise();
+    }
+
 }
 
 import { ObservableDeviceTypeApi } from "./ObservableAPI";
 import { DeviceTypeApiRequestFactory, DeviceTypeApiResponseProcessor} from "../apis/DeviceTypeApi";
+
+export interface DeviceTypeApiGetDeviceTypeByIdRequest {
+    /**
+     * 
+     * @type string
+     * @memberof DeviceTypeApigetDeviceTypeById
+     */
+    deviceTypeId: string
+}
 
 export interface DeviceTypeApiGetDeviceTypesRequest {
 }
@@ -217,6 +255,22 @@ export class ObjectDeviceTypeApi {
 
     public constructor(configuration: Configuration, requestFactory?: DeviceTypeApiRequestFactory, responseProcessor?: DeviceTypeApiResponseProcessor) {
         this.api = new ObservableDeviceTypeApi(configuration, requestFactory, responseProcessor);
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param param the request object
+     */
+    public getDeviceTypeByIdWithHttpInfo(param: DeviceTypeApiGetDeviceTypeByIdRequest, options?: Configuration): Promise<HttpInfo<DeviceTypeMetadata>> {
+        return this.api.getDeviceTypeByIdWithHttpInfo(param.deviceTypeId,  options).toPromise();
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param param the request object
+     */
+    public getDeviceTypeById(param: DeviceTypeApiGetDeviceTypeByIdRequest, options?: Configuration): Promise<DeviceTypeMetadata> {
+        return this.api.getDeviceTypeById(param.deviceTypeId,  options).toPromise();
     }
 
     /**
@@ -243,6 +297,24 @@ import { LogsApiRequestFactory, LogsApiResponseProcessor} from "../apis/LogsApi"
 export interface LogsApiGetLogsRequest {
 }
 
+export interface LogsApiGetLogsBySatelliteRequest {
+    /**
+     * 
+     * @type string
+     * @memberof LogsApigetLogsBySatellite
+     */
+    source?: string
+}
+
+export interface LogsApiGetLogsFromSometimeAgoRequest {
+    /**
+     * 
+     * @type number
+     * @memberof LogsApigetLogsFromSometimeAgo
+     */
+    hoursAgo: number
+}
+
 export class ObjectLogsApi {
     private api: ObservableLogsApi
 
@@ -266,6 +338,38 @@ export class ObjectLogsApi {
         return this.api.getLogs( options).toPromise();
     }
 
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param param the request object
+     */
+    public getLogsBySatelliteWithHttpInfo(param: LogsApiGetLogsBySatelliteRequest = {}, options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        return this.api.getLogsBySatelliteWithHttpInfo(param.source,  options).toPromise();
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param param the request object
+     */
+    public getLogsBySatellite(param: LogsApiGetLogsBySatelliteRequest = {}, options?: Configuration): Promise<Array<LogMetadata>> {
+        return this.api.getLogsBySatellite(param.source,  options).toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param param the request object
+     */
+    public getLogsFromSometimeAgoWithHttpInfo(param: LogsApiGetLogsFromSometimeAgoRequest, options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        return this.api.getLogsFromSometimeAgoWithHttpInfo(param.hoursAgo,  options).toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param param the request object
+     */
+    public getLogsFromSometimeAgo(param: LogsApiGetLogsFromSometimeAgoRequest, options?: Configuration): Promise<Array<LogMetadata>> {
+        return this.api.getLogsFromSometimeAgo(param.hoursAgo,  options).toPromise();
+    }
+
 }
 
 import { ObservableProgramApi } from "./ObservableAPI";
@@ -277,7 +381,19 @@ export interface ProgramApiCompileProgramRequest {
 export interface ProgramApiCompileProgramContinueDestructivelyRequest {
 }
 
+export interface ProgramApiDownloadBinaryRequest {
+    /**
+     * 
+     * @type string
+     * @memberof ProgramApidownloadBinary
+     */
+    binaryId: string
+}
+
 export interface ProgramApiGetProgramDslContentRequest {
+}
+
+export interface ProgramApiGetProgramMetadataRequest {
 }
 
 export interface ProgramApiGetProgramStatusRequest {
@@ -332,6 +448,20 @@ export class ObjectProgramApi {
     }
 
     /**
+     * @param param the request object
+     */
+    public downloadBinaryWithHttpInfo(param: ProgramApiDownloadBinaryRequest, options?: Configuration): Promise<HttpInfo<Array<string>>> {
+        return this.api.downloadBinaryWithHttpInfo(param.binaryId,  options).toPromise();
+    }
+
+    /**
+     * @param param the request object
+     */
+    public downloadBinary(param: ProgramApiDownloadBinaryRequest, options?: Configuration): Promise<Array<string>> {
+        return this.api.downloadBinary(param.binaryId,  options).toPromise();
+    }
+
+    /**
      * Get program DSL definition
      * @param param the request object
      */
@@ -345,6 +475,22 @@ export class ObjectProgramApi {
      */
     public getProgramDslContent(param: ProgramApiGetProgramDslContentRequest = {}, options?: Configuration): Promise<ProgramDslContent> {
         return this.api.getProgramDslContent( options).toPromise();
+    }
+
+    /**
+     * Get program metadata
+     * @param param the request object
+     */
+    public getProgramMetadataWithHttpInfo(param: ProgramApiGetProgramMetadataRequest = {}, options?: Configuration): Promise<HttpInfo<ProgramMetadata>> {
+        return this.api.getProgramMetadataWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get program metadata
+     * @param param the request object
+     */
+    public getProgramMetadata(param: ProgramApiGetProgramMetadataRequest = {}, options?: Configuration): Promise<ProgramMetadata> {
+        return this.api.getProgramMetadata( options).toPromise();
     }
 
     /**
@@ -384,6 +530,15 @@ export class ObjectProgramApi {
 import { ObservableSatelliteApi } from "./ObservableAPI";
 import { SatelliteApiRequestFactory, SatelliteApiResponseProcessor} from "../apis/SatelliteApi";
 
+export interface SatelliteApiDeleteSatelliteByIdRequest {
+    /**
+     * 
+     * @type string
+     * @memberof SatelliteApideleteSatelliteById
+     */
+    satelliteId: string
+}
+
 export interface SatelliteApiEditSatelliteRequest {
     /**
      * 
@@ -402,15 +557,6 @@ export interface SatelliteApiGetDataPointsBySatelliteRequest {
     satelliteId: string
 }
 
-export interface SatelliteApiGetLogsBySatelliteRequest {
-    /**
-     * 
-     * @type string
-     * @memberof SatelliteApigetLogsBySatellite
-     */
-    satelliteId: string
-}
-
 export interface SatelliteApiGetSatelliteByIdRequest {
     /**
      * 
@@ -420,7 +566,25 @@ export interface SatelliteApiGetSatelliteByIdRequest {
     satelliteId: string
 }
 
+export interface SatelliteApiGetSatelliteDeviceTypeRequest {
+    /**
+     * 
+     * @type string
+     * @memberof SatelliteApigetSatelliteDeviceType
+     */
+    satelliteId: string
+}
+
 export interface SatelliteApiGetSatellitesRequest {
+}
+
+export interface SatelliteApiSatelliteRegisterRequest {
+    /**
+     * 
+     * @type SatelliteRegisterDTO
+     * @memberof SatelliteApisatelliteRegister
+     */
+    satelliteRegisterDTO: SatelliteRegisterDTO
 }
 
 export class ObjectSatelliteApi {
@@ -428,6 +592,22 @@ export class ObjectSatelliteApi {
 
     public constructor(configuration: Configuration, requestFactory?: SatelliteApiRequestFactory, responseProcessor?: SatelliteApiResponseProcessor) {
         this.api = new ObservableSatelliteApi(configuration, requestFactory, responseProcessor);
+    }
+
+    /**
+     * Delete satellite by ID.
+     * @param param the request object
+     */
+    public deleteSatelliteByIdWithHttpInfo(param: SatelliteApiDeleteSatelliteByIdRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.deleteSatelliteByIdWithHttpInfo(param.satelliteId,  options).toPromise();
+    }
+
+    /**
+     * Delete satellite by ID.
+     * @param param the request object
+     */
+    public deleteSatelliteById(param: SatelliteApiDeleteSatelliteByIdRequest, options?: Configuration): Promise<void> {
+        return this.api.deleteSatelliteById(param.satelliteId,  options).toPromise();
     }
 
     /**
@@ -463,22 +643,6 @@ export class ObjectSatelliteApi {
     }
 
     /**
-     * Get all logs for a satellite.
-     * @param param the request object
-     */
-    public getLogsBySatelliteWithHttpInfo(param: SatelliteApiGetLogsBySatelliteRequest, options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
-        return this.api.getLogsBySatelliteWithHttpInfo(param.satelliteId,  options).toPromise();
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param param the request object
-     */
-    public getLogsBySatellite(param: SatelliteApiGetLogsBySatelliteRequest, options?: Configuration): Promise<Array<LogMetadata>> {
-        return this.api.getLogsBySatellite(param.satelliteId,  options).toPromise();
-    }
-
-    /**
      * Get satellite by ID.
      * @param param the request object
      */
@@ -495,6 +659,22 @@ export class ObjectSatelliteApi {
     }
 
     /**
+     * Get satellite device type id.
+     * @param param the request object
+     */
+    public getSatelliteDeviceTypeWithHttpInfo(param: SatelliteApiGetSatelliteDeviceTypeRequest, options?: Configuration): Promise<HttpInfo<SatelliteDeviceTypeId>> {
+        return this.api.getSatelliteDeviceTypeWithHttpInfo(param.satelliteId,  options).toPromise();
+    }
+
+    /**
+     * Get satellite device type id.
+     * @param param the request object
+     */
+    public getSatelliteDeviceType(param: SatelliteApiGetSatelliteDeviceTypeRequest, options?: Configuration): Promise<SatelliteDeviceTypeId> {
+        return this.api.getSatelliteDeviceType(param.satelliteId,  options).toPromise();
+    }
+
+    /**
      * Get satellites
      * @param param the request object
      */
@@ -508,6 +688,22 @@ export class ObjectSatelliteApi {
      */
     public getSatellites(param: SatelliteApiGetSatellitesRequest = {}, options?: Configuration): Promise<Array<SatelliteMetadata>> {
         return this.api.getSatellites( options).toPromise();
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param param the request object
+     */
+    public satelliteRegisterWithHttpInfo(param: SatelliteApiSatelliteRegisterRequest, options?: Configuration): Promise<HttpInfo<SatelliteRegisterResponseDTO>> {
+        return this.api.satelliteRegisterWithHttpInfo(param.satelliteRegisterDTO,  options).toPromise();
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param param the request object
+     */
+    public satelliteRegister(param: SatelliteApiSatelliteRegisterRequest, options?: Configuration): Promise<SatelliteRegisterResponseDTO> {
+        return this.api.satelliteRegister(param.satelliteRegisterDTO,  options).toPromise();
     }
 
 }

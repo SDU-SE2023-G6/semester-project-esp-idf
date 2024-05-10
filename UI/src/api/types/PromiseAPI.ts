@@ -8,9 +8,13 @@ import { ErrorResponse } from '../models/ErrorResponse';
 import { LogMetadata } from '../models/LogMetadata';
 import { LogType } from '../models/LogType';
 import { ProgramDslContent } from '../models/ProgramDslContent';
+import { ProgramMetadata } from '../models/ProgramMetadata';
 import { ProgramStatus } from '../models/ProgramStatus';
 import { ProgramStatusProjection } from '../models/ProgramStatusProjection';
+import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
 import { SatelliteMetadata } from '../models/SatelliteMetadata';
+import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
+import { SatelliteRegisterResponseDTO } from '../models/SatelliteRegisterResponseDTO';
 import { SatelliteStatus } from '../models/SatelliteStatus';
 import { ObservableAreaApi } from './ObservableAPI';
 
@@ -120,7 +124,7 @@ export class PromiseAreaApi {
      * Get all satellites in an area.
      * @param areaId 
      */
-    public getSatellitesInAreaWithHttpInfo(areaId: string, _options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
+    public getSatellitesInAreaWithHttpInfo(areaId?: string, _options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
         const result = this.api.getSatellitesInAreaWithHttpInfo(areaId, _options);
         return result.toPromise();
     }
@@ -129,7 +133,7 @@ export class PromiseAreaApi {
      * Get all satellites in an area.
      * @param areaId 
      */
-    public getSatellitesInArea(areaId: string, _options?: Configuration): Promise<Array<SatelliteMetadata>> {
+    public getSatellitesInArea(areaId?: string, _options?: Configuration): Promise<Array<SatelliteMetadata>> {
         const result = this.api.getSatellitesInArea(areaId, _options);
         return result.toPromise();
     }
@@ -169,6 +173,24 @@ export class PromiseDataPointsApi {
         return result.toPromise();
     }
 
+    /**
+     * Get all Data points.
+     * @param hoursAgo 
+     */
+    public getDataPointsFromSometimeAgoWithHttpInfo(hoursAgo: number, _options?: Configuration): Promise<HttpInfo<Array<DataPointMetadata>>> {
+        const result = this.api.getDataPointsFromSometimeAgoWithHttpInfo(hoursAgo, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get all Data points.
+     * @param hoursAgo 
+     */
+    public getDataPointsFromSometimeAgo(hoursAgo: number, _options?: Configuration): Promise<Array<DataPointMetadata>> {
+        const result = this.api.getDataPointsFromSometimeAgo(hoursAgo, _options);
+        return result.toPromise();
+    }
+
 
 }
 
@@ -186,6 +208,24 @@ export class PromiseDeviceTypeApi {
         responseProcessor?: DeviceTypeApiResponseProcessor
     ) {
         this.api = new ObservableDeviceTypeApi(configuration, requestFactory, responseProcessor);
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param deviceTypeId 
+     */
+    public getDeviceTypeByIdWithHttpInfo(deviceTypeId: string, _options?: Configuration): Promise<HttpInfo<DeviceTypeMetadata>> {
+        const result = this.api.getDeviceTypeByIdWithHttpInfo(deviceTypeId, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get device types of satellites by ID.
+     * @param deviceTypeId 
+     */
+    public getDeviceTypeById(deviceTypeId: string, _options?: Configuration): Promise<DeviceTypeMetadata> {
+        const result = this.api.getDeviceTypeById(deviceTypeId, _options);
+        return result.toPromise();
     }
 
     /**
@@ -236,6 +276,42 @@ export class PromiseLogsApi {
      */
     public getLogs(_options?: Configuration): Promise<Array<LogMetadata>> {
         const result = this.api.getLogs(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param source 
+     */
+    public getLogsBySatelliteWithHttpInfo(source?: string, _options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        const result = this.api.getLogsBySatelliteWithHttpInfo(source, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get all logs for a given source. Expects null or no input to get system logs.
+     * @param source 
+     */
+    public getLogsBySatellite(source?: string, _options?: Configuration): Promise<Array<LogMetadata>> {
+        const result = this.api.getLogsBySatellite(source, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param hoursAgo 
+     */
+    public getLogsFromSometimeAgoWithHttpInfo(hoursAgo: number, _options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
+        const result = this.api.getLogsFromSometimeAgoWithHttpInfo(hoursAgo, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get logs since some amount of hours ago.
+     * @param hoursAgo 
+     */
+    public getLogsFromSometimeAgo(hoursAgo: number, _options?: Configuration): Promise<Array<LogMetadata>> {
+        const result = this.api.getLogsFromSometimeAgo(hoursAgo, _options);
         return result.toPromise();
     }
 
@@ -291,6 +367,22 @@ export class PromiseProgramApi {
     }
 
     /**
+     * @param binaryId 
+     */
+    public downloadBinaryWithHttpInfo(binaryId: string, _options?: Configuration): Promise<HttpInfo<Array<string>>> {
+        const result = this.api.downloadBinaryWithHttpInfo(binaryId, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * @param binaryId 
+     */
+    public downloadBinary(binaryId: string, _options?: Configuration): Promise<Array<string>> {
+        const result = this.api.downloadBinary(binaryId, _options);
+        return result.toPromise();
+    }
+
+    /**
      * Get program DSL definition
      */
     public getProgramDslContentWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ProgramDslContent>> {
@@ -303,6 +395,22 @@ export class PromiseProgramApi {
      */
     public getProgramDslContent(_options?: Configuration): Promise<ProgramDslContent> {
         const result = this.api.getProgramDslContent(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get program metadata
+     */
+    public getProgramMetadataWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ProgramMetadata>> {
+        const result = this.api.getProgramMetadataWithHttpInfo(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get program metadata
+     */
+    public getProgramMetadata(_options?: Configuration): Promise<ProgramMetadata> {
+        const result = this.api.getProgramMetadata(_options);
         return result.toPromise();
     }
 
@@ -360,6 +468,24 @@ export class PromiseSatelliteApi {
     }
 
     /**
+     * Delete satellite by ID.
+     * @param satelliteId 
+     */
+    public deleteSatelliteByIdWithHttpInfo(satelliteId: string, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.deleteSatelliteByIdWithHttpInfo(satelliteId, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Delete satellite by ID.
+     * @param satelliteId 
+     */
+    public deleteSatelliteById(satelliteId: string, _options?: Configuration): Promise<void> {
+        const result = this.api.deleteSatelliteById(satelliteId, _options);
+        return result.toPromise();
+    }
+
+    /**
      * Edit satellite.
      * @param satelliteMetadata 
      */
@@ -396,24 +522,6 @@ export class PromiseSatelliteApi {
     }
 
     /**
-     * Get all logs for a satellite.
-     * @param satelliteId 
-     */
-    public getLogsBySatelliteWithHttpInfo(satelliteId: string, _options?: Configuration): Promise<HttpInfo<Array<LogMetadata>>> {
-        const result = this.api.getLogsBySatelliteWithHttpInfo(satelliteId, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get all logs for a satellite.
-     * @param satelliteId 
-     */
-    public getLogsBySatellite(satelliteId: string, _options?: Configuration): Promise<Array<LogMetadata>> {
-        const result = this.api.getLogsBySatellite(satelliteId, _options);
-        return result.toPromise();
-    }
-
-    /**
      * Get satellite by ID.
      * @param satelliteId 
      */
@@ -432,6 +540,24 @@ export class PromiseSatelliteApi {
     }
 
     /**
+     * Get satellite device type id.
+     * @param satelliteId 
+     */
+    public getSatelliteDeviceTypeWithHttpInfo(satelliteId: string, _options?: Configuration): Promise<HttpInfo<SatelliteDeviceTypeId>> {
+        const result = this.api.getSatelliteDeviceTypeWithHttpInfo(satelliteId, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Get satellite device type id.
+     * @param satelliteId 
+     */
+    public getSatelliteDeviceType(satelliteId: string, _options?: Configuration): Promise<SatelliteDeviceTypeId> {
+        const result = this.api.getSatelliteDeviceType(satelliteId, _options);
+        return result.toPromise();
+    }
+
+    /**
      * Get satellites
      */
     public getSatellitesWithHttpInfo(_options?: Configuration): Promise<HttpInfo<Array<SatelliteMetadata>>> {
@@ -444,6 +570,24 @@ export class PromiseSatelliteApi {
      */
     public getSatellites(_options?: Configuration): Promise<Array<SatelliteMetadata>> {
         const result = this.api.getSatellites(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param satelliteRegisterDTO 
+     */
+    public satelliteRegisterWithHttpInfo(satelliteRegisterDTO: SatelliteRegisterDTO, _options?: Configuration): Promise<HttpInfo<SatelliteRegisterResponseDTO>> {
+        const result = this.api.satelliteRegisterWithHttpInfo(satelliteRegisterDTO, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Register a ESP Satellite.
+     * @param satelliteRegisterDTO 
+     */
+    public satelliteRegister(satelliteRegisterDTO: SatelliteRegisterDTO, _options?: Configuration): Promise<SatelliteRegisterResponseDTO> {
+        const result = this.api.satelliteRegister(satelliteRegisterDTO, _options);
         return result.toPromise();
     }
 

@@ -6,9 +6,11 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**compileProgram**](ProgramApi.md#compileProgram) | **POST** /program/compile | Get program DSL definition
 [**compileProgramContinueDestructively**](ProgramApi.md#compileProgramContinueDestructively) | **POST** /program/compile/override | Continue compilation despite warnings
-[**getProgramDslContent**](ProgramApi.md#getProgramDslContent) | **GET** /program | Get program DSL definition
+[**downloadBinary**](ProgramApi.md#downloadBinary) | **GET** /program/binary/{binaryId} | 
+[**getProgramDslContent**](ProgramApi.md#getProgramDslContent) | **GET** /program/content | Get program DSL definition
+[**getProgramMetadata**](ProgramApi.md#getProgramMetadata) | **GET** /program/metadata | Get program metadata
 [**getProgramStatus**](ProgramApi.md#getProgramStatus) | **GET** /program/status | Get program status
-[**saveProgramDslContent**](ProgramApi.md#saveProgramDslContent) | **PUT** /program | Update program DSL definition
+[**saveProgramDslContent**](ProgramApi.md#saveProgramDslContent) | **PUT** /program/content | Update program DSL definition
 
 
 # **compileProgram**
@@ -107,6 +109,60 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
+# **downloadBinary**
+> Array<string> downloadBinary()
+
+
+### Example
+
+
+```typescript
+import {  } from '';
+import * as fs from 'fs';
+
+const configuration = .createConfiguration();
+const apiInstance = new .ProgramApi(configuration);
+
+let body:.ProgramApiDownloadBinaryRequest = {
+  // string
+  binaryId: "binaryId_example",
+};
+
+apiInstance.downloadBinary(body).then((data:any) => {
+  console.log('API called successfully. Returned data: ' + data);
+}).catch((error:any) => console.error(error));
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **binaryId** | [**string**] |  | defaults to undefined
+
+
+### Return type
+
+**Array<string>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: */*
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+**422** | Unprocessable Entity |  -  |
+
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
+
 # **getProgramDslContent**
 > ProgramDslContent getProgramDslContent()
 
@@ -136,6 +192,54 @@ This endpoint does not need any parameter.
 ### Return type
 
 **ProgramDslContent**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: */*
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+**422** | Unprocessable Entity |  -  |
+
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
+
+# **getProgramMetadata**
+> ProgramMetadata getProgramMetadata()
+
+
+### Example
+
+
+```typescript
+import {  } from '';
+import * as fs from 'fs';
+
+const configuration = .createConfiguration();
+const apiInstance = new .ProgramApi(configuration);
+
+let body:any = {};
+
+apiInstance.getProgramMetadata(body).then((data:any) => {
+  console.log('API called successfully. Returned data: ' + data);
+}).catch((error:any) => console.error(error));
+```
+
+
+### Parameters
+This endpoint does not need any parameter.
+
+
+### Return type
+
+**ProgramMetadata**
 
 ### Authorization
 
