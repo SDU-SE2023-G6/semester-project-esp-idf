@@ -1,6 +1,5 @@
 version: '3.7'
 services:
-
   frontend:
     build: ./UI
     container_name: frontend
@@ -59,7 +58,14 @@ services:
     volumes:
       - mongodb_data_container:/data/db
 
+  satelitte_emulator:
+    build: ./emulator
+    container_name: satelitte_emulator
+    restart: always
+    volumes:
+      - ./emulator:/usr/src/app
+    depends_on:
+      - mqtt_broker
+
 volumes:
   mongodb_data_container:
-
-
