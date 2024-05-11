@@ -20,7 +20,7 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @Data
 public class Log {
   private @MongoId ObjectId id;
-  private @Indexed @NotNull Instant timestamp;
+  private @Indexed @NotNull Long timestamp;
   private @Nullable String message;
   @DocumentReference(lazy = true)
   private @Indexed @Nullable Satellite satellite;

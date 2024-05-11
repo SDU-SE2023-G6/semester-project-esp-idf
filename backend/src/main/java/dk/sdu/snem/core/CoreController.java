@@ -516,7 +516,7 @@ public class CoreController {
       String sensor) {}
 
   public record LogMetadata(
-      String id, Instant timestamp, String message, @Nullable String source, Log.LogType type) {}
+      String id, long timestamp, String message, @Nullable String source, Log.LogType type) {}
 
   public record SatelliteRegisterResponseDTO(boolean success) {}
 
