@@ -35,7 +35,7 @@ public class MqttConfig {
 
   @Bean("mqttInboundLogs")
   public IntegrationFlow mqttInboundLogs() {
-    return IntegrationFlow.from(mqttInbound("/logs"))
+    return IntegrationFlow.from(mqttInbound("satellite/logs"))
         .channel(mqttInboundLogsChannel())
         .get();
   }
@@ -45,6 +45,25 @@ public class MqttConfig {
     void sendMessage(String payload);
   }
 
+
+  @Bean
+  public MessageChannel mqttInboundRegistrationChannel() {
+    return new DirectChannel();
+  }
+
+  @Bean("mqttInboundRegistration")
+  public IntegrationFlow mqttInboundRegistration() {
+    return IntegrationFlow.from(mqttInbound("satellite/register"))
+            .channel(mqttInboundRegistrationChannel())
+            .get();
+  }
+
+  @MessagingGateway(defaultRequestChannel = "mqttInboundRegistrationChannel")
+  public interface MqttInboundRegistrationGateway {
+    void sendMessage(String payload);
+  }
+
+
   @Bean
   public MessageChannel mqttInboundDataPointsChannel() {
     return new DirectChannel();
@@ -52,7 +71,7 @@ public class MqttConfig {
 
   @Bean("mqttInboundDataPoints")
   public IntegrationFlow mqttInboundDataPoints() {
-    return IntegrationFlow.from(mqttInbound("/datapoints"))
+    return IntegrationFlow.from(mqttInbound("satellite/data"))
         .channel(mqttInboundDataPointsChannel())
         .get();
   }
