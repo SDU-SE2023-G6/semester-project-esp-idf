@@ -276,7 +276,7 @@ class CoreControllerTest {
   @Nested
   class GetBinaryTests {
     @Test
-    void getBinaryByMacAdressSuccessfully() throws Exception {
+    void getBinaryByMacAddressSuccessfully() throws Exception {
       // Arrange
       DeviceType deviceType = new DeviceType();
       deviceType.setName("Device Type 1");

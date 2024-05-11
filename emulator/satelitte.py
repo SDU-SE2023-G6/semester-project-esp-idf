@@ -12,8 +12,8 @@ def random_mac_address():
     mac = [first_byte] + [random.randint(0x00, 0xFF) for _ in range(5)]
     return ':'.join(f'{octet:02x}' for octet in mac)
 
-ESP_mac_adress = random_mac_address()
-print("ESP MAC address: ", ESP_mac_adress)
+ESP_mac_address = random_mac_address()
+print("ESP MAC address: ", ESP_mac_address)
 
 ESP_firmware_hash = None
 
@@ -31,7 +31,7 @@ def publish_log(client, timestamp, message, msg_type):
         "message": message,
         "type": msg_type,
         "timestamp": timestamp,
-        "satellite_mac_adress": ESP_mac_adress
+        "satellite_mac_address": ESP_mac_address
     }
     client.publish("satellite/logs", json.dumps(log_entry))
 
@@ -41,7 +41,7 @@ def publish_log_heartbeat(client, next_heartbeat):
         "type": "HEARTBEAT",
         "timestamp": time.time(),
         "next_heartbeat": next_heartbeat,
-        "satellite_mac_adress": ESP_mac_adress
+        "satellite_mac_address": ESP_mac_address
     }
     client.publish("satellite/logs", json.dumps(log_entry))
 
@@ -51,13 +51,13 @@ def publish_data(client, timestamp, sensor, unit, data):
         "unit": unit,
         "sensor": sensor,
         "timestamp": timestamp,
-        "satellite_mac_adress": ESP_mac_adress
+        "satellite_mac_address": ESP_mac_address
     }
     client.publish("satellite/data", json.dumps(data_entry))
 
 def publish_register(client):
     register = {
-        "satellite_mac_adress": ESP_mac_adress,
+        "satellite_mac_address": ESP_mac_address,
     }
     client.publish("satellite/register", json.dumps(register))
 
@@ -157,7 +157,7 @@ while True:
             ESP_config["last_batch_sent"] = time.time()
     if time.time() - ESP_config["last_heartbeat_sent"] > ESP_config["heartbeat_interval"]:
         print("Sending heartbeat")
-        binary_discovery = query_binary_discovery(ESP_mac_adress)
+        binary_discovery = query_binary_discovery(ESP_mac_address)
         if binary_discovery == None or binary_discovery["status"] == 404:
             print("No binary found, registering")
             publish_register(mqttc)

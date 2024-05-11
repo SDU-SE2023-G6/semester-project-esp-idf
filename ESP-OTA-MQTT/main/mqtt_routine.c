@@ -186,8 +186,8 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
 
 static void mqtt5_app_start(void)
 {
-    /*** SETUP THE MAC ADRESS STUFF ***/
-    // Get and set the mac adress of the device
+    /*** SETUP THE MAC ADDRESS STUFF ***/
+    // Get and set the mac address of the device
     esp_read_mac(base_mac_addr, ESP_MAC_WIFI_STA);
 
      // create a topic string for the device
