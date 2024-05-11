@@ -503,7 +503,7 @@ public class CoreController {
 
   public record AreaMetadata(String id, @NotBlank @Parameter(required = true) String name) {}
 
-  public record BinaryVersion(String binaryId, String binaryIdHash) {}
+  public record BinaryVersion(String binaryId, String binaryHash) {}
 
   public record DeviceTypeMetadata(String id, String name, boolean deprecated) {}
 
