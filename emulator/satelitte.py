@@ -35,6 +35,16 @@ def publish_log(client, timestamp, message, msg_type):
     }
     client.publish("satellite/logs", json.dumps(log_entry))
 
+def publish_log_heartbeat(client, next_heartbeat):
+    log_entry = {
+        "message": "Heartbeat",
+        "type": "HEARTBEAT",
+        "timestamp": time.time(),
+        "next_heartbeat": next_heartbeat,
+        "satellite_mac_adress": ESP_mac_adress
+    }
+    client.publish("satellite/logs", json.dumps(log_entry))
+
 def publish_data(client, timestamp, sensor, unit, data):
     data_entry = {
         "value": data,
@@ -152,6 +162,7 @@ while True:
             print("No binary found, registering")
             publish_register(mqttc)
         else:
+            publish_log_heartbeat(mqttc, time.time() + ESP_config["heartbeat_interval"])
             if binary_discovery["binaryHash"] != ESP_firmware_hash:
                 print("New firmware hash detected: ", ESP_firmware_hash)
                 publish_log(mqttc, time.time(), "Downloading new firmware", "UPDATING")
