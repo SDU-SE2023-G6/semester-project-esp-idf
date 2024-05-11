@@ -1,6 +1,7 @@
 package dk.sdu.snem.core.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +21,7 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @Data
 public class Log {
   private @MongoId ObjectId id;
-  private @Indexed @NotNull Long timestamp;
+  private @Indexed @NotNull Instant timestamp;
   private @Nullable String message;
   @DocumentReference(lazy = true)
   private @Indexed @Nullable Satellite satellite;

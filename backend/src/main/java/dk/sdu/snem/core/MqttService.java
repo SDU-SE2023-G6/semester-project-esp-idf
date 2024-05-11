@@ -11,6 +11,7 @@ import dk.sdu.snem.core.model.Satellite;
 import dk.sdu.snem.core.repo.DataPointRepository;
 import dk.sdu.snem.core.repo.LogRepository;
 import dk.sdu.snem.core.repo.SatelliteRepository;
+import dk.sdu.snem.core.serialization.DataPointMessage;
 import dk.sdu.snem.core.serialization.GeneratedCodeMetadata;
 import dk.sdu.snem.core.serialization.LogMessage;
 import dk.sdu.snem.core.serialization.RegistrationMessage;
@@ -19,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
 
 @Service
 public class MqttService {
@@ -68,15 +71,16 @@ public class MqttService {
       return;
     }
 
+    Instant timestamp = Instant.ofEpochMilli(message.getTimestamp().longValue() * 1000);
+
     Log log = new Log();
     log.setMessage(message.getMessage());
     log.setType(message.getType());
-    log.setTimestamp(message.getTimestamp());
+    log.setTimestamp(timestamp);
     log.setSatellite(satellite);
 
     logRepo.save(log);
     logger.info(log.toString());
-
 
 
     logger.info(message.toString());
@@ -86,28 +90,33 @@ public class MqttService {
 
   @ServiceActivator(inputChannel = "mqttInboundDataPointsChannel")
   public void handleDataPointMessage(String dataPointPayload) {
-    DataPoint message;
+    DataPointMessage message;
     try {
-      message = mapper.readValue(dataPointPayload, DataPoint.class);
+      message = mapper.readValue(dataPointPayload, DataPointMessage.class);
     } catch (JsonProcessingException e) {
       logger.warn("Failed to deserialize dataPoint message", e);
       return;
     }
 
+    Satellite satellite = satelliteRepo.findByDeviceMACAddress(message.getSatelliteMacAddress());
+    if (satellite == null) {
+      logger.warn("Received log message from unknown satellite: {}", message.getSatelliteMacAddress());
+      return;
+    }
+
+    Instant timestamp = Instant.ofEpochMilli(message.getTimestamp().longValue() * 1000);
+
     DataPoint dataPoint = new DataPoint();
     dataPoint.setUnit(message.getUnit());
-    dataPoint.setMeasurement(message.getMeasurement());
-    dataPoint.setTimestamp(message.getTimestamp());
+    dataPoint.setMeasurement(message.getValue());
+    dataPoint.setTimestamp(timestamp);
     dataPoint.setSensor(message.getSensor());
-
-    System.out.println(dataPoint);
-
-    //dataPoint.setSatellite(message.getSatellite());
+    dataPoint.setSatellite(satellite);
+    dataPoint.setCreatedDate(Instant.now());
 
     dataPointRepo.save(dataPoint);
 
     logger.info(dataPoint.toString());
-
     System.out.println(dataPointPayload);
   }
 

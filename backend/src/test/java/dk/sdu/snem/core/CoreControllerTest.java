@@ -26,6 +26,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -747,9 +749,9 @@ class CoreControllerTest {
       // Arrange
       Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
 
-      Log log1 = createAndSaveLog(satellite, System.currentTimeMillis(), "Log message 1", LogType.INFO);
-      Log log2 = createAndSaveLog(satellite, System.currentTimeMillis(), "Log message 2", LogType.WARNING);
-      Log log3 = createAndSaveLog(null, System.currentTimeMillis(), "Log message 3", LogType.WARNING);
+      Log log1 = createAndSaveLog(satellite, Instant.now(), "Log message 1", LogType.INFO);
+      Log log2 = createAndSaveLog(satellite, Instant.now(), "Log message 2", LogType.WARNING);
+      Log log3 = createAndSaveLog(null, Instant.now(), "Log message 3", LogType.WARNING);
 
       // Act
       MvcResult result = mockMvc.perform(get("/logs/system")
@@ -769,8 +771,8 @@ class CoreControllerTest {
         Log log = i == 0 ? log2 : log1;
 
         assertThat(metadata.id()).isEqualTo(log.getId().toHexString());
-        long truncatedMetadataTimestamp = metadata.timestamp();
-        long truncatedDataPointTimestamp = log.getTimestamp();
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
         assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
         assertThat(metadata.message()).isEqualTo(log.getMessage());
         assertThat(metadata.source()).isEqualTo(satellite.getId().toHexString());
@@ -783,9 +785,9 @@ class CoreControllerTest {
       // Arrange
       Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
 
-      Log log1 = createAndSaveLog(null, System.currentTimeMillis(), "Log message 1", LogType.INFO);
-      Log log2 = createAndSaveLog(null, System.currentTimeMillis(), "Log message 2", LogType.WARNING);
-      Log log3 = createAndSaveLog(satellite, System.currentTimeMillis(), "Log message 3", LogType.WARNING);
+      Log log1 = createAndSaveLog(null, Instant.now(), "Log message 1", LogType.INFO);
+      Log log2 = createAndSaveLog(null, Instant.now(), "Log message 2", LogType.WARNING);
+      Log log3 = createAndSaveLog(satellite, Instant.now(), "Log message 3", LogType.WARNING);
 
       // Act
       MvcResult result = mockMvc.perform(get("/logs/system")
@@ -804,8 +806,8 @@ class CoreControllerTest {
         Log log = i == 0 ? log2 : log1;
 
         assertThat(metadata.id()).isEqualTo(log.getId().toHexString());
-        long truncatedMetadataTimestamp = metadata.timestamp();
-        long truncatedDataPointTimestamp = log.getTimestamp();
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
         assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
         assertThat(metadata.message()).isEqualTo(log.getMessage());
         assertThat(metadata.source()).isNull();
@@ -817,12 +819,12 @@ class CoreControllerTest {
     void getLogsBySatellite_OnlyReturnRelated() throws Exception {
       // Arrange
       Satellite satelliteUnrelated = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type");
-      createAndSaveLog(satelliteUnrelated, System.currentTimeMillis(), "Log message 1", LogType.INFO);
-      createAndSaveLog(satelliteUnrelated, System.currentTimeMillis(), "Log message 2", LogType.WARNING);
+      createAndSaveLog(satelliteUnrelated, Instant.now(), "Log message 1", LogType.INFO);
+      createAndSaveLog(satelliteUnrelated, Instant.now(), "Log message 2", LogType.WARNING);
 
       Satellite satellite = createAndSaveSatellite("Test Satellite", "Test Area", "Test Device Type 2");
-      Log log1 = createAndSaveLog(satellite, System.currentTimeMillis(), "Log message 1", LogType.INFO);
-      Log log2 = createAndSaveLog(satellite, System.currentTimeMillis(), "Log message 2", LogType.WARNING);
+      Log log1 = createAndSaveLog(satellite, Instant.now(), "Log message 1", LogType.INFO);
+      Log log2 = createAndSaveLog(satellite, Instant.now(), "Log message 2", LogType.WARNING);
 
       // Act
       MvcResult result = mockMvc.perform(get("/logs/system")
@@ -842,8 +844,8 @@ class CoreControllerTest {
         Log log = i == 0 ? log2 : log1;
 
         assertThat(metadata.id()).isEqualTo(log.getId().toHexString());
-        long truncatedMetadataTimestamp = metadata.timestamp();
-        long truncatedDataPointTimestamp = log.getTimestamp();
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
         assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
         assertThat(metadata.message()).isEqualTo(log.getMessage());
         assertThat(metadata.source()).isEqualTo(satellite.getId().toHexString());
@@ -862,9 +864,9 @@ class CoreControllerTest {
       Satellite satellite1 = createAndSaveSatellite("Satellite 1", "Area 1", "Device Type 1");
       Satellite satellite2 = createAndSaveSatellite("Satellite 2", "Area 2", "Device Type 2");
 
-      Log log1 = createAndSaveLog(satellite1, System.currentTimeMillis(), "Log message 1", LogType.INFO);
-      Log log2 = createAndSaveLog(satellite2, System.currentTimeMillis(), "Log message 2", LogType.WARNING);
-      Log log3 = createAndSaveLog(null, System.currentTimeMillis(), "Log message 2", LogType.UNSPECIFIED);
+      Log log1 = createAndSaveLog(satellite1, Instant.now(), "Log message 1", LogType.INFO);
+      Log log2 = createAndSaveLog(satellite2, Instant.now(), "Log message 2", LogType.WARNING);
+      Log log3 = createAndSaveLog(null, Instant.now(), "Log message 2", LogType.UNSPECIFIED);
       List<Log> expectedLogs = List.of(log1, log2, log3);
 
       // Act
@@ -884,8 +886,8 @@ class CoreControllerTest {
         Log log = expectedLogs.get(i);
 
         assertThat(metadata.id()).isEqualTo(log.getId().toHexString());
-        long truncatedMetadataTimestamp = metadata.timestamp();
-        long truncatedDataPointTimestamp = log.getTimestamp();
+        Instant truncatedMetadataTimestamp = metadata.timestamp().truncatedTo(ChronoUnit.MILLIS);
+        Instant truncatedDataPointTimestamp = log.getTimestamp().truncatedTo(ChronoUnit.MILLIS);
         assertThat(truncatedMetadataTimestamp).isEqualTo(truncatedDataPointTimestamp);
         assertThat(metadata.message()).isEqualTo(log.getMessage());
         if(log.getSatellite() != null) {
@@ -1018,7 +1020,7 @@ class CoreControllerTest {
     return satelliteRepo.save(satellite);
   }
 
-  Log createAndSaveLog(Satellite satellite, long timestamp, String message, LogType type) {
+  Log createAndSaveLog(Satellite satellite, Instant timestamp, String message, LogType type) {
     Log log = new Log();
     log.setSatellite(satellite);
     log.setTimestamp(timestamp);
