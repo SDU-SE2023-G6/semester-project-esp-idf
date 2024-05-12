@@ -7,12 +7,10 @@
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
+#include "cJSON.h"
 
-static const char *T_OTA = "OTA_ROUTINE";
-extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
-extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
+#include "ota_routine.h"
 
-#define OTA_URL_SIZE 256
 
 /* Event handler for catching system events */
 static void ota_event_handler(void* arg, esp_event_base_t event_base,
@@ -145,9 +143,6 @@ int perform_ota(char *update_url)
         if (err != ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
             break;
         }
-        // esp_https_ota_perform returns after every read operation which gives user the ability to
-        // monitor the status of OTA upgrade by calling esp_https_ota_get_image_len_read, which gives length of image
-        // data read so far.
         ESP_LOGD(T_OTA, "Image bytes read: %d", esp_https_ota_get_image_len_read(https_ota_handle));
     }
 

@@ -26,14 +26,7 @@
 
 #include "sdkconfig.h" // Load the config files
 
-static const char *T_MQTT = "mqtt5_example";
-
-uint8_t base_mac_addr[6] = {0}; // MAC address of the ESP32
-char device_update_topic[50] = {0}; // Topic for receiving OTA updates
-char device_heartbeat_topic[50] = {0};
-
-
-#define USE_PROPERTY_ARR_SIZE   sizeof(user_property_arr)/sizeof(esp_mqtt5_user_property_item_t)
+#include "mqtt_routine.h"
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -235,7 +228,7 @@ static void mqtt5_app_start(void)
         .session.last_will.retain = true,
     };
 
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt5_cfg);
+    client = esp_mqtt_client_init(&mqtt5_cfg);
 
     /* Set connection properties and user properties */
     esp_mqtt5_client_set_user_property(&connect_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);

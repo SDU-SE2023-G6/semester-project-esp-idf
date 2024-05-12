@@ -19,5 +19,6 @@ sed_command="/^idf_component_register/s/SRCS .*/SRCS $c_files/"
 sed -i "$sed_command" "$folder_path/CMakeLists.txt"
 
 # Build the project
-nix --offline --experimental-features 'nix-command flakes' develop github:mirrexagon/nixpkgs-esp-dev#esp32-idf -c cmake .
-nix --offline --experimental-features 'nix-command flakes' develop github:mirrexagon/nixpkgs-esp-dev#esp32-idf -c make
+#source /opt/esp/entrypoint.sh 
+idf.py fullclean
+idf.py build

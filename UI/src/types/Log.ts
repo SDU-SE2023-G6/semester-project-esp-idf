@@ -64,10 +64,17 @@ const logSimplification = {
     [LogType.UpdateFail]: SimplifiedLogType.Error,
     [LogType.UpdateRollbackStart]: SimplifiedLogType.Update,
     [LogType.UpdateRollbackSuccess]: SimplifiedLogType.Success,
-    [LogType.UpdateRollbackFail]: SimplifiedLogType.Error
+    [LogType.UpdateRollbackFail]: SimplifiedLogType.Error,
+    [SimplifiedLogType.Info]: SimplifiedLogType.Info,
+    [SimplifiedLogType.Error]: SimplifiedLogType.Error,
+    [SimplifiedLogType.Warning]: SimplifiedLogType.Warning,
+    [SimplifiedLogType.Debug]: SimplifiedLogType.Debug,
+    [SimplifiedLogType.Success]: SimplifiedLogType.Success,
+    [SimplifiedLogType.Update]: SimplifiedLogType.Update,
+    [SimplifiedLogType.Heartbeat]: SimplifiedLogType.Heartbeat
 }
 
-export function simplifyLogType(logType:LogType):SimplifiedLogType {
+export function simplifyLogType(logType:LogType|SimplifiedLogType):SimplifiedLogType {
     return logSimplification[logType];
 }
 

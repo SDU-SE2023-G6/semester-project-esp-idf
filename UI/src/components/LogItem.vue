@@ -2,7 +2,7 @@
     <div class="log-container" @click="isDialogShown = true">
       <div class="log-header">
         <div class="log-left">
-            <StatusCircle :type="log.type" />
+            <StatusCircle :type_log="log.type" />
             <div class="timestamp">{{ timeStampToDate(log.timestamp) }}</div>
             <div class="name">{{ sourceName }}</div>
         </div>
@@ -17,7 +17,7 @@
       :subtitle="timeStampToDate(log.timestamp)"
     >
     <div class="dialog-content">
-      <StatusCircle :type="log.type" />
+      <StatusCircle :type_log="log.type" />
       <p>{{ log.message }}</p>
     </div>
    

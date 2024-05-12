@@ -1,7 +1,7 @@
 <template>
   <div class="satellite-container">
     <div class="stat-name">
-      <div :class="status + ' status'"></div>
+      <div :class="status + ' status'"><ATooltip :text="statusText" /></div>
       <div class="name">{{ props.satellite.name }}</div>
     </div>
     <div class="class">{{ props.satellite.type?.name }}</div>
@@ -21,12 +21,23 @@ const simplifiedStatusMap = {
   "ONLINE": 'online',
   "OFFLINE": 'offline',
   "ERROR": 'error',
-  "UPDATING": 'pending',
+  "UPDATING": 'updating',
   "PENDING_METADATA": 'pending',
   "PENDING_VERSION_CHECK": 'pending',
 };
 
 const status = simplifiedStatusMap[props.satellite.status] as keyof typeof simplifiedStatusMap;
+
+const humanReadableStatusMap = {
+  "ONLINE": 'Online',
+  "OFFLINE": 'Offline',
+  "ERROR": 'Error',
+  "UPDATING": 'Updating',
+  "PENDING_METADATA": 'Pending Metadata',
+  "PENDING_VERSION_CHECK": 'Pending Version Check',
+};
+
+const statusText = humanReadableStatusMap[props.satellite.status] as keyof typeof humanReadableStatusMap;
 </script>
 
 <style scoped>
@@ -71,6 +82,10 @@ const status = simplifiedStatusMap[props.satellite.status] as keyof typeof simpl
 
 .status.pending {
   background-color: var(--color-pending);
+}
+
+.status.updating {
+  background-color: var(--color-updating);
 }
 
 .name {
