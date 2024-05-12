@@ -41,13 +41,13 @@ export function getLogMessage(logType:LogType):string {
 }
 
 export enum SimplifiedLogType {
-    Info = 'INFO',
-    Error = 'ERROR',
-    Warning = 'WARNING',
-    Debug = 'DEBUG',
-    Success = 'SUCCESS',
-    Update = 'UPDATE',
-    Heartbeat = 'HEARTBEAT'
+    Info = 'Info',
+    Error = 'Error',
+    Warning = 'Warning',
+    Debug = 'Debug',
+    Success = 'Success',
+    Update = 'Update',
+    Heartbeat = 'Heartbeat'
 }
 
 const logSimplification = {
