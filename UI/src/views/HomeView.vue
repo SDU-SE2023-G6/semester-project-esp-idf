@@ -5,19 +5,22 @@
   import type { Area } from '@/types/Area';
   import LogItem from '@/components/LogItem.vue';
   import { useTime } from '@/composables/useTime';
-
+  import {ref} from 'vue';
   const { slidingWindow } = useTime()
 
 
   const dataStore = useDataStore();
 
-  const areas: Area[] = dataStore.getAreas;
-  const logs = dataStore.getLogs;
+  const areas: Area[] = ref([]);
+  const logs: Log[] = ref([]);
 
-  // Sort logs by timestamp and only show the last 5
-  const sortedLogs = [...logs].sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
-  const selectedLogs = sortedLogs.slice(0, 5);
+  async function fetchAreasAndLogs() {
+    areas.value = await dataStore.getAreas();
+    logs.value = (await dataStore.getLogs()).slice(0, 10);
+  }
 
+  fetchAreasAndLogs();
+  setInterval(() => fetchAreasAndLogs(), 1000);
 
   const dummyLineData = [20, 30, 40, 50, 60, 70, 80, 90, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 20, 30, 40, 50, 60, 70];
 
@@ -27,7 +30,7 @@
   <div class="w-full">
     <h1>Dashboard</h1>
     <div class="flex main-wrapper">
-      <div v-if="areas.length > 0" class="w-full area-wrapper">
+      <div class="w-full area-wrapper">
         <HomeArea v-for="area in areas" :key="area.id" :area="area" :details="false" class="area-container"/>
       </div> 
       <div class="flex column-wrapper w-full">
@@ -37,7 +40,7 @@
         </div>
        <div class="general-wrapper">
           <h2>Logs</h2>
-          <LogItem v-for="log in selectedLogs" :log="log" :key="log.timestamp" />
+          <LogItem v-for="log in logs" :log="log" :key="log.timestamp" />
         </div>
       </div>
     </div>
