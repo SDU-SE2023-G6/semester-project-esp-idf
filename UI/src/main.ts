@@ -25,7 +25,19 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(anu, {
-    initialTheme: 'dark'
+    initialTheme: 'dark',
+    themes: {
+        light: {
+            colors: {
+                primary: '211, 100%, 50%',
+            }
+        },
+        dark: {
+            colors: {
+                primary: '211, 100%, 50%',
+            }
+        }
+    }
 })
 app.use(PrimeVue);
 

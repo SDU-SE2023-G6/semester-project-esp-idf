@@ -45,7 +45,7 @@
     background-color: var(--color-pending);
   }
 
-  .status.update {
+  .status.update, .status.updating{
     background-color: var(--color-updating);
   }
   
