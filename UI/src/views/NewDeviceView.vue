@@ -204,6 +204,7 @@ const resetForm = () => {
 .unregistered-wrapper {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 1em;
 }
 .unregistered-wrapper > * {
