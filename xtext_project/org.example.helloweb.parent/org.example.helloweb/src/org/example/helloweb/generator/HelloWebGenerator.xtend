@@ -88,6 +88,7 @@ class HelloWebGenerator extends AbstractGenerator {
     // Generate code for the device type here
     var readingIncrement = 0;
     var deviceTypeCode = 
+
     '''
 	#include "target_device_type.h"
 	
@@ -97,7 +98,8 @@ class HelloWebGenerator extends AbstractGenerator {
 	    .name = "«instantiation.name»",
 	    .pins = {«instantiation.pins.join(', ')»},
 	    .pinCount = «instantiation.pins.size»,
-	    .samplingRate = «mapXTextTimeUnitToC(instantiation.samplingRate)»
+	    .samplingRate = «mapXTextTimeUnitToC(instantiation.samplingRate)»,
+		.readings = (double[]) {«FOR output : instantiation.sensor.out»0.0«IF output != instantiation.sensor.out.last», «ENDIF»«ENDFOR»}
 	};
 	«ENDFOR»
 	
@@ -109,26 +111,21 @@ class HelloWebGenerator extends AbstractGenerator {
 	    .batchSizePolicy = «deviceType.batchSizePolicy»,
 	    .heartBeatPolicy = «mapXTextTimeUnitToC(deviceType.heartBeatPolicy)»
 	};
-	
-	DeviceType* get_device_type_constrained(double* readings) {
-		DeviceType* modified = duplicateDeviceType(&base_device_type);
-		«FOR instantiation: deviceType.sensorInstantiations»
+		
+	void constrain_device_type(DeviceType* device_type) {
+		«FOR instantiation : deviceType.sensorInstantiations»
 		«FOR output : instantiation.sensor.out»
-		double «instantiation.name»_«output.name» = readings[«readingIncrement++»];
+		double «instantiation.name»_«output.name» = device_type->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->readings[«instantiation.sensor.out.indexOf(output)»];
 		«ENDFOR»
 		«ENDFOR»
 		«FOR instantiation : deviceType.sensorInstantiations»
 		«FOR constraint : instantiation.constraints»
 		if («generateCondition(deviceType, instantiation, constraint.condition)») {
-			modified->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.value = «extractXTextTimeUnitCount(constraint.samplingRate)»;
-			modified->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.unit = «extractXTextTimeUnit(constraint.samplingRate)»;
+			device_type->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.value = «extractXTextTimeUnitCount(constraint.samplingRate)»;
+			device_type->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.unit = «extractXTextTimeUnit(constraint.samplingRate)»;
 		}
 		«ENDFOR»
 		«ENDFOR»
-		
-		
-		
-		return modified;
 	}
 	'''
 	
@@ -141,7 +138,7 @@ class HelloWebGenerator extends AbstractGenerator {
 		#include "«instantiation.sensor.name»_sensor.h"
 		«ENDFOR»
 		extern DeviceType base_device_type;
-		DeviceType* get_device_type_constrained(double* readings);
+		void constrain_device_type(DeviceType* device_type);
 		
 		#endif /* TARGET_DEVICE_TYPE_H */
 	'''
@@ -273,6 +270,7 @@ class HelloWebGenerator extends AbstractGenerator {
 		    int pins[MAX_PINS];
 		    int pinCount;
 		    TimeDuration samplingRate;
+			double* readings;
 		};
 		
 		struct DeviceType {

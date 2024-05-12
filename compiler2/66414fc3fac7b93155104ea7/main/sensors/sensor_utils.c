@@ -11,6 +11,8 @@
 #include "mqtt5_client.h"
 #include "mqtt_routine.h"
 #include "cJSON.h"
+#include "shared_snem_library.h"
+#include "target_device_type.h"
 
 const char * T_SENSOR = "SENSOR_ROUTINE";
 
@@ -57,8 +59,6 @@ void read_and_delete_file2(const char* sensor_path) {
                         scanned, time, data);
             continue;
         } else {
-
-
             char timestamp[10];
             sprintf(timestamp, "%" PRId64, time);
 
@@ -123,6 +123,54 @@ void log_sensor_data(const char* sensor_path, const char* data) {
     fclose(f);
 
     logged_count++;
+    ESP_LOGI("SENSOR", "Logged count %d", logged_count);
+}
+
+void create_sensor_name(char* sensor_path_buffer, SensorInstantiation *_sensor) {
+    char sensor_path_prefix[10] = "spiffs";
+
+    sprintf(sensor_path_buffer, "/%s/%s/%s.txt", 
+        sensor_path_prefix, _sensor->name, _sensor->sensor->name);
+}
+
+// calculate the sampling rate in milliseconds
+int timeDurationToMs(TimeDuration duration) {
+    switch (duration.unit) {
+        case SECOND:
+            return duration.value * 1000;
+        case MINUTE:
+            return duration.value * 60000;
+        case HOUR:
+            return duration.value * 3600000;
+        case DAY:
+            return duration.value * 86400000;
+    }
+    return 0;
+
+}
+
+
+void run_sensor(void *pvParameter) {
+    SensorInstantiation *sensor_t = (SensorInstantiation *) pvParameter;
+
+    ESP_LOGI(T_SENSOR, "Running sensor %s", sensor_t->name);
+
+    while (1) {
+        double *readings = sensor_t->sensor->readerFunction(sensor_t->pins, sensor_t->pinCount);
+
+        for (int index = 0; index < sensor_t->sensor->outCount; index++) {
+            sensor_t->readings[index] = readings[index];
+            char sensor_path[215];
+            create_sensor_name(sensor_path, sensor_t);
+            char _char_reading[6] = {0};
+            sprintf(_char_reading, "%.2f", readings[index]);
+            log_sensor_data(sensor_path, _char_reading);
+        }
+        
+
+        vTaskDelay(timeDurationToMs(sensor_t->samplingRate) / portTICK_PERIOD_MS);
+    }
+
 }
 
 
@@ -131,21 +179,38 @@ void sensor_routine(void *pvParameter)
     
     ESP_LOGI(T_SENSOR, "Sensor routine started");
     
-    while (1) {
-        if (logged_count > 9) {
-            read_and_delete_file2(sensor1);
-            // read_and_delete_file2(sensor2);
+    TaskHandle_t read_sensor = NULL;
+
+    for (int i = 0; i < base_device_type.sensorCount; i++) {
+        ESP_LOGI(T_SENSOR, "Starting routine for %s", base_device_type.sensorInstantiations[i]->name);
+        void *void_sensor_t = (void*) base_device_type.sensorInstantiations[i];
+
+        SensorInstantiation *_sensor_t = (SensorInstantiation*) void_sensor_t; 
+
+        ESP_LOGI(T_SENSOR, "Test mem %s", _sensor_t->name);
+        xTaskCreate(&run_sensor,
+                    "sensor_routine", 8192, 
+                    (void*) base_device_type.sensorInstantiations[i],
+                     5, &read_sensor);
+    }
+
+    while(1) {
+
+        constrain_device_type(&base_device_type);
+
+        if (logged_count > 10) {
+            ESP_LOGI(T_SENSOR, "STARTING TO SEND DATA. SUSPENDING SENSOR.");
+            vTaskSuspend(read_sensor);
+            for (int i = 0; i < base_device_type.sensorCount; i++) {
+                char sensor_path[215];
+                create_sensor_name(sensor_path, base_device_type.sensorInstantiations[i]);
+                read_and_delete_file2(sensor_path);
+            }
             logged_count = 0;
-        } else {
-            char random_float[6] = {0};
-            sprintf(random_float, "%.2f", 15.0 + ((float)rand() / RAND_MAX) * 15.0);
-            log_sensor_data(sensor1, random_float);
-            
-            // sprintf(random_float, "%.2f", 15.0 + ((float)rand() / RAND_MAX) * 15.0);
-            // log_sensor_data(sensor2, random_float);
-            printf("Logged count: %d\n", logged_count);
+
+            ESP_LOGI(T_SENSOR, "RESUMING SENSOR");
+            vTaskResume(read_sensor);
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-
 }
