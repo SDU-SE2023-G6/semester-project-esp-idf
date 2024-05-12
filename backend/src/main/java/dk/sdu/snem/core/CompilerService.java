@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -53,7 +54,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class CompilerService {
-  private static Logger log = LoggerFactory.getLogger(CompilerService.class);
+  private static final Logger log = LoggerFactory.getLogger(CompilerService.class);
   private final RestTemplate restTemplate;
   private final ProgramRepository programRepo;
   private final DeviceTypeRepository deviceTypeRepo;
@@ -159,7 +160,6 @@ public class CompilerService {
   public CompletableFuture<Void> compileBinary(
       Program program,
     byte[] codeGeneratedZipFile, GeneratedCodeMetadata metadata, DeviceTypeMetadata target) {
-    log.info("Starting compile");
     final DeviceType deviceType =
         deviceTypeRepo
             .findByName(target.getName())
@@ -175,6 +175,7 @@ public class CompilerService {
     binary.setId(ObjectId.get());
     binary.setProgram(program);
     binary.setDeviceType(deviceType);
+    log.info("Starting compile with id %s".formatted(binary.getId().toHexString()));
 
     Optional<Binary> oldBinary = binaryRepo.findFirstByDeviceTypeAndWithdrawnOrderByCompilationTimeDesc(deviceType, false);
     oldBinary.ifPresent(value -> binary.setVersion(value.getVersion() + 1));
@@ -185,6 +186,7 @@ public class CompilerService {
     TargetFilesAndReaders targets = extractTargetFilesAndReaders(metadata, target);
     List<ReaderFunction> readers = readerRepo.findByNameIn(targets.readers());
     if (readers.size() != targets.readers().size()) {
+      log.warn("Failed to find all readers");
       return CompletableFuture.failedFuture(new RuntimeException("Unable to find reader function"));
     }
 
@@ -196,6 +198,8 @@ public class CompilerService {
       try {
         copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
       } catch (IOException e) {
+        log.warn("Failed to copy base compiler project at %s destination is %s".formatted(baseCompilerProjectFolder, destinationFolder));
+        e.printStackTrace();
         File folderToDelete = new File(destinationFolder);
         FileSystemUtils.deleteRecursively(folderToDelete);
         return CompletableFuture.failedFuture(e);
@@ -204,6 +208,7 @@ public class CompilerService {
 
     int filesFound = extractFilesToFolder(codeGeneratedZipFile, targets.files.stream().toList(), generatedCodeInsertFolder);
     if (filesFound != targets.files().size()) {
+      log.warn("Failed to find required files");
       return CompletableFuture.failedFuture(new RuntimeException("Was unable to find all expected files"));
     }
     readers.forEach(x -> extractFilesToFolder(x.getSourceFiles(), List.of(
@@ -214,8 +219,10 @@ public class CompilerService {
 
 
     try {
+      log.info("Starting compile of C code");
       compile(destinationFolder);
     } catch (IOException | InterruptedException | RuntimeException e) {
+      log.error("Compiling failed", e);
       File folderToDelete = new File(destinationFolder);
       FileSystemUtils.deleteRecursively(folderToDelete);
       return CompletableFuture.failedFuture(e);
@@ -223,10 +230,11 @@ public class CompilerService {
 
 
     try {
-      byte[] compiledBinary = Files.readAllBytes(Paths.get(destinationFolder+"/ESP-OTA-MQTT.bin"));
+      byte[] compiledBinary = Files.readAllBytes(Paths.get(destinationFolder+"/build/ESP-OTA-MQTT.bin"));
       binary.setCompiledBinary(compiledBinary);
       binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
     } catch (IOException e) {
+      log.error("Locating compiled binary failed", e);
       File folderToDelete = new File(destinationFolder);
       FileSystemUtils.deleteRecursively(folderToDelete);
       return CompletableFuture.failedFuture(e);
@@ -245,7 +253,7 @@ public class CompilerService {
   }
 
   public static void compile(String directory) throws IOException, InterruptedException {
-    ProcessBuilder processBuilder = new ProcessBuilder(List.of("./nix-build.sh"));
+    ProcessBuilder processBuilder = new ProcessBuilder(List.of("./auto-build.sh"));
     processBuilder.directory(new File(directory));
     Process process;
     try{
@@ -267,11 +275,13 @@ public class CompilerService {
     }
 
     int exitCode = process.waitFor();
+    log.info("Compiling completed");
 
     if (exitCode != 0) {
       throw new RuntimeException("Program failed unexpectedly");
     }
   }
+
 
   private static void copyFolderAndContents(File source, File destination) throws IOException {
     if (source.isDirectory()) {
@@ -289,9 +299,13 @@ public class CompilerService {
         copyFolderAndContents(srcFile, destFile);
       }
     } else {
-      Files.copy(source.toPath(), destination.toPath());
+      if (!destination.getParentFile().exists()) {
+        destination.getParentFile().mkdirs();
+      }
+      Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
   }
+
 
   private static TargetFilesAndReaders extractTargetFilesAndReaders(GeneratedCodeMetadata metadata, DeviceTypeMetadata target) {
     Set<String> targetFiles = new HashSet<>(List.of(
