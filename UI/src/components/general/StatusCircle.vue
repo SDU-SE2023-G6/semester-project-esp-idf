@@ -1,17 +1,18 @@
 <script setup lang="ts">
     import { defineProps } from 'vue'
     import type { LogType } from '@/types/Log'
+    import { simplifyLogType } from '@/types/Log'
 
     interface Props {
         type: LogType;
     }
 
     const props = defineProps<Props>();
-    
+    const simplifiedType = simplifyLogType(props.type).toLowerCase();
 </script>
 
 <template>
-    <div :class="props.type + ' status'"></div>
+    <div :class="simplifiedType + ' status'"></div>
 </template>
 
 <style scoped>
