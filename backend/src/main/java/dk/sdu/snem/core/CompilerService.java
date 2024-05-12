@@ -242,7 +242,7 @@ public class CompilerService {
 
 
     File folderToDelete = new File(destinationFolder);
-    FileSystemUtils.deleteRecursively(folderToDelete);
+    //FileSystemUtils.deleteRecursively(folderToDelete);
 
     binary.setCompilationTime(Instant.now());
     binaryRepo.save(binary);

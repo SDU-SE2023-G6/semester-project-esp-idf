@@ -22,7 +22,7 @@ services:
       - MQTT_HOST=mqtt_broker
       - XTEXT_HOST=xtext_backend
       - COMPILER_BASE_PROJECT_PATH=/compiler/base
-      - COMPILER_BASE_PROJECT_INSERT_PATH=/lol
+      - COMPILER_BASE_PROJECT_INSERT_PATH=/main
     command: "java -jar /app.jar"
     volumes:
       - ./ESP-OTA-MQTT:/compiler/base
