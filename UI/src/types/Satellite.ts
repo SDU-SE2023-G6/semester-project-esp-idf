@@ -5,7 +5,8 @@ export enum SatelliteStatus {
     Offline = 'OFFLINE',
     Error = 'ERROR',
     Updating = 'UPDATING',
-    PendingMetadata = 'PENDING_METADATA'
+    PendingMetadata = 'PENDING_METADATA',
+    PendingVersionCheck = 'PENDING_VERSION_CHECK'
 }
 
 import type { AreaId } from '@/types/Area'

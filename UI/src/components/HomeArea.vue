@@ -1,5 +1,5 @@
 <template>
-  <div class="area-container">
+  <div class="area-container" v-bind="$attrs">
       <div class="flex area-header">
         <RouterLink :to="`/areas/${ props.area.id}`"><h2 class="area-name">{{ props.area.name }}</h2></RouterLink>
         <div v-if="props.details" class="flex area-details">
@@ -66,19 +66,19 @@ interface Props {
 }
 
 interface Emit {
-  (event: 'UpdatedArea'): void;
+  (event: 'updatedArea'): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emit>();
 
-let satellites = [] as Satellite[];
+let satellites:Satellite[] = ref([]);
 
 async function fetchSatellites() {
-  satellites = await dataStore.getSatellitesByArea(props.area.id);
+  satellites.value = await dataStore.getSatellitesByArea(props.area.id);
 }
 
-setTimeout(() => {
+setInterval(() => {
   fetchSatellites();
 }, 1000);
 
@@ -91,7 +91,7 @@ const tempAreaName = ref(props.area.name);
 const removeArea = async () => {
   if(!confirm("are you sure you want to delete this area?")) return
   await dataStore.deleteArea(props.area);
-  emit('UpdatedArea');
+  emit('updatedArea');
 }
 
 const editArea = async (area: Area) => {
@@ -102,7 +102,7 @@ const editArea = async (area: Area) => {
   area.name = tempAreaName.value;
   await dataStore.editArea(area) 
   isDialogShown.value = false;
-  emit('UpdatedArea');
+  emit('updatedArea');
 }
 </script>
 
