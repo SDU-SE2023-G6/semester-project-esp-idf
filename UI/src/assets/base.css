@@ -11,6 +11,7 @@
   --vt-c-orange: #FF8C00;
   --vt-c-blue: #007AFF;
   --vt-c-cyan: #20DDFF;
+  --vt-c-purple: #8E2DE2;
   --vt-c-grey: #8E8E93;
 
 
@@ -54,6 +55,7 @@
   --color-unknown: var(--vt-c-grey);
   --color-warning: var(--vt-c-orange);
   --color-pending: var(--vt-c-cyan);
+  --color-updating: var(--vt-c-purple);
 
   --section-gap: 160px;
 }
