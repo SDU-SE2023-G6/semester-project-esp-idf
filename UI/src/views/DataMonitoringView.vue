@@ -2,19 +2,64 @@
 import LineChart from '@/components/general/LineChart.vue';
 import BarChart from '../components/general/BarChart.vue'
 import PieChart from '@/components/general/PieChart.vue';
-import type { LogType } from '@/types/Log';
+import { LogType } from '@/types/Log';
 import { useDataStore } from '@/stores/dataStore';
 import { ref, computed } from 'vue';
 import { useTime } from '@/composables/useTime';
+import type { Log } from '@/types/Log';
+import type { DataPoint } from '@/types/DataPoint';
+import { format } from 'path';
+import Satellite from '@/types/Satellite';
 
 const { slidingWindow } = useTime() 
 
 
-const logTypes: LogType[] = ['info', 'warning', 'error', 'success', 'status'];
+const logTypes: LogType[] = [LogType.Info, LogType.Warning, LogType.Error, LogType.UpdateSuccess, LogType.Heartbeat];
 
 const dataStore = useDataStore();
-const logs = ref(dataStore.getLogs); 
-const logData = ref(logTypes.map(type => logs.value.filter(log => log.type === type).length));
+//const logs = ref(dataStore.getLogs);
+ 
+
+let logs: Log[] = ref([]);
+const logData = ref();
+const groupedLogs = ref();
+const data: {dt:DataPoint,src:Satellite}[] = ref([]);
+
+async function fetchLogs() {
+  logs.value = await dataStore.getLogs();
+  logData.value = logTypes.map(type => logs.value.filter(log => log.type === type).length);
+  groupedLogs.value = slidingWindow.value.map((hour: string) => logs.value.filter((log: Log) => log.timestamp.getHours() === parseInt(hour)).length);
+}
+
+async function fetchData() {
+  let dataPoints = (await dataStore.getDataPoints()).slice(0, 20);
+  let newData = [];
+  for(let i = 0; i < dataPoints.length; i++){
+    let satellite = await dataStore.getSatelliteById(dataPoints[i].satellite);
+    console.log("satellite", satellite);  
+    newData.push({dt: dataPoints[i], src: satellite});
+  }
+  if(data.value.length == 0){
+    data.value = newData;
+  } else if(JSON.stringify(data.value) !== JSON.stringify(newData)){
+    data.value = newData;
+  }
+}
+
+
+fetchLogs();
+fetchData();
+
+
+setInterval(() => fetchLogs(), 500);
+setInterval(() => fetchData(), 500);
+
+
+const cols: ATableProps['cols'] = [
+  {name: 'Source', formatter: row => `${row.src.name}/${row.dt.sensor}`},
+  { name: 'value', formatter: row => `${row.dt.value} ${row.dt.unit}` },
+  {name: 'timestamp', formatter: row => `${row.dt.timestamp.toLocaleString()}`},
+]
 
 
 const logColors = ref([
@@ -33,10 +78,6 @@ const logColors = ref([
 ]);
 
 
-const dummyLineData = [20, 30, 40, 50, 60, 70, 80, 90, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 20, 30, 40, 50, 60, 70];
-
-
-
 </script>
 
 
@@ -44,15 +85,24 @@ const dummyLineData = [20, 30, 40, 50, 60, 70, 80, 90, 100, 90, 80, 70, 60, 50, 
   <div>
     <h1>Data Monitoring</h1>
     <div class="w-full charts-wrapper">
+
+
+      <div class="tile">
+        <ATable
+        :rows="data"
+        :cols="cols"
+      />
+      </div>
+
       <div class="tile">
         <h3>Number of logs past 24h</h3>
-        <BarChart :labels="slidingWindow" :data="dummyLineData" color="#fff"/>
+        <BarChart :labels="slidingWindow" :data="groupedLogs" color="#fff"/>
       </div>
      
-      <div class="tile">
+      <!--<div class="tile">
         <h3>Temperature in Forest past 24h</h3>
         <LineChart :labels="slidingWindow" :data="dummyLineData" color="#fff"/>
-      </div>
+      </div>-->
 
      
       <div class="tile">
