@@ -6,7 +6,7 @@ import { useDataStore } from '@/stores/dataStore';
 import type { LogType } from '@/types/Log';
 
 const dataStore = useDataStore();
-const logs = ref(dataStore.getLogs); // Use ref for reactivity
+const logs = ref([]); // Use ref for reactivity
 
 const logTypes: LogType[] = ['info', 'warning', 'error', 'success', 'status'];
 
@@ -17,6 +17,10 @@ const filteredLogs = computed(() =>
     .filter(log => selectedLogTypes.value.includes(log.type))
     .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
 );
+
+const fetchLogs = async () => logs.value = await dataStore.getLogs();
+fetchLogs();
+setInterval(() => fetchLogs(), 1000);
 
 const toggleType = (type: LogType) => {
   if (selectedLogTypes.value.includes(type)) {
