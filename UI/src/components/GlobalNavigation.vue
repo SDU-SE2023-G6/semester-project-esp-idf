@@ -12,7 +12,7 @@ const isActive = (path: string) => {
 </script>
 <template>
     <div class="wrapper">
-        <img alt="Vue logo" src="../assets/logo.svg" />
+        <img alt="Vue logo" src="../assets/logo.svg" class="logo" />
         <nav>
             <router-link to="/">  
                 <FontAwesomeIcon :icon="faHouse" />
@@ -52,7 +52,8 @@ const isActive = (path: string) => {
         gap:2em;
     }
     img {
-        padding:1em;
+        padding:0;
+        margin: -70px;
     }
     nav {
         display: flex;
