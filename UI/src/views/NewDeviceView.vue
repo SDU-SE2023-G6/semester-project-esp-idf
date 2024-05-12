@@ -3,63 +3,68 @@
     <div class="configuration-step">
       <h2>Intitial firmware flashing</h2>
       <p>To a new satellite, first connect a new ESP32 with USB to your computer, and install the intitial mesh frimware by clicking the "Initialize" button below, then select your device.</p>
-      <ABtn class="button" id="initialize">Initialize</ABtn>
-      <esp-web-install-button id="esp-web-install-button" 
+      <ABtn id="initialize" icon="i-bx-transfer-alt">Select device to initialize</ABtn>
+      <esp-web-install-button id="esp-web-install-button"
+            compilation:src="`esp-web-install/esp-web-install-button.js`"
+            compilation:manifest="`esp-web-install/manifest.json`"
           :manifest="`esp-web-install/manifest.json`"
           ></esp-web-install-button>
     </div>
     <br>
-    <!--<div class="configuration-step">
-        <h2>Configuration and connection to the network</h2>
-        <p>To a new satellite, first connect a new ESP32 with USB to your computer, and install the intitial mesh frimware by clicking the "Initialize" button below, then select your device.</p>
-        <ABtn class="button" id="connect" @click="handleConnectButtonClick">Configure and connect</ABtn>
-    </div>-->
 
-    <div>
+    <div class="configuration-step">
         <h2>Unregistered satellites</h2>
-        <div class="unregistered-wrapper">
-            <div v-for="device in pendingDevices" :key="device.id" class="configuration-step">
-            <p>{{device.mac}}</p>
-            <ABtn class="button" @click="isDialogShown = true">Fill metadata</ABtn>
-        </div>
-        </div>
-        
+        <p> Satellites that have been flashed with the initial firmware but have not been registered yet will appear here. </p>
     </div>    
-    
-
-
-
-
+    <div class="unregistered-wrapper">
+        <ACard v-for="device in pendingDevices" :key="pendingDevices.indexOf(device)" 
+            :title="device.macAddress"
+            variant="outline"
+            color="primary"
+            class="shadow-none unregister-card"
+        >
+            <ABtn @click="selectDevice(device)" variant="outline">Fill metadata</ABtn>
+        </ACard>
+    </div>
 
     <ADialog
-      v-model="isDialogShown"
-      title="Fill satellite metadata"
+      v-model="isDeviceSelected"
+      title="Satellite registration"
     >
       <div class="a-card-body">
-        <AInput
-            type="text"
-            placeholder="Enter satellite name"
-            required
-            v-model="selectedName"
-            class="input"
-        />
+          
+          <AInput
+          type="text"
+          required
+          v-model="selectedName"
+          class="input"
+          placeholder="Enter a name"
+          prepend-inner-icon="i-bx-code"
+          />
+          
+          <ASelect v-model="selectedType" :options="types" placeholder="Select a type" prepend-inner-icon="i-bx-chip"/>
+          <ASelect v-model="selectedArea" :options="areas" placeholder="Select an area" prepend-inner-icon="i-bx-map-pin"/>
 
-        <Dropdown v-model="selectedClass" :options="classes"  placeholder="Select a class" />
+          <AAlert
+              color="danger"
+              variant="light"
+              v-model="modalErrorDisplayed"
+          >
+              {{ modalError }}
+          </AAlert>
 
-        <Dropdown v-model="selectedArea" :options="areas" optionLabel="name" placeholder="Select an area" />
-        
-
-        <div class="buttons">
+          <div class="buttons">
             <ABtn
                 color="success"
+                variant="outline"
                 @click="saveMetadata()"
             >
                 Confirm
             </ABtn>
             <ABtn
-                variant="light"
                 color="danger"
-                @click="isDialogShown = false"
+                variant="outline"
+                @click="resetForm()"
             >
                 Cancel
             </ABtn>
@@ -99,78 +104,98 @@
 
 <script setup>
 import { ref } from 'vue';
-import Dropdown from 'primevue/dropdown';
 import { useDataStore } from '@/stores/dataStore';
 
 const dataStore = useDataStore();
 
-const selectedClass = ref();
+const isDeviceSelected = ref(false);
+const selectedDevice = ref(null);
+const selectedType = ref();
 const selectedArea = ref();
 const selectedName = ref();
 
-const areas = dataStore.getAreas();
-const classes = dataStore.getSatelliteTypes();
+let areas = ref([]);
+let types = ref([]);
 
-const isDialogShown = ref(false);
+async function fetchAreasAndTypes() {
+    const areasList = await dataStore.getAreas();
+    areas.value = [];
+    areasList.forEach(area => {
+        areas.value.push({text: area.name, value: area.name, id: area.id});
+    });
+    console.log(areas.value);
 
-//let pendingDevices = dataStore.getDevidesPendingMetadata;
-
-let pendingDevices = [{mac: "64:33:4e:20:5e:13"}, {mac: "cc:7e:09:7e:1f:c6"}, {mac: "8a:db:fa:20:ca:74"}];
-
-console.log("pendingDevices", pendingDevices);
-
-let connectedPort = null;
-
-async function handleConnectButtonClick() {
-    navigator.serial
-        .requestPort()
-        .then(async (port) => {
-            // Connect to `port` or add it to the list of available ports.
-            console.log("Connected to:", port);
-            connectedPort = port;
-            await port.open({ baudRate: 115200 });
-            console.log("Port readable:", port.readable);
-
-            // Function to decode incoming bytes into a string
-            function decodeText(data) {
-                const decoder = new TextDecoder('utf-8');
-                return decoder.decode(data);
-            }
-
-            while (port.readable) {
-                const reader = port.readable.getReader();
-                try {
-                    while (true) {
-                        const { value, done } = await reader.read();
-                        if (done) {
-                            // |reader| has been canceled.
-                            break;
-                        }
-
-                        if (value) {
-                            // Decode and log the UART data
-                            const decodedMessage = decodeText(value);
-                            console.log("Decoded message:", decodedMessage);
-                        }
-                    }
-                } catch (error) {
-                    console.log("Error reading data:", error);
-                } finally {
-                    reader.releaseLock();
-                }
-            }
-        })
-        .catch((e) => {
-            // The user didn't select a port.
-            console.log(e);
-        });
+    const typesList = await dataStore.getSatelliteTypes();
+    types.value = [];
+    typesList.forEach(type => {
+        types.value.push({text: type.name, value: type.name, id: type.id});
+    });
+    console.log(types.value);
 }
 
-const saveMetadata = () => {
-    console.log("Save metadata");
-    console.log(selectedName.value, selectedClass.value, selectedArea.value);
+fetchAreasAndTypes();
 
+const pendingDevices = ref([]);
 
+const fetchPendingDevices = async () => pendingDevices.value = await dataStore.getDevicesPendingMetadata();
+fetchPendingDevices();
+setInterval(() => fetchPendingDevices(), 500);
+setInterval(() => console.log(pendingDevices.value), 1000);
+
+let modalError = ref("");
+let modalErrorDisplayed = ref(false);
+
+const selectDevice = (device) => {
+    resetForm();
+    selectedDevice.value = device;
+    isDeviceSelected.value = true;
+};
+
+const saveMetadata = async () => {
+    
+    console.log(selectedName.value, selectedType.value, selectedArea.value);
+    if(!selectedName.value || !selectedType.value || !selectedArea.value){
+        modalError.value = "Please fill all fields.";
+        modalErrorDisplayed.value = true;
+        return;
+    }
+
+    const selectedTypeIndex = types.value.findIndex(type => type.value === selectedType.value);
+    if(selectedTypeIndex === -1){
+        modalError.value = "Invalid type.";
+        modalErrorDisplayed.value = true;
+        return;
+    }
+    const selectedTypeId = types.value[selectedTypeIndex].id;
+
+    const selectedAreaIndex = areas.value.findIndex(area => area.value === selectedArea.value);
+    if(selectedAreaIndex === -1){
+        modalError.value = "Invalid area.";
+        modalErrorDisplayed.value = true;
+        return;
+    }
+
+    const selectedAreaId = areas.value[selectedAreaIndex].id;
+
+    await dataStore.editSatellite({
+        id: selectedDevice.value.id,
+        macAddress: selectedDevice.value.macAddress,
+        status: "UPDATING",
+        name: selectedName.value,
+        type: {id: selectedTypeId},
+        area: selectedAreaId
+    });
+
+    resetForm();
+    fetchPendingDevices();
+};
+
+const resetForm = () => {
+    selectedName.value = "";
+    selectedType.value = "";
+    selectedArea.value = "";
+    isDeviceSelected.value = false;
+    modalError.value = "";
 };
 
 </script>
@@ -186,16 +211,30 @@ const saveMetadata = () => {
     border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 1em;
+    margin: 1em 0px;
+    width: 200px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
 }
+
+
+@keyframes blink {
+  0% { opacity: 1; }
+  25%, 75% { opacity: 0.4; }
+  50%, 100% { opacity: 1; }
+}
+
+.unregister-card {
+  animation: blink 1s ease-out;
+}
+
 .a-card-body {
     display: flex;
     flex-direction: column;
     gap: 1em;
     max-width: 500px;
-}
-.a-card-body .input {
-    background-color: #09090b;
-    border-radius: 8px;
 }
 
 .buttons {
