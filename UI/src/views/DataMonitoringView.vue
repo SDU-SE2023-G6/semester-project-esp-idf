@@ -2,19 +2,19 @@
 import LineChart from '@/components/general/LineChart.vue';
 import BarChart from '../components/general/BarChart.vue'
 import PieChart from '@/components/general/PieChart.vue';
-import { LogType, simplifyLogType } from '@/types/Log';
+import { LogType, SimplifiedLogType, simplifyLogType } from '@/types/Log';
 import { useDataStore } from '@/stores/dataStore';
 import { ref, computed } from 'vue';
 import { useTime } from '@/composables/useTime';
 import type { Log } from '@/types/Log';
 import type { DataPoint } from '@/types/DataPoint';
 import { format } from 'path';
-import Satellite from '@/types/Satellite';
+import type {Satellite} from '@/types/Satellite';
 
 const { slidingWindow } = useTime() 
 
 
-const logTypes: SimplifiedLogType[] = [simplifyLogType(LogType.Info), simplifyLogType(LogType.Warning), simplifyLogType(LogType.Error), simplifyLogType(LogType.UpdateSuccess), simplifyLogType(LogType.Heartbeat)];
+const logTypes: SimplifiedLogType[] = [SimplifiedLogType.Heartbeat, SimplifiedLogType.Debug, SimplifiedLogType.Info, SimplifiedLogType.Warning, SimplifiedLogType.Error, SimplifiedLogType.Success, SimplifiedLogType.Update];
 
 const dataStore = useDataStore();
 //const logs = ref(dataStore.getLogs);
@@ -27,11 +27,8 @@ const data: {dt:DataPoint,src:Satellite}[] = ref([]);
 
 async function fetchLogs() {
   logs.value = await dataStore.getLogs();
-  logData.value = logTypes.map(type => logs.value.filter(log => log.type === type).length);
+  logData.value = logTypes.map(type => logs.value.filter(log => simplifyLogType(log.type) === type).length);
   groupedLogs.value = slidingWindow.value.map((hour: string) => logs.value.filter((log: Log) => log.timestamp.getHours() === parseInt(hour)).length);
-
-  console.log("logData", logData.value);
-  console.log("types",logTypes);
 }
 
 async function fetchData() {
@@ -67,6 +64,10 @@ const cols: ATableProps['cols'] = [
 
 const logColors = ref([
   getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-unknown'),
+  getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-unknown'),
+  getComputedStyle(document.documentElement)
     .getPropertyValue('--color-pending'),
   getComputedStyle(document.documentElement)
     .getPropertyValue('--color-warning'),
@@ -74,8 +75,9 @@ const logColors = ref([
     .getPropertyValue('--color-disabled'),
   getComputedStyle(document.documentElement)
     .getPropertyValue('--color-enabled'),
-    getComputedStyle(document.documentElement)
-    .getPropertyValue('--color-unknown'),
+  getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-updating'),
+
  
   
 ]);
