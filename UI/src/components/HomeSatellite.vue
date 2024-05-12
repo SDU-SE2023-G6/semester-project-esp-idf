@@ -1,7 +1,7 @@
 <template>
   <div class="satellite-container">
     <div class="stat-name">
-      <div :class="props.satellite.status + ' status'"></div>
+      <div :class="status + ' status'"></div>
       <div class="name">{{ props.satellite.name }}</div>
     </div>
     <div class="class">{{ props.satellite.type?.name }}</div>
@@ -16,6 +16,17 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const simplifiedStatusMap = {
+  "ONLINE": 'online',
+  "OFFLINE": 'offline',
+  "ERROR": 'error',
+  "UPDATING": 'pending',
+  "PENDING_METADATA": 'pending',
+  "PENDING_VERSION_CHECK": 'pending',
+};
+
+const status = simplifiedStatusMap[props.satellite.status] as keyof typeof simplifiedStatusMap;
 </script>
 
 <style scoped>
