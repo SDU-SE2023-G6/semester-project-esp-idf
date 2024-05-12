@@ -19,7 +19,7 @@
             "ONLINE": 'success',
             "OFFLINE": 'offline',
             "ERROR": 'error',
-            "UPDATING": 'pending',
+            "UPDATING": 'updating',
             "PENDING_METADATA": 'pending',
             "PENDING_VERSION_CHECK": 'pending',
         };
@@ -43,6 +43,10 @@
   
   .status.info, .status.pending {
     background-color: var(--color-pending);
+  }
+
+  .status.update {
+    background-color: var(--color-updating);
   }
   
   .status.warning {

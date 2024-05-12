@@ -3,22 +3,33 @@ import { computed, ref } from 'vue';
 import LogItem from '@/components/LogItem.vue';
 import StatusCircle from '@/components/general/StatusCircle.vue';
 import { useDataStore } from '@/stores/dataStore';
-import type { LogType } from '@/types/Log';
+import type { LogType, SimplifiedLogType } from '@/types/Log';
+import { simplifyLogType } from '@/types/Log';
 
 const dataStore = useDataStore();
 const logs = ref([]); // Use ref for reactivity
 
-const logTypes: LogType[] = ['info', 'warning', 'error', 'success', 'status'];
+// Array of the existing log types generate from the type enum
+const logTypes: SimplifiedLogType[] = ["Heartbeat", "Debug", "Info", "Warning", "Error", "Success", "Update"]
 
 const selectedLogTypes = ref([...logTypes]); // Maintain the types you want to display
 
 const filteredLogs = computed(() => 
   logs.value
-    .filter(log => selectedLogTypes.value.includes(log.type))
+    .filter(log => selectedLogTypes.value.includes(simplifyLogType(log.type)))
     .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
 );
 
-const fetchLogs = async () => logs.value = await dataStore.getLogs();
+async function fetchLogs() {
+  const newLogsValue = await dataStore.getLogs();
+  if(logs.value) {
+    if (JSON.stringify(logs.value) !== JSON.stringify(newLogsValue)) {
+      logs.value = newLogsValue;
+    }
+  } else {
+    logs.value = newLogsValue;
+  }
+}
 fetchLogs();
 setInterval(() => fetchLogs(), 1000);
 
@@ -42,7 +53,7 @@ const toggleType = (type: LogType) => {
            :key="logType" 
            @click="toggleType(logType)"
            :class="{ selected: !selectedLogTypes.includes(logType) }">
-        <StatusCircle :type="logType" /> 
+        <StatusCircle :type_log="logType" /> 
         <span>{{ logType }}</span>
       </div>
     </div>
