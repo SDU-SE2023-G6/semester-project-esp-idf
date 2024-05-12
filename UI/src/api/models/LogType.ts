@@ -13,9 +13,9 @@
 import { HttpFile } from '../http/http';
 
 export enum LogType {
-    Unspecified = 'UNSPECIFIED',
     Error = 'ERROR',
     Info = 'INFO',
+    Debug = 'DEBUG',
     Warning = 'WARNING',
     Heartbeat = 'HEARTBEAT',
     UpdateDownloadStart = 'UPDATE_DOWNLOAD_START',

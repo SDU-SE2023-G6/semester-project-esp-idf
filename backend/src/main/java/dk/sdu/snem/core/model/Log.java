@@ -26,14 +26,14 @@ public class Log {
   @DocumentReference(lazy = true)
   private @Indexed @Nullable Satellite satellite;
 
-  private @Indexed @NotNull LogType type = LogType.UNSPECIFIED;
+  private @Indexed @NotNull LogType type;
 
   @Getter
   @Schema(enumAsRef = true)
   public enum LogType {
-    UNSPECIFIED("UNSPECIFIED"),
     ERROR("ERROR"),
     INFO("INFO"),
+    DEBUG("DEBUG"),
     WARNING("WARNING"),
     HEARTBEAT("HEARTBEAT"),
     UPDATE_DOWNLOAD_START("UPDATE_DOWNLOAD_START"),

@@ -866,7 +866,7 @@ class CoreControllerTest {
 
       Log log1 = createAndSaveLog(satellite1, Instant.now(), "Log message 1", LogType.INFO);
       Log log2 = createAndSaveLog(satellite2, Instant.now(), "Log message 2", LogType.WARNING);
-      Log log3 = createAndSaveLog(null, Instant.now(), "Log message 2", LogType.UNSPECIFIED);
+      Log log3 = createAndSaveLog(null, Instant.now(), "Log message 2", LogType.DEBUG);
       List<Log> expectedLogs = List.of(log1, log2, log3);
 
       // Act
