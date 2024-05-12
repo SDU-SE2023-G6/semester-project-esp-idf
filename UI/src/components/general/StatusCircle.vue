@@ -2,13 +2,30 @@
     import { defineProps } from 'vue'
     import type { LogType } from '@/types/Log'
     import { simplifyLogType } from '@/types/Log'
-
+    import type { SatelliteStatus } from '@/types/Satellite'
+    import { ref } from 'vue'
     interface Props {
-        type: LogType;
+        type_log?: LogType;
+        status_satellite?: SatelliteStatus;
     }
 
     const props = defineProps<Props>();
-    const simplifiedType = simplifyLogType(props.type).toLowerCase();
+    let simplifiedType = ref('...');
+    console.log(props)
+    if(props.type_log) {
+        simplifiedType.value = simplifyLogType(props.type_log).toLowerCase();
+    } else if(props.status_satellite) {
+        const simplifiedStatusMap = {
+            "ONLINE": 'success',
+            "OFFLINE": 'offline',
+            "ERROR": 'error',
+            "UPDATING": 'pending',
+            "PENDING_METADATA": 'pending',
+            "PENDING_VERSION_CHECK": 'pending',
+        };
+
+        simplifiedType.value = simplifiedStatusMap[props.status_satellite] as keyof typeof simplifiedStatusMap;
+    }
 </script>
 
 <template>

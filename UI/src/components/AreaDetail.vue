@@ -172,7 +172,7 @@ const filters = ref({
 
       <column field="status" header="Status" style="width: 50px;">
         <template #body="{ data }">
-          <StatusCircle :type="data.status" />
+          <StatusCircle :status_satellite="data.status" />
         </template>
       </column>
 
