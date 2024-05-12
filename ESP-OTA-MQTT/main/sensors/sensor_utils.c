@@ -123,6 +123,7 @@ void log_sensor_data(const char* sensor_path, const char* data) {
     fclose(f);
 
     logged_count++;
+    ESP_LOGI("SENSOR", "Logged count %d", logged_count);
 }
 
 void create_sensor_name(char* sensor_path_buffer, SensorInstantiation *_sensor) {
@@ -155,7 +156,6 @@ void run_sensor(void *pvParameter) {
     ESP_LOGI(T_SENSOR, "Running sensor %s", sensor_t->name);
 
     while (1) {
-        ESP_LOGI(T_SENSOR, "Reading sensor %s", sensor_t->name);
         double *readings = sensor_t->sensor->readerFunction(sensor_t->pins, sensor_t->pinCount);
 
         for (int index = 0; index < sensor_t->sensor->outCount; index++) {
@@ -181,28 +181,31 @@ void sensor_routine(void *pvParameter)
     
     TaskHandle_t read_sensor = NULL;
 
-    for (int i = 0; i < dummy_device_type.sensorCount; i++) {
-        ESP_LOGI(T_SENSOR, "Starting routine for %s", dummy_device_type.sensorInstantiations[i]->name);
-        void *void_sensor_t = (void*) dummy_device_type.sensorInstantiations[i];
+    for (int i = 0; i < base_device_type.sensorCount; i++) {
+        ESP_LOGI(T_SENSOR, "Starting routine for %s", base_device_type.sensorInstantiations[i]->name);
+        void *void_sensor_t = (void*) base_device_type.sensorInstantiations[i];
 
         SensorInstantiation *_sensor_t = (SensorInstantiation*) void_sensor_t; 
 
         ESP_LOGI(T_SENSOR, "Test mem %s", _sensor_t->name);
         xTaskCreate(&run_sensor,
                     "sensor_routine", 8192, 
-                    (void*) dummy_device_type.sensorInstantiations[i],
-                     5, read_sensor);
+                    (void*) base_device_type.sensorInstantiations[i],
+                     5, &read_sensor);
     }
 
     while(1) {
-        if (logged_count > 50) {
+        if (logged_count > 10) {
+            ESP_LOGI(T_SENSOR, "STARTING TO SEND DATA. SUSPENDING SENSOR.");
             vTaskSuspend(read_sensor);
-            for (int i = 0; i < dummy_device_type.sensorCount; i++) {
+            for (int i = 0; i < base_device_type.sensorCount; i++) {
                 char sensor_path[215];
-                create_sensor_name(sensor_path, dummy_device_type.sensorInstantiations[i]);
+                create_sensor_name(sensor_path, base_device_type.sensorInstantiations[i]);
                 read_and_delete_file2(sensor_path);
             }
             logged_count = 0;
+
+            ESP_LOGI(T_SENSOR, "RESUMING SENSOR");
             vTaskResume(read_sensor);
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
