@@ -18,22 +18,21 @@ public class SatelliteService {
     private final SatelliteRepository satelliteRepo;
     private final LogRepository logRepo;
 
-    private List<Satellite> satellites;
 
     public SatelliteService(SatelliteRepository satelliteRepo, LogRepository logRepo) {
         this.satelliteRepo = satelliteRepo;
         this.logRepo = logRepo;
-        this.satellites = satelliteRepo.findAll();
     }
 
     public void checkSatellites() {
         Instant now = Instant.now();
 
-        for (Satellite satellite : satellites) {
-            System.out.println("Inside");
-            System.out.println(satellite.getNextExpectedHeartbeat());
-            if (satellite.getNextExpectedHeartbeat() != null) {System.out.println(satellite.getNextExpectedHeartbeat().isBefore(now));}
-            System.out.println(now);
+        for (Satellite satellite : satelliteRepo.findAll()) {
+            if (satellite.getNextExpectedHeartbeat() != null) {
+                logger.info("Inside at %s".formatted(satellite.getNextExpectedHeartbeat().toString()));
+                logger.info("Is before %s".formatted(satellite.getNextExpectedHeartbeat().isBefore(now)));
+                logger.info("Now is %s".formatted(now.toString()));
+            }
             if (satellite.getNextExpectedHeartbeat() != null && satellite.getNextExpectedHeartbeat().isBefore(now)) {
                 satellite.setStatus(Satellite.SatelliteStatus.OFFLINE);
                 satelliteRepo.save(satellite);

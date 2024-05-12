@@ -1,9 +1,12 @@
 package dk.sdu.snem;
 
+import dk.sdu.snem.core.CoreController;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +24,8 @@ import org.springframework.messaging.MessageChannel;
 @EnableIntegration
 @IntegrationComponentScan
 public class MqttConfig {
+  private static final Logger logger = LoggerFactory.getLogger(MqttConfig.class);
+
   @Value("${mqtt.broker.host}")
   private String mqttBrokerHost;
 
@@ -104,7 +109,7 @@ public class MqttConfig {
     } catch (UnknownHostException e) {
       throw new RuntimeException(e);
     }
-    System.out.println("IP Address of " + mqttBrokerHost + ": " + address.getHostAddress());
+    logger.info("IP Address of " + mqttBrokerHost + ": " + address.getHostAddress());
     options.setServerURIs(new String[]{String.format("tcp://%s:%d", address.getHostAddress(), mqttBrokerPort)});
     factory.setConnectionOptions(options);
     return factory;
