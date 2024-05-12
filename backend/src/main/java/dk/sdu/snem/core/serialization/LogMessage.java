@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class LogMessage {
   private String message;
   private Log.LogType type;
-  private Long timestamp;
+  private long timestamp;
   @Nullable
   @JsonProperty("next_heartbeat")
   @JsonAlias("next_heartbeat")

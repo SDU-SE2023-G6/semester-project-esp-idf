@@ -71,7 +71,7 @@ public class MqttService {
       return;
     }
 
-    Instant timestamp = Instant.ofEpochMilli(message.getTimestamp().longValue() * 1000);
+    Instant timestamp = Instant.ofEpochMilli(message.getTimestamp() * 1000);
 
     Log log = new Log();
     log.setMessage(message.getMessage());
@@ -80,11 +80,7 @@ public class MqttService {
     log.setSatellite(satellite);
 
     logRepo.save(log);
-    logger.info(log.toString());
-
-
     logger.info(message.toString());
-    System.out.println(logPayload);
 
   }
 
@@ -100,11 +96,11 @@ public class MqttService {
 
     Satellite satellite = satelliteRepo.findByDeviceMACAddress(message.getSatelliteMacAddress());
     if (satellite == null) {
-      logger.warn("Received log message from unknown satellite: {}", message.getSatelliteMacAddress());
+      logger.warn("Received data point message from unknown satellite: {}", message.getSatelliteMacAddress());
       return;
     }
 
-    Instant timestamp = Instant.ofEpochMilli(message.getTimestamp().longValue() * 1000);
+    Instant timestamp = Instant.ofEpochMilli(message.getTimestamp() * 1000);
 
     DataPoint dataPoint = new DataPoint();
     dataPoint.setUnit(message.getUnit());
@@ -117,7 +113,6 @@ public class MqttService {
     dataPointRepo.save(dataPoint);
 
     logger.info(dataPoint.toString());
-    System.out.println(dataPointPayload);
   }
 
   @ServiceActivator(inputChannel = "mqttInboundRegistrationChannel")
@@ -136,6 +131,5 @@ public class MqttService {
     satelliteRepo.save(satellite);
 
     logger.info(registrationMessage.toString());
-    System.out.println(registrationPayload);
   }
 }
