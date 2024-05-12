@@ -6,16 +6,14 @@ import type {Area} from '@/types/Area';
 
 const dataStore = useDataStore();
 
-let areas: Area[] = [];
+let areas: Area[] = ref([]);
 
 async function fetchAreas() {
-  areas = await dataStore.getAreas();
+  areas.value = await dataStore.getAreas();
 }
 
-setTimeout(() => {
-  fetchAreas();
-}, 1000);
-
+setInterval(() => fetchAreas(), 1000);
+fetchAreas();
 
 const isDialogShown = ref(false)
 
@@ -26,20 +24,31 @@ let helpArea = {
 
 const isEditMode = ref(false)
 
-const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
+const modalError = ref("");
+const modalErrorDisplayed = ref(false);
+
+const handleModal = async (area = JSON.parse(JSON.stringify(helpArea))) => {
 
   if(area.name === "") {
+    modalError.value = "Area name cannot be empty"
+    modalErrorDisplayed.value = true;
     return
   }
 
-  dataStore.addArea({
+  await dataStore.addArea({
       name: area.name,
       id: ''
   })
 
-  isDialogShown.value = false;
+  resetModal();
+  fetchAreas();
+}
+
+const resetModal = () => {
   helpArea.name = "";
-  isEditMode.value = false;
+  modalError.value = "";
+  modalErrorDisplayed.value = false;
+  isDialogShown.value = false;
 }
 
 </script>
@@ -66,20 +75,29 @@ const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
         <AInput
           type="text"
           label="Area name"
-          placeholder="Enter area name"
+          placeholder="Enter an area name"
           v-model="helpArea.name"
           required
         />
 
+        <AAlert
+          color="danger"
+          variant="light"
+          v-model="modalErrorDisplayed"
+        >
+          {{ modalError }}
+        </AAlert>
+
         <div class="buttons">
           <ABtn
             color="success"
+            variant="outline"
             @click="handleModal()"
           >
             Confirm
           </ABtn>
           <ABtn
-            variant="light"
+            variant="outline"
             color="danger"
             @click="isDialogShown = false"
           >
@@ -109,8 +127,8 @@ const handleModal = (area = JSON.parse(JSON.stringify(helpArea))) => {
   }
   .area-wrapper {
     gap: 1em;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
   }
   .area-wrapper > * {
    max-height: 300px;
