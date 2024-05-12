@@ -17,5 +17,14 @@ export enum LogType {
     Error = 'ERROR',
     Info = 'INFO',
     Warning = 'WARNING',
-    Heartbeat = 'HEARTBEAT'
+    Heartbeat = 'HEARTBEAT',
+    UpdateDownloadStart = 'UPDATE_DOWNLOAD_START',
+    UpdateDownloadComplete = 'UPDATE_DOWNLOAD_COMPLETE',
+    UpdateStart = 'UPDATE_START',
+    UpdateComplete = 'UPDATE_COMPLETE',
+    UpdateSuccess = 'UPDATE_SUCCESS',
+    UpdateFail = 'UPDATE_FAIL',
+    UpdateRollbackStart = 'UPDATE_ROLLBACK_START',
+    UpdateRollbackSuccess = 'UPDATE_ROLLBACK_SUCCESS',
+    UpdateRollbackFail = 'UPDATE_ROLLBACK_FAIL'
 }

@@ -40,7 +40,8 @@ public class Satellite {
     OFFLINE("OFFLINE"),
     ERROR("ERROR"),
     UPDATING("UPDATING"),
-    PENDING_METADATA("PENDING_METADATA");
+    PENDING_METADATA("PENDING_METADATA"),
+    PENDING_VERSION_CHECK("PENDING_VERSION_CHECK");
 
     private final String value;
 

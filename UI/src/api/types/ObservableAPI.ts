@@ -3,6 +3,7 @@ import { Configuration} from '../configuration'
 import { Observable, of, from } from '../rxjsStub';
 import {mergeMap, map} from  '../rxjsStub';
 import { AreaMetadata } from '../models/AreaMetadata';
+import { BinaryVersion } from '../models/BinaryVersion';
 import { DataPointMetadata } from '../models/DataPointMetadata';
 import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
@@ -675,6 +676,35 @@ export class ObservableProgramApi {
      */
     public getProgramStatus(_options?: Configuration): Observable<ProgramStatusProjection> {
         return this.getProgramStatusWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ProgramStatusProjection>) => apiResponse.data));
+    }
+
+    /**
+     * @param deviceMac 
+     */
+    public provideBinaryVersionWithHttpInfo(deviceMac: string, _options?: Configuration): Observable<HttpInfo<BinaryVersion>> {
+        const requestContextPromise = this.requestFactory.provideBinaryVersion(deviceMac, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.provideBinaryVersionWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * @param deviceMac 
+     */
+    public provideBinaryVersion(deviceMac: string, _options?: Configuration): Observable<BinaryVersion> {
+        return this.provideBinaryVersionWithHttpInfo(deviceMac, _options).pipe(map((apiResponse: HttpInfo<BinaryVersion>) => apiResponse.data));
     }
 
     /**

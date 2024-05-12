@@ -2,6 +2,7 @@ import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/htt
 import { Configuration} from '../configuration'
 
 import { AreaMetadata } from '../models/AreaMetadata';
+import { BinaryVersion } from '../models/BinaryVersion';
 import { DataPointMetadata } from '../models/DataPointMetadata';
 import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
@@ -399,6 +400,15 @@ export interface ProgramApiGetProgramMetadataRequest {
 export interface ProgramApiGetProgramStatusRequest {
 }
 
+export interface ProgramApiProvideBinaryVersionRequest {
+    /**
+     * 
+     * @type string
+     * @memberof ProgramApiprovideBinaryVersion
+     */
+    deviceMac: string
+}
+
 export interface ProgramApiSaveProgramDslContentRequest {
     /**
      * 
@@ -507,6 +517,20 @@ export class ObjectProgramApi {
      */
     public getProgramStatus(param: ProgramApiGetProgramStatusRequest = {}, options?: Configuration): Promise<ProgramStatusProjection> {
         return this.api.getProgramStatus( options).toPromise();
+    }
+
+    /**
+     * @param param the request object
+     */
+    public provideBinaryVersionWithHttpInfo(param: ProgramApiProvideBinaryVersionRequest, options?: Configuration): Promise<HttpInfo<BinaryVersion>> {
+        return this.api.provideBinaryVersionWithHttpInfo(param.deviceMac,  options).toPromise();
+    }
+
+    /**
+     * @param param the request object
+     */
+    public provideBinaryVersion(param: ProgramApiProvideBinaryVersionRequest, options?: Configuration): Promise<BinaryVersion> {
+        return this.api.provideBinaryVersion(param.deviceMac,  options).toPromise();
     }
 
     /**

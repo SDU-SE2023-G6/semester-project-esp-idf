@@ -1,4 +1,5 @@
 export * from '../models/AreaMetadata'
+export * from '../models/BinaryVersion'
 export * from '../models/DataPointMetadata'
 export * from '../models/DeviceTypeMetadata'
 export * from '../models/ErrorResponse'

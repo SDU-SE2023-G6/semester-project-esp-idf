@@ -1,4 +1,5 @@
 export * from '../models/AreaMetadata';
+export * from '../models/BinaryVersion';
 export * from '../models/DataPointMetadata';
 export * from '../models/DeviceTypeMetadata';
 export * from '../models/ErrorResponse';
@@ -15,6 +16,7 @@ export * from '../models/SatelliteRegisterResponseDTO';
 export * from '../models/SatelliteStatus';
 
 import { AreaMetadata } from '../models/AreaMetadata';
+import { BinaryVersion } from '../models/BinaryVersion';
 import { DataPointMetadata } from '../models/DataPointMetadata';
 import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
@@ -50,6 +52,7 @@ let enumsMap: Set<string> = new Set<string>([
 
 let typeMap: {[index: string]: any} = {
     "AreaMetadata": AreaMetadata,
+    "BinaryVersion": BinaryVersion,
     "DataPointMetadata": DataPointMetadata,
     "DeviceTypeMetadata": DeviceTypeMetadata,
     "ErrorResponse": ErrorResponse,

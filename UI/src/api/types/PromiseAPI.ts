@@ -2,6 +2,7 @@ import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/htt
 import { Configuration} from '../configuration'
 
 import { AreaMetadata } from '../models/AreaMetadata';
+import { BinaryVersion } from '../models/BinaryVersion';
 import { DataPointMetadata } from '../models/DataPointMetadata';
 import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
 import { ErrorResponse } from '../models/ErrorResponse';
@@ -427,6 +428,22 @@ export class PromiseProgramApi {
      */
     public getProgramStatus(_options?: Configuration): Promise<ProgramStatusProjection> {
         const result = this.api.getProgramStatus(_options);
+        return result.toPromise();
+    }
+
+    /**
+     * @param deviceMac 
+     */
+    public provideBinaryVersionWithHttpInfo(deviceMac: string, _options?: Configuration): Promise<HttpInfo<BinaryVersion>> {
+        const result = this.api.provideBinaryVersionWithHttpInfo(deviceMac, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * @param deviceMac 
+     */
+    public provideBinaryVersion(deviceMac: string, _options?: Configuration): Promise<BinaryVersion> {
+        const result = this.api.provideBinaryVersion(deviceMac, _options);
         return result.toPromise();
     }
 
