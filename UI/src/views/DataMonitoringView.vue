@@ -2,7 +2,7 @@
 import LineChart from '@/components/general/LineChart.vue';
 import BarChart from '../components/general/BarChart.vue'
 import PieChart from '@/components/general/PieChart.vue';
-import { LogType } from '@/types/Log';
+import { LogType, simplifyLogType } from '@/types/Log';
 import { useDataStore } from '@/stores/dataStore';
 import { ref, computed } from 'vue';
 import { useTime } from '@/composables/useTime';
@@ -14,7 +14,7 @@ import Satellite from '@/types/Satellite';
 const { slidingWindow } = useTime() 
 
 
-const logTypes: LogType[] = [LogType.Info, LogType.Warning, LogType.Error, LogType.UpdateSuccess, LogType.Heartbeat];
+const logTypes: SimplifiedLogType[] = [simplifyLogType(LogType.Info), simplifyLogType(LogType.Warning), simplifyLogType(LogType.Error), simplifyLogType(LogType.UpdateSuccess), simplifyLogType(LogType.Heartbeat)];
 
 const dataStore = useDataStore();
 //const logs = ref(dataStore.getLogs);
@@ -29,6 +29,9 @@ async function fetchLogs() {
   logs.value = await dataStore.getLogs();
   logData.value = logTypes.map(type => logs.value.filter(log => log.type === type).length);
   groupedLogs.value = slidingWindow.value.map((hour: string) => logs.value.filter((log: Log) => log.timestamp.getHours() === parseInt(hour)).length);
+
+  console.log("logData", logData.value);
+  console.log("types",logTypes);
 }
 
 async function fetchData() {
@@ -51,8 +54,8 @@ fetchLogs();
 fetchData();
 
 
-setInterval(() => fetchLogs(), 500);
-setInterval(() => fetchData(), 500);
+setInterval(() => fetchLogs(), 3500);
+setInterval(() => fetchData(), 3500);
 
 
 const cols: ATableProps['cols'] = [
