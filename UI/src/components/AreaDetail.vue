@@ -23,31 +23,26 @@
   const route = useRoute();
 
   const id = route.params.id as string;
-  let area: Area = { name: "", id: ""};
-
-  fetchArea();
-
-  async function fetchArea() {
-    area = await dataStore.getAreaById(id);
-  }
-
-  const areas = await dataStore.getAreas();
-  let satellites = ref<Satellite[]>([]);
-
-  async function fetchSatellites() {
+  const area: Area = ref({ name: "", id: ""});
+  const areas: Area[] = ref([]);
+  const satellites: Satellite[] = ref([]);
+  const types = ref([]);
+  
+  async function fetchData() {
+    area.value = await dataStore.getAreaById(id);
+    areas.value = await dataStore.getAreas();
     satellites.value = await dataStore.getSatellitesByArea(id);
+    types.value = await dataStore.getSatelliteTypes();
   }
 
-  setTimeout(() => {
-    fetchSatellites();
+  fetchData();
+
+  setInterval(async () => {
+    await fetchData();
   }, 1000);
-
-  console.log("satellites", satellites.value);
-
 
   const selectedSatellites = ref<Satellite[]>([]);
   const selectedArea = ref();
-  const classes = await dataStore.getSatelliteTypes();
 
   const changeArea = async () => {
     let promises = [];
@@ -58,13 +53,13 @@
     }
 
     await Promise.all(promises);
-    await fetchSatellites();
-  } 
+    await fetchData();
+  }
 
   const deleteSatellite = async (satellite: Satellite) => {
-    if (!confirm("Are you sure you want to delete this area?")) return;
+    if (!confirm(`Are you sure you want to delete ${satellite.name}?`)) return;
     await dataStore.deleteSatellite(satellite);
-    await fetchSatellites();
+    await fetchData();
   }
 
   const isDialogShown = ref(false);
@@ -113,7 +108,7 @@ const onRowEditSave = (event) => {
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-    class: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+    type: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
     status: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
 
@@ -131,7 +126,7 @@ const filters = ref({
 
     <ABtn class="button">
       <a href="/new-device">
-        <i class="i-bx-plus-circle" />
+        <i class="i-bx-plus-circle"/>
       Add New Device
       </a>
     </ABtn>
@@ -158,7 +153,7 @@ const filters = ref({
         v-model:editingRows="editingRows"
         v-model:selection="selectedSatellites"
         v-model:filters="filters"
-        :globalFilterFields="['name', 'class', 'status']"
+        :globalFilterFields="['name', 'type', 'status']"
         :value="satellites"
         selectionMode="multiple"
         editMode="row"
@@ -187,9 +182,9 @@ const filters = ref({
         </template>
       </Column>
 
-      <Column field="class" header="Class" style="width: 30%;">
+      <Column field="type" header="Type" style="width: 30%;">
         <template #editor="{ data, field }">
-            <Dropdown v-model="data[field]" :options="classes" placeholder="Select a class" />
+            <Dropdown v-model="data[field]" :options="types" placeholder="Select a type" />
         </template>
       </Column>
 
