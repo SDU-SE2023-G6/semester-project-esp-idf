@@ -1,3 +1,4 @@
+#include "http_routine.h"
 
 #include <string.h>
 #include <sys/param.h>
@@ -17,7 +18,8 @@
 #include "esp_mac.h"
 
 #include "sdkconfig.h" // Load the config files
-
+#include "http_routine.h"
+#include "ota_routine.h"
 
 
 #include "esp_http_client.h"
@@ -27,7 +29,6 @@
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
 static const char *T_HTTP = "HTTP_ROUTING";
-
 
 /**
  * @brief Event handler handling the registation of the device to the server
@@ -192,4 +193,76 @@ void satellite_register_device(void *pvParameters) {
 }
 
 
+esp_err_t check_for_ota_update()
+{
+    uint8_t base_mac_addr[6] = {0}; // MAC address of the ESP32
+    esp_read_mac(base_mac_addr, ESP_MAC_WIFI_STA);
+    char device_topic[32] = {0};
+    sprintf(device_topic, "%02x%02x%02x%02x%02x%02x", 
+        base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
+        base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
+
+    char check_url[256];
+    sprintf(check_url, 
+        "%s/program/binary-discovery/%s", CONFIG_SERVER_URL, device_topic);
+
+    ESP_LOGI(T_HTTP, "Checking for updates at %s", check_url);
+
+    esp_http_client_config_t config = {
+        .url = check_url,
+        .event_handler = _http_event_handler,
+        .method = HTTP_METHOD_GET,
+        .disable_auto_redirect = true,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    // GET
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK) {
+        int status_code = esp_http_client_get_status_code(client);
+        ESP_LOGI(T_HTTP, "HTTP GET Status = %d, content_length = %"PRId64,
+        status_code,
+        esp_http_client_get_content_length(client));
+        // TODO: log update avaialable
+        if (status_code != 200) {
+            ESP_LOGE(T_HTTP, "Failed to get update with code %d", status_code);
+            return ESP_FAIL;
+        }
+
+        char* buffer = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER);
+        esp_http_client_read(client, buffer, MAX_HTTP_OUTPUT_BUFFER);
+        // get response content 
+        cJSON *root = cJSON_Parse(buffer);
+        free(buffer); //  clear the buffer
+        if (root == NULL) {
+            ESP_LOGE(T_HTTP, "Failed to parse JSON");
+            return ESP_FAIL;
+        }
+
+        cJSON *updateId = cJSON_GetObjectItem(root, "binaryId");
+        cJSON *binaryHash = cJSON_GetObjectItem(root, "binaryHash");
+
+        if (updateId == NULL || binaryHash == NULL) {
+            ESP_LOGE(T_HTTP, "Failed to get updateId or binaryHash");
+            return ESP_FAIL;
+        }
+
+        ESP_LOGI(T_HTTP, "Update available: %s", updateId->valuestring);
+        ESP_LOGI(T_HTTP, "Binary hash: %s", binaryHash->valuestring);
+
+        // TODO: do check here
+        char update_url[256];
+        sprintf(update_url,
+            "%s/program/binary/%s", CONFIG_SERVER_URL, updateId->valuestring);
+        perform_ota(update_url);
+
+    } else {
+        ESP_LOGE(T_HTTP, "HTTP GET request failed: %s", esp_err_to_name(err));
+        // TODO: LOG ERROR
+        return ESP_FAIL; 
+    }
+
+    return ESP_OK;
+}
 
