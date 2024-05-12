@@ -1,13 +1,13 @@
 #include "target_device_type.h"
 
-SensorInstantiation FTL_DHT11_outside = {
+SensorInstantiation HTL_DHT11_outside = {
     .sensor = &DHT11_sensor,
     .name = "outside",
     .pins = {1, 2},
     .pinCount = 2,
     .samplingRate = {1, SECOND}
 };
-SensorInstantiation FTL_light_top = {
+SensorInstantiation HTL_light_top = {
     .sensor = &light_sensor,
     .name = "top",
     .pins = {3},
@@ -16,8 +16,8 @@ SensorInstantiation FTL_light_top = {
 };
 
 DeviceType base_device_type = {
-    .name = "FTL",
-    .sensorInstantiations = {&FTL_DHT11_outside, &FTL_light_top},
+    .name = "HTL",
+    .sensorInstantiations = {&HTL_DHT11_outside, &HTL_light_top},
     .sensorCount = 2,
     .batchRatePolicy = {1, SECOND},
     .batchSizePolicy = 0,
