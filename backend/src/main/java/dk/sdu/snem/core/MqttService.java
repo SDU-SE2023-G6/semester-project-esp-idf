@@ -90,6 +90,23 @@ public class MqttService {
     logRepo.save(log);
     logger.info(message.toString());
 
+    switch (message.getType()) {
+      case ERROR, UPDATE_ROLLBACK_FAIL, UPDATE_FAIL, WARNING ->
+              satellite.setStatus(Satellite.SatelliteStatus.ERROR);
+      case UPDATE_ROLLBACK_SUCCESS, UPDATE_SUCCESS ->
+              satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
+      case UPDATE_DOWNLOAD_START, UPDATE_DOWNLOAD_COMPLETE, UPDATE_START, UPDATE_COMPLETE, UPDATE_ROLLBACK_START ->
+              satellite.setStatus(Satellite.SatelliteStatus.UPDATING);
+      case HEARTBEAT -> {
+        System.out.println("Heartbeat");
+        if(message.getNextHeartbeat() != null) {satellite.setNextExpectedHeartbeat(Instant.ofEpochMilli(message.getNextHeartbeat() * 1000));}
+        satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
+      }
+    }
+
+    System.out.println(satellite.toString());
+
+    satelliteRepo.save(satellite);
   }
 
   @ServiceActivator(inputChannel = "mqttInboundDataPointsChannel")

@@ -2,7 +2,7 @@
     <div class="log-container" @click="isDialogShown = true">
       <div class="log-header">
         <div class="log-left">
-            <StatusCircle :type="log.type" />
+            <StatusCircle :type_log="log.type" />
             <div class="timestamp">{{ timeStampToDate(log.timestamp) }}</div>
             <div class="name">{{ sourceName }}</div>
         </div>
@@ -13,11 +13,11 @@
 
     <ADialog
       v-model="isDialogShown"
-      :title="getSourceName(log.source)"
+      :title="sourceName"
       :subtitle="timeStampToDate(log.timestamp)"
     >
     <div class="dialog-content">
-      <StatusCircle :type="log.type" />
+      <StatusCircle :type_log="log.type" />
       <p>{{ log.message }}</p>
     </div>
    
@@ -26,7 +26,7 @@
     </ADialog>
   </template>
   
-  <script setup lang="ts">
+<script setup lang="ts">
     import type { Log, LogSource } from '@/types/Log';
     import {useDataStore} from '@/stores/dataStore';
     import { ref } from 'vue';
@@ -48,22 +48,15 @@
     
     const isDialogShown = ref(false)
 
-    let sourceName = '...';
-    let typeName = '...';
+    let sourceName = ref();
+    let typeName = ref();
 
-    async function getSourceName(source: LogSource){
-      const fetechedSourcename = (await dataStore.getSatelliteById(source))?.name || 'System';
-      sourceName = fetechedSourcename;
+    async function fetchSourceAndType(){
+      sourceName.value = (await dataStore.getSatelliteById(props.log.source))?.name || 'System';
+      typeName.value = (await dataStore.getSatelliteById(props.log.source)).type?.name || '';
     }
 
-    async function getTypeName(source: LogSource){
-      if(!source) return typeName = '';
-      const satelliteTypeName = (await dataStore.getSatelliteById(source)).type?.name || '';
-      typeName = satelliteTypeName;
-    }
-
-    getSourceName(props.log.source);
-    getTypeName(props.log.source);
+    fetchSourceAndType();
   </script>
   
   <style scoped>

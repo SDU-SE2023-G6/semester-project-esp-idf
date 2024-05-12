@@ -16,7 +16,16 @@
 
   async function fetchAreasAndLogs() {
     areas.value = await dataStore.getAreas();
-    logs.value = (await dataStore.getLogs()).slice(0, 10);
+    const logsOldValue = logs.value;
+    const logsNewValue = (await dataStore.getLogs()).slice(0, 10);
+    // Check if the logs have changed
+    if(!logsOldValue){
+      logs.value = logsNewValue;
+      return;
+    }
+    if (JSON.stringify(logsOldValue) !== JSON.stringify(logsNewValue)) {
+      logs.value = logsNewValue;
+    }
   }
 
   fetchAreasAndLogs();

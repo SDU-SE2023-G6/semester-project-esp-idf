@@ -37,9 +37,6 @@
 
   fetchData();
 
-  setInterval(async () => {
-    await fetchData();
-  }, 1000);
 
   const selectedSatellites = ref<Satellite[]>([]);
   const selectedArea = ref();
@@ -100,8 +97,10 @@
 
 const onRowEditSave = (event) => {
     let { newData, index } = event;
-
     products.value[index] = newData;
+
+    dataStore.editSatellite(products.value[index]);
+    fetchData();
 };
 
 
@@ -172,7 +171,7 @@ const filters = ref({
 
       <column field="status" header="Status" style="width: 50px;">
         <template #body="{ data }">
-          <StatusCircle :type="data.status" />
+          <StatusCircle :status_satellite="data.status" />
         </template>
       </column>
 
@@ -183,8 +182,11 @@ const filters = ref({
       </Column>
 
       <Column field="type" header="Type" style="width: 30%;">
+        <template #body="{ data }">
+          {{ data.type.name }}
+        </template>
         <template #editor="{ data, field }">
-            <Dropdown v-model="data[field]" :options="types" placeholder="Select a type" />
+            <Dropdown v-model="data[field]" :options="types" optionLabel="name" placeholder="Select a type" />
         </template>
       </Column>
 
