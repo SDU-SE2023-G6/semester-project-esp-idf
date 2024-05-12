@@ -5,6 +5,6 @@
 #include "DHT11_sensor.h"
 #include "light_sensor.h"
 extern DeviceType base_device_type;
-DeviceType* get_device_type_constrained(double* readings);
+DeviceType* constrain_device_type(DeviceType* device_type);
 
 #endif /* TARGET_DEVICE_TYPE_H */

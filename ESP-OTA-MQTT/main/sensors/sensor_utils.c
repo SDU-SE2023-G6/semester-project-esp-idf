@@ -159,7 +159,7 @@ void run_sensor(void *pvParameter) {
         double *readings = sensor_t->sensor->readerFunction(sensor_t->pins, sensor_t->pinCount);
 
         for (int index = 0; index < sensor_t->sensor->outCount; index++) {
-
+            sensor_t->readings[index] = readings[index];
             char sensor_path[215];
             create_sensor_name(sensor_path, sensor_t);
             char _char_reading[6] = {0};
@@ -195,6 +195,9 @@ void sensor_routine(void *pvParameter)
     }
 
     while(1) {
+
+        constrain_device_type(&base_device_type);
+
         if (logged_count > 10) {
             ESP_LOGI(T_SENSOR, "STARTING TO SEND DATA. SUSPENDING SENSOR.");
             vTaskSuspend(read_sensor);

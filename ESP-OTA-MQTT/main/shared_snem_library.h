@@ -50,6 +50,7 @@ struct SensorInstantiation {
     int pins[MAX_PINS];
     int pinCount;
     TimeDuration samplingRate;
+    double* readings;
 };
 
 struct DeviceType {
