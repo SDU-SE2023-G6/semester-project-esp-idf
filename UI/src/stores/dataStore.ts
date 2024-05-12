@@ -1,7 +1,7 @@
 // stores/dataStore.js
 import { defineStore } from 'pinia';
 import type { DataPoint } from '@/types/DataPoint';
-import type { Log, LogSource } from '@/types/Log';
+import { getLogMessage, type Log, type LogSource } from '@/types/Log';
 import type { Area, AreaId } from '@/types/Area';
 import type { Satellite, SatelliteId } from '@/types/Satellite';
 import { AreaApi, DataPointsApi, DeviceTypeApi, LogsApi, SatelliteApi, ProgramApi } from './api';
@@ -34,10 +34,6 @@ async function SatelliteMetadataToSatellite(satelliteMetadata: SatelliteMetadata
     throw new Error(`Satellite id is required, got ${satelliteMetadata.id} (${satelliteMetadata})`);
   }
 
-  // const satelliteClass = satelliteMetadata.class;
-  // if(!satelliteMetadata.class) {
-  //   throw new Error(`Satellite class is required, got ${satelliteMetadata.class} (${satelliteMetadata})`);
-  // }
   if(!satelliteMetadata.status) {
     throw new Error(`Satellite status is required, got ${satelliteMetadata.status} (${satelliteMetadata})`);
   }
@@ -101,30 +97,47 @@ async function DataPointMetadataToDataPoint(dataPointMetadata: DataPointMetadata
   };
 }
 
-async function LogsMetadatasToLogs(logMetadatas: LogMetadata[]): Promise<Log[]> {
-  return Promise.all(logMetadatas.map(LogMetadataToLog));
+function LogsMetadatasToLogs(logMetadatas: LogMetadata[]): Log[] {
+  return logMetadatas.map(LogMetadataToLog);
 }
 
-async function LogMetadataToLog(logMetadata: LogMetadata): Promise<Log> {
+function LogMetadataToLog(logMetadata: LogMetadata): Log {
   if(!logMetadata.timestamp) {
     throw new Error(`Log timestamp is required, got ${logMetadata.timestamp} (${logMetadata})`);
   }
   if(!logMetadata.type) {
     throw new Error(`Log type is required, got ${logMetadata.type} (${logMetadata})`);
   }
-  if(!logMetadata.message) {
-    throw new Error(`Log message is required, got ${logMetadata.message} (${logMetadata})`);
-  }
+
 
   return {
     source: logMetadata.source ? logMetadata.source : 'system',
     timestamp: logMetadata.timestamp,
     type: logMetadata.type,
-    message: logMetadata.message
+    message: logMetadata.message ? logMetadata.message : getLogMessage(logMetadata.type)
   }
 }
 
+async function fetchDevicesPendingMetadata() {
+  const satellites = await SatelliteMetadatasToSatellites(await SatelliteApi.getSatellites());
+  const satellitesPendingMetadata = satellites.filter(satellite => satellite.status === 'PENDING_METADATA');
+  return satellitesPendingMetadata;
+}
 
+function satelliteToSatelliteMetadata(satellite: Satellite): SatelliteMetadata {
+  return {
+    id: satellite.id,
+    name: satellite.name,
+    areaId: satellite.area,
+    deviceTypeId: satellite.type?.id,
+    macAddress: satellite.macAddress,
+    status: satellite.status
+  };
+}
+
+function sortLogsByTimestamp(logs: Log[]): Log[] {
+  return logs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+}
 
 export const useDataStore = defineStore('data', {
   actions: {
@@ -135,26 +148,22 @@ export const useDataStore = defineStore('data', {
     deleteArea: async (area: Area) => AreaApi.deleteAreaById(area.id),
 
     getSatellites: async () => SatelliteMetadatasToSatellites(await SatelliteApi.getSatellites()),
-    getDevicesPendingMetadata: async () =>{
-      const satellites = await SatelliteMetadatasToSatellites(await SatelliteApi.getSatellites());
-      const satellitesPendingMetadata = satellites.filter(satellite => satellite.status === 'PENDING_METADATA');
-      return satellitesPendingMetadata;
-    },
+    getDevicesPendingMetadata: async () => await fetchDevicesPendingMetadata(),
     getSatelliteById: async (id: SatelliteId) => SatelliteMetadataToSatellite(await SatelliteApi.getSatelliteById(id)),
     getSatellitesByArea: async (areaId: AreaId) => SatelliteMetadatasToSatellites(await AreaApi.getSatellitesInArea(areaId)),
     getSatellitesWithoutArea: async () => SatelliteMetadatasToSatellites(await AreaApi.getSatellitesInArea()),
-    editSatellite: async (satellite: Satellite) => await SatelliteApi.editSatellite(satellite),
+    editSatellite: async (satellite: Satellite) => await SatelliteApi.editSatellite(satelliteToSatelliteMetadata(satellite)),
     deleteSatellite: async (satellite: Satellite) => await SatelliteApi.deleteSatelliteById(satellite.id),
     
-    getSatelliteTypes: async () => DeviceTypeMetadatasToSatelliteTypes(await DeviceTypeApi.getDeviceTypes()),
+    getSatelliteTypes: async () => (await DeviceTypeMetadatasToSatelliteTypes(await DeviceTypeApi.getDeviceTypes())).filter(deviceType => !deviceType.deprecated),
     getSatelliteTypeById: async (id: string) => DeviceTypeMetadataToSatelliteType(await DeviceTypeApi.getDeviceTypeById(id)),
 
     getDataPoints: async () => DataPointMetadatasToDataPoints(await DataPointsApi.getDataPoints()),
     getDataPointsBySatellite: async (satellite: Satellite) => DataPointMetadatasToDataPoints(await SatelliteApi.getDataPointsBySatellite(satellite.id)),
     getDataPointsFromSometimeAgo: async (hours:number) => DataPointMetadatasToDataPoints(await DataPointsApi.getDataPointsFromSometimeAgo(hours)),
 
-    getLogs: async () => LogsMetadatasToLogs(await LogsApi.getLogs()),
-    getLogsBySource: async (source: LogSource) => LogsMetadatasToLogs(source === 'system' ? await LogsApi.getLogsBySatellite() : await LogsApi.getLogsBySatellite(source)),
-    getLogsFromSometimeAgo: async (hours:number) => LogsMetadatasToLogs(await LogsApi.getLogsFromSometimeAgo(hours))
+    getLogs: async () => sortLogsByTimestamp(LogsMetadatasToLogs(await LogsApi.getLogs())),
+    getLogsBySource: async (source: LogSource) => sortLogsByTimestamp(LogsMetadatasToLogs(source === 'system' ? await LogsApi.getLogsBySatellite() : await LogsApi.getLogsBySatellite(source))),
+    getLogsFromSometimeAgo: async (hours:number) => sortLogsByTimestamp(LogsMetadatasToLogs(await LogsApi.getLogsFromSometimeAgo(hours)))
   }
 });
