@@ -27,6 +27,7 @@ public class Satellite {
   @DocumentReference
   private @Indexed @Nullable DeviceType deviceType;
   private @Indexed @NotNull SatelliteStatus status = SatelliteStatus.PENDING_METADATA;
+  private @Nullable Instant nextExpectedHeartbeat;
 
   public Satellite(String name, String deviceMACAddress) {
     this.name = name;

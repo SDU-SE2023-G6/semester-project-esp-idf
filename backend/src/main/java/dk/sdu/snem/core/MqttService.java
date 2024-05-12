@@ -22,6 +22,9 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Objects;
+
+import static dk.sdu.snem.core.model.Log.LogType.*;
 
 @Service
 public class MqttService {
@@ -68,6 +71,11 @@ public class MqttService {
     Satellite satellite = satelliteRepo.findByDeviceMACAddress(message.getSatelliteMacAddress());
     if (satellite == null) {
       logger.warn("Received log message from unknown satellite: {}", message.getSatelliteMacAddress());
+      return;
+    }
+
+    if(Objects.equals(message.getMessage(), "") && message.getType() != ERROR) {
+      logger.warn("Received log message with null message");
       return;
     }
 

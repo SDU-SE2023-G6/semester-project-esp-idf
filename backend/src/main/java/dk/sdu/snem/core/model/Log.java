@@ -25,6 +25,7 @@ public class Log {
   private @Nullable String message;
   @DocumentReference(lazy = true)
   private @Indexed @Nullable Satellite satellite;
+  private @Nullable Instant nextExpectedHeartbeat;
 
   private @Indexed @NotNull LogType type;
 
