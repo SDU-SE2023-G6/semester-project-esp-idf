@@ -150,6 +150,11 @@ public class MqttService {
       return;
     }
 
+    if(satelliteRepo.findByDeviceMACAddress(registrationMessage.getSatelliteMacAddress()) != null) {
+      logger.warn("Device already exists");
+      return;
+    }
+
     Satellite satellite = new Satellite();
     satellite.setDeviceMACAddress(registrationMessage.getSatelliteMacAddress());
 
