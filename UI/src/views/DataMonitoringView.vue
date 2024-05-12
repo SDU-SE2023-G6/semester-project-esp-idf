@@ -36,7 +36,6 @@ async function fetchData() {
   let newData = [];
   for(let i = 0; i < dataPoints.length; i++){
     let satellite = await dataStore.getSatelliteById(dataPoints[i].satellite);
-    console.log("satellite", satellite);  
     newData.push({dt: dataPoints[i], src: satellite});
   }
   if(data.value.length == 0){
@@ -91,29 +90,34 @@ const logColors = ref([
     <h1>Data Monitoring</h1>
     <div class="w-full charts-wrapper">
 
+      <div class="flex-col">
+        <div class="tile">
+          <h3>Number of logs past 24h</h3>
+          <BarChart :labels="slidingWindow" :data="groupedLogs" color="#fff"/>
+        </div>
+      
+        <!--<div class="tile">
+          <h3>Temperature in Forest past 24h</h3>
+          <LineChart :labels="slidingWindow" :data="dummyLineData" color="#fff"/>
+        </div>-->
 
-      <div class="tile">
-        <ATable
-        :rows="data"
-        :cols="cols"
-      />
-      </div>
+ 
 
-      <div class="tile">
-        <h3>Number of logs past 24h</h3>
-        <BarChart :labels="slidingWindow" :data="groupedLogs" color="#fff"/>
+          <div class="tile">
+            <h3>Logs past 24h</h3>
+            <PieChart :labels="logTypes" :data="logData" :colors="logColors" />
+          </div>
+        </div>
+        <div class="tile">
+          <ATable
+          :rows="data"
+          :cols="cols"
+        />
       </div>
-     
-      <!--<div class="tile">
-        <h3>Temperature in Forest past 24h</h3>
-        <LineChart :labels="slidingWindow" :data="dummyLineData" color="#fff"/>
-      </div>-->
+    
+      
 
-     
-      <div class="tile">
-        <h3>Logs past 24h</h3>
-        <PieChart :labels="logTypes" :data="logData" :colors="logColors" />
-      </div>
+      
       
     </div> 
 
@@ -132,5 +136,10 @@ const logColors = ref([
     padding: 1em;
     border-radius: 10px;
     min-width: 30vw;
+  }
+  .flex-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
   }
 </style>

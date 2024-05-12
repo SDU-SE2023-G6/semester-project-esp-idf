@@ -98,13 +98,13 @@ public class MqttService {
       case UPDATE_DOWNLOAD_START, UPDATE_DOWNLOAD_COMPLETE, UPDATE_START, UPDATE_COMPLETE, UPDATE_ROLLBACK_START ->
               satellite.setStatus(Satellite.SatelliteStatus.UPDATING);
       case HEARTBEAT -> {
-        System.out.println("Heartbeat");
+        logger.info("Heartbeat");
         if(message.getNextHeartbeat() != null) {satellite.setNextExpectedHeartbeat(Instant.ofEpochMilli(message.getNextHeartbeat() * 1000));}
         satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
       }
     }
 
-    System.out.println(satellite.toString());
+    logger.info(satellite.toString());
 
     satelliteRepo.save(satellite);
   }

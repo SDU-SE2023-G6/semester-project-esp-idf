@@ -13,6 +13,7 @@
 
   const areas: Area[] = ref([]);
   const logs: Log[] = ref([]);
+  const someLogs: Log[] = ref([]);
 
   async function fetchAreasAndLogs() {
     areas.value = await dataStore.getAreas();
@@ -31,7 +32,15 @@
   fetchAreasAndLogs();
   setInterval(() => fetchAreasAndLogs(), 1000);
 
-  const dummyLineData = [20, 30, 40, 50, 60, 70, 80, 90, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 20, 30, 40, 50, 60, 70];
+  const groupedLogs = ref();
+  async function fetchLogs() {
+    someLogs.value = await dataStore.getLogs();
+    groupedLogs.value = slidingWindow.value.map((hour: string) => someLogs.value.filter((log: Log) => log.timestamp.getHours() === parseInt(hour)).length);
+  }
+
+  fetchLogs();
+  setInterval(() => fetchLogs(), 5000);
+
 
 </script>
 
@@ -45,7 +54,7 @@
       <div class="flex column-wrapper w-full">
         <div class="general-wrapper">
           <h2>Incoming data</h2>
-          <BarChart :labels="slidingWindow" :data="dummyLineData" color="#fff" class="chart"/>
+          <BarChart :labels="slidingWindow" :data="groupedLogs" color="#fff" class="chart"/>
         </div>
        <div class="general-wrapper">
           <h2>Logs</h2>

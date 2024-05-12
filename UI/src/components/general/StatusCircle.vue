@@ -11,7 +11,6 @@
 
     const props = defineProps<Props>();
     let simplifiedType = ref('...');
-    console.log(props)
     if(props.type_log) {
         simplifiedType.value = simplifyLogType(props.type_log).toLowerCase();
     } else if(props.status_satellite) {

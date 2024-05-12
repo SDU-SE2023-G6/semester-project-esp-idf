@@ -15,7 +15,10 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import org.apache.juli.logging.LogFactory;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class CoreController {
 
+  private static final Logger logger = LoggerFactory.getLogger(CoreController.class);
   private final SatelliteRepository satelliteRepo;
   private final AreaRepository areaRepo;
   private final DeviceTypeRepository deviceTypeRepo;
@@ -277,7 +281,7 @@ public class CoreController {
       return new ResponseEntity<>(satelliteRegisterResponseDTO, HttpStatusCode.valueOf(200));
 
     } catch (Exception e) {
-      System.out.println("Failed to add Satellite.");
+      logger.info("Failed to add Satellite.");
       return new ResponseEntity<>(
           new SatelliteRegisterResponseDTO(false), HttpStatusCode.valueOf(400));
     }
