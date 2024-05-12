@@ -1,4 +1,4 @@
-idf_component_register(SRCS "ota_routine.c" "main.c" "mqtt_routine.c" "ntp.c" "http_routine.c"
+idf_component_register(SRCS "main.c" "ota_routine.c" "ntp.c" "mqtt_routine.c" "shared_snem_library.c" "target_device_type.c" "http_routine.c" 
                     INCLUDE_DIRS "." "files" "sensors"
                     # Embed the server root certificate into the final binary
                     EMBED_TXTFILES ${project_dir}/server_certs/ca_cert.pem

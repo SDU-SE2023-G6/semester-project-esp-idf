@@ -5,4 +5,7 @@
 
 DeviceType* getDeviceTypeConstrained(double* readings);
 
+
+extern DeviceType dummy_device_type;
+
 #endif /* TARGET_DEVICE_TYPE_H */

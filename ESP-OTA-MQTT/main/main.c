@@ -102,7 +102,7 @@ void app_main(void)
     /* CODE FOR MAIN LOOP */
 
     // Initialize SNTP and go to the sensor routine
-    if (initialize_sntp(3, 10000) == ESP_OK) {
+    if (initialize_sntp(6, 10000) == ESP_OK) {
         ESP_LOGI(TAG, "SNTP initialized");
         xTaskCreate(&sensor_routine, "sensor_task", 8192, NULL, 5, gatherData);
     } else {
