@@ -95,13 +95,21 @@ void app_main(void)
     }
     xSemaphoreGive(init_lock);
 
-    xTaskCreate(&satellite_register_device, "register_device", 8192, NULL, 5, NULL);
+    // xTaskCreate(&satellite_register_device, "register_device", 8192, NULL, 5, NULL);
 
-    xTaskCreate(&mqtt5_app_start, "start mqtt", 8192, NULL, 5, NULL);
+    xSemaphoreTake(init_lock, portMAX_DELAY);
+    ESP_LOGI(TAG, "Starting MQTT");
+    mqtt5_app_start();
+    ESP_LOGI(TAG, "RELASING LOCK");
+    xSemaphoreGive(init_lock);
+
+    ESP_LOGI(TAG, "Registering device");
+    register_device();
+    ESP_LOGI(TAG, "Done registering");
 
     /* CODE FOR MAIN LOOP */
-
     // Initialize SNTP and go to the sensor routine
+    ESP_LOGI(TAG, "Starting main loop");
     if (initialize_sntp(6, 10000) == ESP_OK) {
         ESP_LOGI(TAG, "SNTP initialized");
         xTaskCreate(&sensor_routine, "sensor_task", 8192, NULL, 5, gatherData);

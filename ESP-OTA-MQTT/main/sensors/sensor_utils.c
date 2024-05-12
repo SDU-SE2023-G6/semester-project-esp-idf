@@ -205,6 +205,14 @@ void sensor_routine(void *pvParameter)
             }
             logged_count = 0;
 
+            // TODO: Do it somewhere else later
+            ESP_LOGI(T_SENSOR, "Sending heartbeat");
+            send_heartbeat();
+            ESP_LOGI(T_SENSOR, "Checking for OTA update");
+            if(check_for_ota_update() == ESP_OK) {
+                ESP_LOGI(T_SENSOR, "OTA update found. Rebooting...");
+            }
+
             ESP_LOGI(T_SENSOR, "RESUMING SENSOR");
             vTaskResume(read_sensor);
         }

@@ -23,10 +23,52 @@
 #include "esp_mac.h"
 #include "cJSON.h"
 #include "ota_routine.c"
+#include <stdio.h>
+#include <stdlib.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include "esp_system.h"
 
 #include "sdkconfig.h" // Load the config files
 
+#include "sensor_utils.h"
 #include "mqtt_routine.h"
+
+void copy_mac_address(char *dest)
+{
+    esp_read_mac(base_mac_addr, ESP_MAC_WIFI_STA);
+    sprintf(dest, "%02x%02x%02x%02x%02x%02x", 
+        base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
+        base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
+}
+
+
+void send_heartbeat() {
+    cJSON *root = cJSON_CreateObject();
+
+    char device_id[18] = {0};
+    copy_mac_address(device_id);
+
+    char timestamp_next[20];
+    // TODO: Fix this to be a proper timestamp
+    sprintf(timestamp_next, "%" PRId64, xx_time_get_time());
+
+    char timestamp[20];
+    sprintf(timestamp, "%" PRId64, xx_time_get_time());
+    
+    cJSON_AddStringToObject(root,"message", "Heartbeat");
+    cJSON_AddStringToObject(root,"type", "HEARTBEAT");
+    cJSON_AddStringToObject(root,"timestamp", timestamp);
+    cJSON_AddStringToObject(root,"next_heartbeat", timestamp_next);
+    cJSON_AddStringToObject(root,"satellite_mac_address", device_id);
+
+    char data[512] = {0};
+    sprintf(data, "%s", cJSON_PrintUnformatted(root));
+
+     // create a topic string for the device
+    esp_mqtt_client_publish(client, device_heartbeat_topic, data, 0, 0, 0);
+    cJSON_Delete(root);
+}
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -94,10 +136,10 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
 
         // subscribe to the device update topic
         msg_id = esp_mqtt_client_subscribe(client, device_update_topic, 0);
+        send_heartbeat();
 
         // TODO: Consider using a enum here.
         // Publish a i am alive message
-        esp_mqtt_client_publish(client, device_heartbeat_topic, "Alive", 0, 0, 0);
 
         esp_mqtt5_client_delete_user_property(publish_property.user_property);
         publish_property.user_property = NULL;
@@ -112,7 +154,6 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
         ESP_LOGI(T_MQTT, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
         print_user_property(event->property->user_property);
         esp_mqtt5_client_set_publish_property(client, &publish_property);
-        msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
         ESP_LOGI(T_MQTT, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
@@ -177,7 +218,7 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
     }
 }
 
-static void mqtt5_app_start(void)
+void mqtt5_app_start(void)
 {
     /*** SETUP THE MAC ADDRESS STUFF ***/
     // Get and set the mac address of the device
@@ -185,7 +226,7 @@ static void mqtt5_app_start(void)
 
      // create a topic string for the device
     char device_topic[32] = {0};
-    sprintf(device_topic, "/topic/%02x%02x%02x%02x%02x%02x", 
+    sprintf(device_topic, "%02x%02x%02x%02x%02x%02x", 
         base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
         base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
 
@@ -197,7 +238,7 @@ static void mqtt5_app_start(void)
 
     // Set the device update and heartbeat topics
     sprintf(device_update_topic, "%s/update", device_topic);
-    sprintf(device_heartbeat_topic,"%s/heartbeat", device_topic);
+    sprintf(device_heartbeat_topic,"%s/satellite/logs", device_topic);
 
 
     esp_mqtt5_connection_property_config_t connect_property = {
@@ -244,6 +285,27 @@ static void mqtt5_app_start(void)
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt5_event_handler, NULL);
     esp_mqtt_client_start(client);
-    
-    vTaskDelete(NULL);
+}
+
+
+
+esp_err_t register_device(void)
+{
+    cJSON *root = cJSON_CreateObject();
+
+     // create a topic string for the device
+    char device_id[32] = {0};
+    copy_mac_address(device_id);
+
+    cJSON_AddStringToObject(root, "satellite_mac_address", device_id);
+
+    char device_data[50] = {0};
+    sprintf(device_data, "%s", cJSON_PrintUnformatted(root));
+
+    cJSON_AddStringToObject(root, "satellite_mac_address", device_id);
+    esp_mqtt_client_publish(client, "satellite/register", device_data, 0, 0, 0);
+
+    cJSON_Delete(root);
+    // Start the MQTT client
+    return ESP_OK;
 }

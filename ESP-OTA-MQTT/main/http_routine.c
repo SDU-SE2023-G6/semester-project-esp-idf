@@ -6,7 +6,6 @@
 #include <ctype.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
 #include <esp_err.h>
 #include "esp_tls.h"
 #include "esp_log.h"
@@ -128,69 +127,72 @@ void create_device_registration_payload(char *deviceName, char *deviceMACAddress
     cJSON_Delete(root);
 }
 
-void http_register_deivce(void)
-{
-	 // Declare local_response_buffer with size (MAX_HTTP_OUTPUT_BUFFER + 1) to prevent out of bound access when
-    // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
-    char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
-    /**
-     * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
-     * If host and path parameters are not set, query parameter will be ignored. In such cases,
-     * query parameter should be specified in URL.
-     *
-     * If URL as well as host and path parameters are specified, values of host and path will be considered.
-     */
-	bool success = false;
+/**
+ * TODO: DELETE IF NOT ½USED
+*/
+// void http_register_deivce(void)
+// {
+// 	 // Declare local_response_buffer with size (MAX_HTTP_OUTPUT_BUFFER + 1) to prevent out of bound access when
+//     // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
+//     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
+//     /**
+//      * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
+//      * If host and path parameters are not set, query parameter will be ignored. In such cases,
+//      * query parameter should be specified in URL.
+//      *
+//      * If URL as well as host and path parameters are specified, values of host and path will be considered.
+//      */
+// 	bool success = false;
 
-    char *payload = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER);
+//     char *payload = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER);
 
-    uint8_t esp_mac_address[6] = {0};
-    esp_read_mac(esp_mac_address, ESP_MAC_WIFI_STA);
+//     uint8_t esp_mac_address[6] = {0};
+//     esp_read_mac(esp_mac_address, ESP_MAC_WIFI_STA);
 
-    ESP_LOGI(T_HTTP, "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x", 
-            esp_mac_address[0], esp_mac_address[1], esp_mac_address[2], 
-            esp_mac_address[3], esp_mac_address[4], esp_mac_address[5]);
+//     ESP_LOGI(T_HTTP, "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x", 
+//             esp_mac_address[0], esp_mac_address[1], esp_mac_address[2], 
+//             esp_mac_address[3], esp_mac_address[4], esp_mac_address[5]);
 
-    char* deviceMACAddress = (char *)malloc(18);
-    sprintf(deviceMACAddress, "%02x:%02x:%02x:%02x:%02x:%02x", 
-            esp_mac_address[0], esp_mac_address[1], esp_mac_address[2], 
-            esp_mac_address[3], esp_mac_address[4], esp_mac_address[5]);
+//     char* deviceMACAddress = (char *)malloc(18);
+//     sprintf(deviceMACAddress, "%02x:%02x:%02x:%02x:%02x:%02x", 
+//             esp_mac_address[0], esp_mac_address[1], esp_mac_address[2], 
+//             esp_mac_address[3], esp_mac_address[4], esp_mac_address[5]);
 
-    create_device_registration_payload("New ESP", deviceMACAddress, payload);
-    esp_http_client_config_t config = {
-        .url = CONFIG_SERVER_URL"/satellite/register",
-        .event_handler = _http_event_handler,
-        .method = HTTP_METHOD_POST,
-        .disable_auto_redirect = true,
-    };
+//     create_device_registration_payload("New ESP", deviceMACAddress, payload);
+//     esp_http_client_config_t config = {
+//         .url = CONFIG_SERVER_URL"/satellite/register",
+//         .event_handler = _http_event_handler,
+//         .method = HTTP_METHOD_POST,
+//         .disable_auto_redirect = true,
+//     };
 
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    esp_http_client_set_post_field(client, payload, strlen(payload));
-    esp_http_client_set_header(client, "Content-Type", "application/json");
+//     esp_http_client_handle_t client = esp_http_client_init(&config);
+//     esp_http_client_set_post_field(client, payload, strlen(payload));
+//     esp_http_client_set_header(client, "Content-Type", "application/json");
 
-    // GET
-    esp_err_t err = esp_http_client_perform(client);
-    if (err == ESP_OK) {
-        ESP_LOGI(T_HTTP, "HTTP GET Status = %d, content_length = %"PRId64,
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
+//     // GET
+//     esp_err_t err = esp_http_client_perform(client);
+//     if (err == ESP_OK) {
+//         ESP_LOGI(T_HTTP, "HTTP GET Status = %d, content_length = %"PRId64,
+//                 esp_http_client_get_status_code(client),
+//                 esp_http_client_get_content_length(client));
 
-		success = true;
-    } else {
-        ESP_LOGE(T_HTTP, "HTTP GET request failed: %s", esp_err_to_name(err));
-    }
-    ESP_LOG_BUFFER_HEX(T_HTTP, local_response_buffer, strlen(local_response_buffer));
+// 		success = true;
+//     } else {
+//         ESP_LOGE(T_HTTP, "HTTP GET request failed: %s", esp_err_to_name(err));
+//     }
+//     ESP_LOG_BUFFER_HEX(T_HTTP, local_response_buffer, strlen(local_response_buffer));
 
-    free(payload);
-    free(deviceMACAddress);
-    esp_http_client_cleanup(client);
-}
+//     free(payload);
+//     free(deviceMACAddress);
+//     esp_http_client_cleanup(client);
+// }
 
-void satellite_register_device(void *pvParameters) {
-	http_register_deivce();
+// void satellite_register_device(void *pvParameters) {
+// 	http_register_deivce();
 
-    vTaskDelete(NULL);
-}
+//     vTaskDelete(NULL);
+// }
 
 
 esp_err_t check_for_ota_update()
