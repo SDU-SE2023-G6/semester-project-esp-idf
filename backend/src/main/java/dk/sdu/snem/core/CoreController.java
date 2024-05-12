@@ -200,6 +200,10 @@ public class CoreController {
             .findById(new ObjectId(satelliteMetadata.id()))
             .orElseThrow(NotFoundException::new);
 
+    if (satellite.getStatus() == Satellite.SatelliteStatus.PENDING_METADATA) {
+      satellite.setStatus(Satellite.SatelliteStatus.UPDATING);
+    }
+
     satellite.setArea(area);
     satellite.setDeviceType(type);
     satellite.setName(satelliteMetadata.name());
