@@ -74,10 +74,10 @@ public class MqttService {
       return;
     }
 
-    if(Objects.equals(message.getMessage(), "") && message.getType() != ERROR) {
+    /*if(Objects.equals(message.getMessage(), "") && message.getType() != ERROR) {
       logger.warn("Received log message with null message");
       return;
-    }
+    }*/
 
     Instant timestamp = Instant.ofEpochMilli(message.getTimestamp() * 1000);
 
