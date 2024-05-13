@@ -1,6 +1,7 @@
 package dk.sdu.snem;
 
 import com.mongodb.lang.NonNull;
+import dk.sdu.snem.core.CoreController;
 import dk.sdu.snem.core.model.Program;
 import dk.sdu.snem.core.model.ReaderFunction;
 import dk.sdu.snem.core.repo.ProgramRepository;
@@ -16,6 +17,8 @@ import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,6 +43,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableMongoAuditing
 @OpenAPIDefinition
 public class ApplicationConfig implements WebMvcConfigurer {
+  private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
+
 
   private final MongoDatabaseFactory databaseFactory;
   private final MappingMongoConverter mongoConverter;
@@ -59,9 +64,14 @@ public class ApplicationConfig implements WebMvcConfigurer {
   @Bean
   CommandLineRunner defaultReaderSeeder() {
     return args -> {
+
       PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
       try {
+        logger.info("Finding default reader functions");
         Resource[] directories = resolver.getResources("classpath:/sampleReaders/*");
+        if (directories.length == 0) {
+          logger.warn("Found no default reader functions");
+        }
         for (Resource directory : directories) {
 
           ReaderFunction readerFunction =
@@ -73,16 +83,16 @@ public class ApplicationConfig implements WebMvcConfigurer {
                         function.setName(directory.getFilename());
                         return readerFunctionRepo.save(function);
                       });
-
+          logger.info("Saving reader function %s".formatted(readerFunction.getName()));
           Resource[] files =
               resolver.getResources("classpath:/sampleReaders/" + directory.getFilename() + "/*");
           byte[] allFilesAsZip = zipFiles(files);
           readerFunction.setSourceFiles(allFilesAsZip);
           readerFunctionRepo.save(readerFunction);
         }
+        logger.info("Done searching for reader functions");
       } catch (IOException e) {
-        // Handle exception
-        e.printStackTrace();
+        logger.error("Failure reading reader functions", e);
       }
     };
   }
