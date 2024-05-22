@@ -111,6 +111,7 @@ function LogMetadataToLog(logMetadata: LogMetadata): Log {
 
 
   return {
+    id: logMetadata.id,
     source: logMetadata.source ? logMetadata.source : 'system',
     timestamp: logMetadata.timestamp,
     type: logMetadata.type,

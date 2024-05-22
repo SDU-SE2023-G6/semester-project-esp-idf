@@ -80,6 +80,7 @@ export function simplifyLogType(logType:LogType|SimplifiedLogType):SimplifiedLog
 
 
 export type Log = {
+    id?: string;
     type: LogType;
     timestamp: Date;
     source: LogSource;
