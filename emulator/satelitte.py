@@ -12,13 +12,48 @@ def random_mac_address():
     mac = [first_byte] + [random.randint(0x00, 0xFF) for _ in range(5)]
     return ':'.join(f'{octet:02x}' for octet in mac)
 
-ESP_mac_address = random_mac_address()
-print("ESP MAC address: ", ESP_mac_address)
+# Check for a MAC_ADRESS file and read the MAC address from it
+# If the file does not exist, generate a random MAC address and write it to the file
+ESP_mac_address = None
+try:
+    with open("EMU_MAC_ADDRESS", "r") as f:
+        ESP_mac_address = f.read()
+        print("ESP MAC address: ", ESP_mac_address)
+except FileNotFoundError:
+    with open("EMU_MAC_ADDRESS", "w") as f:
+        ESP_mac_address = random_mac_address()
+        f.write(ESP_mac_address)
+        print("ESP MAC address: ", ESP_mac_address)
+
 
 ESP_firmware_hash = None
 
-BACKEND_URL = "http://backend:8080"
-MQTT_BROKER = "mqtt_broker"
+## Check if backend is running in a container or locally
+# If running in a container, use the container name "backend" as the backend URL
+# If running locally, use localhost as the backend URL
+
+BACKEND_URL = None
+MQTT_BROKER = None
+
+while BACKEND_URL == None or MQTT_BROKER == None:
+    try:
+        response = requests.get("http://backend:8080")
+        BACKEND_URL = "http://backend:8080"
+        MQTT_BROKER = "mqtt_broker"
+        print("Backend URL: ", BACKEND_URL)
+        print("MQTT Broker: ", MQTT_BROKER)
+    except requests.exceptions.ConnectionError:
+        print("Unable to connect to backend as expected with container syntax.")
+    try:
+        response = requests.get("http://localhost:8080")
+        BACKEND_URL = "http://localhost:8080"
+        MQTT_BROKER = "localhost"
+        print("Backend URL: ", BACKEND_URL)
+        print("MQTT Broker: ", MQTT_BROKER)
+    except requests.exceptions.ConnectionError:
+        print("Unable to connect to backend as expected with localhost syntax.")
+    
+    time.sleep(1)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -37,10 +72,9 @@ def publish_log(client, timestamp, message, msg_type):
 
 def publish_log_heartbeat(client, next_heartbeat):
     log_entry = {
-        "message": "Heartbeat",
         "type": "HEARTBEAT",
-        "timestamp": time.time(),
-        "next_heartbeat": next_heartbeat,
+        "timestamp": int(time.time()),
+        "next_heartbeat": int(next_heartbeat),
         "satellite_mac_address": ESP_mac_address
     }
     client.publish("satellite/logs", json.dumps(log_entry))
@@ -75,8 +109,12 @@ def query_binary_discovery(mac_address):
         # Raise an exception if the request was not successful
         response.raise_for_status()
 
+        response = response.json()
+
+        response["status"] = 200
+
         # Return the JSON response content
-        return response.json()
+        return response
 
     except requests.exceptions.HTTPError as http_err:
         return {
@@ -147,7 +185,7 @@ while True:
                     "value": data,
                     "unit": sensor["unit"],
                     "sensor": sensor["name"],
-                    "timestamp": time.time()
+                    "timestamp": int(time.time())
                 })
         if len(ESP_data_storage) >= ESP_config["batch_size"] or time.time() - ESP_config["last_batch_sent"] > ESP_config["batch_timeout"]:
             print("Sending batch")
@@ -156,21 +194,22 @@ while True:
             ESP_data_storage = []
             ESP_config["last_batch_sent"] = time.time()
     if time.time() - ESP_config["last_heartbeat_sent"] > ESP_config["heartbeat_interval"]:
-        print("Sending heartbeat")
         binary_discovery = query_binary_discovery(ESP_mac_address)
         if binary_discovery == None or binary_discovery["status"] == 404:
             print("No binary found, registering")
             publish_register(mqttc)
         else:
+            print("Sending heartbeat")
             publish_log_heartbeat(mqttc, time.time() + ESP_config["heartbeat_interval"])
             if binary_discovery["binaryHash"] != ESP_firmware_hash:
                 print("New firmware hash detected: ", ESP_firmware_hash)
-                publish_log(mqttc, time.time(), "Downloading new firmware", "UPDATING")
+                publish_log(mqttc, time.time(), "Downloading new firmware", "UPDATE_DOWNLOAD_START")
                 time.sleep(2)
-                publish_log(mqttc, time.time(), "Download complete, starting update", "UPDATING")
+                publish_log(mqttc, time.time(), "Download complete, starting update", "UPDATE_DOWNLOAD_COMPLETE")
+                publish_log(mqttc, time.time(), "Firmware update in progress", "UPDATE_START")
                 time.sleep(5)
                 ESP_firmware_hash = binary_discovery["binaryHash"]
-                publish_log(mqttc, time.time(), "Firmware update complete", "UPDATING")
+                publish_log(mqttc, time.time(), "Firmware update complete", "UPDATE_SUCCESS")
         ESP_config["last_heartbeat_sent"] = time.time()
     time.sleep(1)
     
