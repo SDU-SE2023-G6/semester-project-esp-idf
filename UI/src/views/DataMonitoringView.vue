@@ -20,10 +20,10 @@ const dataStore = useDataStore();
 //const logs = ref(dataStore.getLogs);
  
 
-let logs: Log[] = ref([]);
+let logs = ref<Log[]>([]);
 const logData = ref();
 const groupedLogs = ref();
-const data: {dt:DataPoint,src:Satellite}[] = ref([]);
+const data = ref<{dt:DataPoint,src:Satellite}[]>([]);
 
 async function fetchLogs() {
   logs.value = await dataStore.getLogs();

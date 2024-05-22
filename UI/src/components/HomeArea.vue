@@ -72,7 +72,7 @@ interface Emit {
 const props = defineProps<Props>();
 const emit = defineEmits<Emit>();
 
-let satellites:Satellite[] = ref([]);
+let satellites = ref<Satellite[]>([]);
 
 async function fetchSatellites() {
   satellites.value = await dataStore.getSatellitesByArea(props.area.id);
