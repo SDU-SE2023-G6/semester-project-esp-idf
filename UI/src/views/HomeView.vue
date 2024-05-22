@@ -3,6 +3,7 @@
   import HomeArea from '@/components/HomeArea.vue';
   import { useDataStore } from '@/stores/dataStore';
   import type { Area } from '@/types/Area';
+  import type { Log } from '@/types/Log';
   import LogItem from '@/components/LogItem.vue';
   import { useTime } from '@/composables/useTime';
   import {ref} from 'vue';
@@ -11,15 +12,18 @@
 
   const dataStore = useDataStore();
 
-  const areas: Area[] = ref([]);
-  const logs: Log[] = ref([]);
-  const someLogs: Log[] = ref([]);
+  const areas = ref<Area[]>([]);
+  const logs = ref<Log[]>([]);
+  const someLogs = ref<Log[]>([]);
 
   async function fetchAreasAndLogs() {
     areas.value = await dataStore.getAreas();
     const logsOldValue = logs.value;
-    const logsNewValue = (await dataStore.getLogs()).slice(0, 10);
+    const logsNewValue = (await dataStore.getLogs())
+      .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
+      .slice(0, 10);
     // Check if the logs have changed
+    
     if(!logsOldValue){
       logs.value = logsNewValue;
       return;
@@ -27,6 +31,7 @@
     if (JSON.stringify(logsOldValue) !== JSON.stringify(logsNewValue)) {
       logs.value = logsNewValue;
     }
+
   }
 
   fetchAreasAndLogs();
@@ -58,7 +63,7 @@
         </div>
        <div class="general-wrapper">
           <h2>Logs</h2>
-          <LogItem v-for="log in logs" :log="log" :key="log.timestamp" />
+          <LogItem v-for="log in logs" :log="log" :key="log.id" />
         </div>
       </div>
     </div>
