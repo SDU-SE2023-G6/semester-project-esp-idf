@@ -60,7 +60,6 @@ services:
 
   satelitte_emulator:
     build: ./emulator
-    container_name: satelitte_emulator
     restart: always
     volumes:
       - ./emulator:/usr/src/app
