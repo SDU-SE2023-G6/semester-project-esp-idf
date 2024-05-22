@@ -3,25 +3,23 @@ import { computed, ref } from 'vue';
 import LogItem from '@/components/LogItem.vue';
 import StatusCircle from '@/components/general/StatusCircle.vue';
 import { useDataStore } from '@/stores/dataStore';
-import type { LogType, SimplifiedLogType } from '@/types/Log';
+import type { Log, LogType, SimplifiedLogType } from '@/types/Log';
 import { simplifyLogType } from '@/types/Log';
 
 const dataStore = useDataStore();
-const logs = ref([]); // Use ref for reactivity
+const logs = ref<Log[]>([]); // Use ref for reactivity
 
 // Array of the existing log types generate from the type enum
 const logTypes: SimplifiedLogType[] = ["Heartbeat", "Debug", "Info", "Warning", "Error", "Success", "Update"]
 
 const selectedLogTypes = ref([...logTypes]); // Maintain the types you want to display
 
-const filteredLogs = computed(() => 
-  logs.value
+async function fetchLogs() {
+  const newLogsValueRaw = await dataStore.getLogs();
+  let newLogsValue = newLogsValueRaw
     .filter(log => selectedLogTypes.value.includes(simplifyLogType(log.type)))
     .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-);
-
-async function fetchLogs() {
-  const newLogsValue = await dataStore.getLogs();
+    .slice(0, 50);
   if(logs.value) {
     if (JSON.stringify(logs.value) !== JSON.stringify(newLogsValue)) {
       logs.value = newLogsValue;
@@ -33,12 +31,13 @@ async function fetchLogs() {
 fetchLogs();
 setInterval(() => fetchLogs(), 1000);
 
-const toggleType = (type: LogType) => {
+const toggleType = (type: SimplifiedLogType) => {
   if (selectedLogTypes.value.includes(type)) {
     selectedLogTypes.value = selectedLogTypes.value.filter(logType => logType !== type);
   } else {
     selectedLogTypes.value.push(type);
   }
+  fetchLogs();
 };
 
 </script>
@@ -57,7 +56,7 @@ const toggleType = (type: LogType) => {
         <span>{{ logType }}</span>
       </div>
     </div>
-    <LogItem v-for="log in filteredLogs" :log="log" :key="log.timestamp" />
+    <LogItem v-for="log in logs" :log="log" :key="log.id" />
   </div>
 </template>
 
