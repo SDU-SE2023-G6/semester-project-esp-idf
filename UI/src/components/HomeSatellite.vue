@@ -10,10 +10,15 @@
 
 <script setup lang="ts">
 import type { Satellite } from '@/types/Satellite';
+import {useDataStore} from '@/stores/dataStore';
+import { ref } from 'vue';
+
+const dataStore = useDataStore();
 
 interface Props {
   satellite: Satellite;
 }
+
 
 const props = defineProps<Props>();
 
@@ -26,8 +31,6 @@ const simplifiedStatusMap = {
   "PENDING_VERSION_CHECK": 'pending',
 };
 
-const status = simplifiedStatusMap[props.satellite.status] as keyof typeof simplifiedStatusMap;
-
 const humanReadableStatusMap = {
   "ONLINE": 'Online',
   "OFFLINE": 'Offline',
@@ -37,7 +40,17 @@ const humanReadableStatusMap = {
   "PENDING_VERSION_CHECK": 'Pending Version Check',
 };
 
-const statusText = humanReadableStatusMap[props.satellite.status] as keyof typeof humanReadableStatusMap;
+const statusText = ref(humanReadableStatusMap[props.satellite.status] as keyof typeof humanReadableStatusMap);
+const status = ref(simplifiedStatusMap[props.satellite.status] as keyof typeof simplifiedStatusMap);
+
+async function fetchSatelliteStatus() {
+  const s  = (await dataStore.getSatelliteById(props.satellite.id)).status;
+  status.value = simplifiedStatusMap[s] as keyof typeof simplifiedStatusMap;
+  statusText.value = humanReadableStatusMap[s] as keyof typeof humanReadableStatusMap;
+}
+
+fetchSatelliteStatus();
+setInterval(() => fetchSatelliteStatus(), 1000);
 </script>
 
 <style scoped>
