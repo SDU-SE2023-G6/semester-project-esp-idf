@@ -1,0 +1,12 @@
+# Ignore Maven build artifacts
+target/
+**/target
+
+# Ignore Eclipse project files
+.classpath
+.project
+.settings/
+
+# Ignore Docker-related files
+.dockerignore
+Dockerfile
