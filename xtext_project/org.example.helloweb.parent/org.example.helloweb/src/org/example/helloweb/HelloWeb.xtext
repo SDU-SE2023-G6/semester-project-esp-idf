@@ -61,7 +61,7 @@ SensorUnit:
     
 
 TimeUnit:
-    INT ('s' | 'm' | 'h' | 'd');
+    value=INT unit=('s' | 'm' | 'h' | 'd');
     
 Decimal:
 	left=INT '.' right=INT;

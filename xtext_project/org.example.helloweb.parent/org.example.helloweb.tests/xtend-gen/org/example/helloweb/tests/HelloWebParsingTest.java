@@ -10,8 +10,8 @@ import org.eclipse.xtext.testing.util.ParseHelper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(InjectionExtension.class)/* 
-@InjectWith(_HelloWebInjectorProvider) */
+@ExtendWith(InjectionExtension.class)
+@InjectWith(HelloWebInjectorProvider.class)
 @SuppressWarnings("all")
 public class HelloWebParsingTest {
   @Inject
