@@ -1,10 +1,9 @@
-// stores/dataStore.js
 import { defineStore } from 'pinia';
 import type { DataPoint } from '@/types/DataPoint';
 import { getLogMessage, type Log, type LogSource } from '@/types/Log';
 import type { Area, AreaId } from '@/types/Area';
 import type { Satellite, SatelliteId } from '@/types/Satellite';
-import { AreaApi, DataPointsApi, DeviceTypeApi, LogsApi, SatelliteApi, ProgramApi } from './api';
+import { AreaApi, DataPointsApi, DeviceTypeApi, LogsApi, SatelliteApi } from './api';
 import type { AreaMetadata, DataPointMetadata, DeviceTypeMetadata, LogMetadata, SatelliteMetadata } from '@/api';
 import type { SatelliteType } from '@/types/SatelliteType';
 

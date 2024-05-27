@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import LogItem from '@/components/LogItem.vue';
 import StatusCircle from '@/components/general/StatusCircle.vue';
 import { useDataStore } from '@/stores/dataStore';
-import type { Log, LogType, SimplifiedLogType } from '@/types/Log';
+import type { Log, SimplifiedLogType } from '@/types/Log';
 import { simplifyLogType } from '@/types/Log';
 
 const dataStore = useDataStore();
-const logs = ref<Log[]>([]); // Use ref for reactivity
+const logs = ref<Log[]>([]);
 
-// Array of the existing log types generate from the type enum
 const logTypes: SimplifiedLogType[] = ["Heartbeat", "Debug", "Info", "Warning", "Error", "Success", "Update"]
 
-const selectedLogTypes = ref([...logTypes]); // Maintain the types you want to display
+const selectedLogTypes = ref([...logTypes]);
 
 async function fetchLogs() {
   const newLogsValueRaw = await dataStore.getLogs();

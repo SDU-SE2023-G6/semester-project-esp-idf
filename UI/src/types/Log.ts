@@ -1,4 +1,3 @@
-import type { L } from "vitest/dist/reporters-xEmem8D4.js";
 import type { SatelliteId } from "./Satellite";
 
 export type LogSource = SatelliteId | 'system';

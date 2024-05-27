@@ -27,7 +27,7 @@
   </template>
   
 <script setup lang="ts">
-    import type { Log, LogSource } from '@/types/Log';
+    import type { Log } from '@/types/Log';
     import {useDataStore} from '@/stores/dataStore';
     import { ref } from 'vue';
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'

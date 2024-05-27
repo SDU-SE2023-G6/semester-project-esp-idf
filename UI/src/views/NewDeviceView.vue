@@ -76,15 +76,6 @@
 </template>
 
 <script>
-    navigator.serial.addEventListener("connect", (e) => {
-    // Connect to `e.target` or add it to a list of available ports.
-        console.log('connected :'+e);
-    });
-
-    navigator.serial.addEventListener("disconnect", (e) => {
-    // Remove `e.target` from the list of available ports.
-        console.log(e);
-    });
 
     navigator.serial.getPorts().then((ports) => {
         console.log(ports);

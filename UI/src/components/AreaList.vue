@@ -22,7 +22,6 @@ let helpArea = {
   id: 0
 }
 
-const isEditMode = ref(false)
 
 const modalError = ref("");
 const modalErrorDisplayed = ref(false);

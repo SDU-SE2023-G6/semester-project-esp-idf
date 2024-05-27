@@ -1,6 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue';
-  import Button from "primevue/button"
+  import { ref } from 'vue';
   import DataTable from "primevue/datatable"
   import InputText from "primevue/inputtext"
   import Column from "primevue/column"
@@ -12,10 +11,9 @@
 
 
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  import { faSearch, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+  import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
   import type { Satellite } from '@/types/Satellite';
   import StatusCircle from './general/StatusCircle.vue';
-  import MultiSelect from 'primevue/multiselect';
   import type { Area } from '@/types/Area';
 
 

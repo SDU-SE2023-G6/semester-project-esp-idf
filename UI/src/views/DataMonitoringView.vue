@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import LineChart from '@/components/general/LineChart.vue';
 import BarChart from '../components/general/BarChart.vue'
 import PieChart from '@/components/general/PieChart.vue';
-import { LogType, SimplifiedLogType, simplifyLogType } from '@/types/Log';
+import { SimplifiedLogType, simplifyLogType } from '@/types/Log';
 import { useDataStore } from '@/stores/dataStore';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useTime } from '@/composables/useTime';
 import type { Log } from '@/types/Log';
 import type { DataPoint } from '@/types/DataPoint';
-import { format } from 'path';
 import type {Satellite} from '@/types/Satellite';
 
 const { slidingWindow } = useTime() 
@@ -76,12 +74,7 @@ const logColors = ref([
     .getPropertyValue('--color-enabled'),
   getComputedStyle(document.documentElement)
     .getPropertyValue('--color-updating'),
-
- 
-  
 ]);
-
-
 </script>
 
 
@@ -95,14 +88,6 @@ const logColors = ref([
           <h3>Number of logs past 24h</h3>
           <BarChart :labels="slidingWindow" :data="groupedLogs" color="#fff"/>
         </div>
-      
-        <!--<div class="tile">
-          <h3>Temperature in Forest past 24h</h3>
-          <LineChart :labels="slidingWindow" :data="dummyLineData" color="#fff"/>
-        </div>-->
-
- 
-
           <div class="tile">
             <h3>Logs past 24h</h3>
             <PieChart :labels="logTypes" :data="logData" :colors="logColors" />
@@ -114,14 +99,7 @@ const logColors = ref([
           :cols="cols"
         />
       </div>
-    
-      
-
-      
-      
-    </div> 
-
-   
+    </div>
   </div>
 </template>
 
