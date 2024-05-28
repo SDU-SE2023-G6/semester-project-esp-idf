@@ -5,6 +5,8 @@ import StatusCircle from '@/components/general/StatusCircle.vue';
 import { useDataStore } from '@/stores/dataStore';
 import type { Log, SimplifiedLogType } from '@/types/Log';
 import { simplifyLogType } from '@/types/Log';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 const dataStore = useDataStore();
 const logs = ref<Log[]>([]);
@@ -13,7 +15,11 @@ const logTypes: SimplifiedLogType[] = ["Heartbeat", "Debug", "Info", "Warning", 
 
 const selectedLogTypes = ref([...logTypes]);
 
+const requesting = ref(false);
+
 async function fetchLogs() {
+  if(requesting.value) return;
+  requesting.value = true;
   const newLogsValueRaw = await dataStore.getLogs();
   let newLogsValue = newLogsValueRaw
     .filter(log => selectedLogTypes.value.includes(simplifyLogType(log.type)))
@@ -26,9 +32,13 @@ async function fetchLogs() {
   } else {
     logs.value = newLogsValue;
   }
+  requesting.value = false;
+  console.log("logs", logs.value)
 }
+
 fetchLogs();
-setInterval(() => fetchLogs(), 1000);
+setSafeInterval(() => fetchLogs(), 1000);
+
 
 const toggleType = (type: SimplifiedLogType) => {
   if (selectedLogTypes.value.includes(type)) {

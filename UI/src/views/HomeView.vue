@@ -8,6 +8,8 @@
   import { useTime } from '@/composables/useTime';
   import {ref} from 'vue';
   const { slidingWindow } = useTime()
+  import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 
   const dataStore = useDataStore();
@@ -16,7 +18,15 @@
   const logs = ref<Log[]>([]);
   const someLogs = ref<Log[]>([]);
 
+  const requestingAreasAndLogs = ref(false);
+  const requestinglogs = ref(false);
+
+
+
   async function fetchAreasAndLogs() {
+    if(requestingAreasAndLogs.value) return;
+    requestingAreasAndLogs.value = true;
+
     areas.value = await dataStore.getAreas();
     const logsOldValue = logs.value;
     const logsNewValue = (await dataStore.getLogs())
@@ -26,25 +36,31 @@
     
     if(!logsOldValue){
       logs.value = logsNewValue;
+      requestingAreasAndLogs.value = false;
       return;
     }
     if (JSON.stringify(logsOldValue) !== JSON.stringify(logsNewValue)) {
       logs.value = logsNewValue;
     }
 
+    requestingAreasAndLogs.value = false;
+
   }
 
   fetchAreasAndLogs();
-  setInterval(() => fetchAreasAndLogs(), 1000);
+  setSafeInterval(() => fetchAreasAndLogs(), 1000);
 
   const groupedLogs = ref();
   async function fetchLogs() {
+    if(requestinglogs.value) return;
+    requestinglogs.value = true;
     someLogs.value = await dataStore.getLogs();
     groupedLogs.value = slidingWindow.value.map((hour: string) => someLogs.value.filter((log: Log) => log.timestamp.getHours() === parseInt(hour)).length);
+    requestinglogs.value = false;
   }
 
   fetchLogs();
-  setInterval(() => fetchLogs(), 5000);
+  setSafeInterval(() => fetchLogs(), 5000);
 
 
 </script>

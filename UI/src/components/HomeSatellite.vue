@@ -10,10 +10,10 @@
 
 <script setup lang="ts">
 import type { Satellite } from '@/types/Satellite';
-import {useDataStore} from '@/stores/dataStore';
 import { ref } from 'vue';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
-const dataStore = useDataStore();
 
 interface Props {
   satellite: Satellite;
@@ -44,13 +44,13 @@ const statusText = ref(humanReadableStatusMap[props.satellite.status] as keyof t
 const status = ref(simplifiedStatusMap[props.satellite.status] as keyof typeof simplifiedStatusMap);
 
 async function fetchSatelliteStatus() {
-  const s  = (await dataStore.getSatelliteById(props.satellite.id)).status;
+  const s  = props.satellite.status;
   status.value = simplifiedStatusMap[s] as keyof typeof simplifiedStatusMap;
   statusText.value = humanReadableStatusMap[s] as keyof typeof humanReadableStatusMap;
 }
 
 fetchSatelliteStatus();
-setInterval(() => fetchSatelliteStatus(), 1000);
+setSafeInterval(() => fetchSatelliteStatus(), 1000);
 </script>
 
 <style scoped>

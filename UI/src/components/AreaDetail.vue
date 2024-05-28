@@ -8,7 +8,7 @@
   import { useRoute } from 'vue-router';
   import BackButton from '@/components/general/BackButton.vue';
   import { FilterMatchMode } from 'primevue/api';
-
+  import { useInterval } from '@/composables/useInterval';
 
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
   import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
@@ -18,6 +18,8 @@
 
 
   const dataStore = useDataStore();
+  const { setSafeInterval } = useInterval();
+
   const route = useRoute();
 
   const id = route.params.id as string;
@@ -34,6 +36,7 @@
   }
 
   fetchData();
+  setSafeInterval(() => fetchData(), 1000);
 
 
   const selectedSatellites = ref<Satellite[]>([]);

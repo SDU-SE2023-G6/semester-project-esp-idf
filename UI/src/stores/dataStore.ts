@@ -77,7 +77,7 @@ async function DataPointMetadataToDataPoint(dataPointMetadata: DataPointMetadata
   if(!dataPointMetadata.timestamp) {
     throw new Error(`DataPoint timestamp is required, got ${dataPointMetadata.timestamp} (${dataPointMetadata})`);
   }
-  if(!dataPointMetadata.measurement) {
+  if(dataPointMetadata.measurement === undefined) {
     throw new Error(`DataPoint value is required, got ${dataPointMetadata.measurement} (${dataPointMetadata})`);
   }
   if(!dataPointMetadata.sensor) {

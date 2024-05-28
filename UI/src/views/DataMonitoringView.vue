@@ -8,6 +8,8 @@ import { useTime } from '@/composables/useTime';
 import type { Log } from '@/types/Log';
 import type { DataPoint } from '@/types/DataPoint';
 import type {Satellite} from '@/types/Satellite';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 const { slidingWindow } = useTime() 
 
@@ -23,13 +25,21 @@ const logData = ref();
 const groupedLogs = ref();
 const data = ref<{dt:DataPoint,src:Satellite}[]>([]);
 
+const requestingLogs = ref(false);
+const requestingData = ref(false);
+
 async function fetchLogs() {
+  if(requestingLogs.value) return;
+  requestingLogs.value = true;
   logs.value = await dataStore.getLogs();
   logData.value = logTypes.map(type => logs.value.filter(log => simplifyLogType(log.type) === type).length);
   groupedLogs.value = slidingWindow.value.map((hour: string) => logs.value.filter((log: Log) => log.timestamp.getHours() === parseInt(hour)).length);
+  requestingLogs.value = false;
 }
 
 async function fetchData() {
+  if(requestingData.value) return;
+  requestingData.value = true;
   let dataPoints = (await dataStore.getDataPoints()).slice(0, 20);
   let newData = [];
   for(let i = 0; i < dataPoints.length; i++){
@@ -41,6 +51,7 @@ async function fetchData() {
   } else if(JSON.stringify(data.value) !== JSON.stringify(newData)){
     data.value = newData;
   }
+  requestingData.value = false;
 }
 
 
@@ -48,8 +59,8 @@ fetchLogs();
 fetchData();
 
 
-setInterval(() => fetchLogs(), 3500);
-setInterval(() => fetchData(), 3500);
+setSafeInterval(() => fetchLogs(), 3500);
+setSafeInterval(() => fetchData(), 3500);
 
 
 const cols: ATableProps['cols'] = [

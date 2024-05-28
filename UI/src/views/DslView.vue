@@ -2,6 +2,8 @@
 import { ProgramStatus } from '@/api';
 import { ProgramApi } from '@/stores/api';
 import { computed, ref } from 'vue';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 
 //import XtextEditor from '@/components/XtextEditor.vue'
@@ -11,7 +13,7 @@ const pollProgramStatus = async () => {
     programStatus.value = status.status ?? ProgramStatus.ErrorUnexpected;
 };
 
-setInterval(pollProgramStatus, 1000);
+setSafeInterval(pollProgramStatus, 1000);
 pollProgramStatus();
 
 const actionInProgress = ref(false);

@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import { useDataStore } from '@/stores/dataStore';
 import HomeArea from './HomeArea.vue';
 import type {Area} from '@/types/Area';
-
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 const dataStore = useDataStore();
 
 let areas: Area[] = ref([]);
@@ -12,7 +13,7 @@ async function fetchAreas() {
   areas.value = await dataStore.getAreas();
 }
 
-setInterval(() => fetchAreas(), 1000);
+setSafeInterval(() => fetchAreas(), 1000);
 fetchAreas();
 
 const isDialogShown = ref(false)

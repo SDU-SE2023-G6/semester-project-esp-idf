@@ -56,6 +56,8 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faTrash, faPencil, faList } from '@fortawesome/free-solid-svg-icons'
 import { defineProps, defineEmits, ref } from 'vue';
 import type { Satellite } from '@/types/Satellite';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 const dataStore = useDataStore();
 
@@ -78,7 +80,7 @@ async function fetchSatellites() {
   satellites.value = await dataStore.getSatellitesByArea(props.area.id);
 }
 
-setInterval(() => {
+setSafeInterval(() => {
   fetchSatellites();
 }, 1000);
 

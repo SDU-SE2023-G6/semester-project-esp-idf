@@ -96,7 +96,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useDataStore } from '@/stores/dataStore';
-
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 const dataStore = useDataStore();
 
 const isDeviceSelected = ref(false);
@@ -130,8 +131,7 @@ const pendingDevices = ref([]);
 
 const fetchPendingDevices = async () => pendingDevices.value = await dataStore.getDevicesPendingMetadata();
 fetchPendingDevices();
-setInterval(() => fetchPendingDevices(), 500);
-setInterval(() => console.log(pendingDevices.value), 1000);
+setSafeInterval(() => fetchPendingDevices(), 1000);
 
 let modalError = ref("");
 let modalErrorDisplayed = ref(false);
