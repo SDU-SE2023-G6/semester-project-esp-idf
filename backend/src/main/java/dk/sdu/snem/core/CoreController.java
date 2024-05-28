@@ -335,7 +335,8 @@ public class CoreController {
   @Operation(summary = "Get all Data points.")
   public List<DataPointMetadata> getDataPoints() {
     return dataPointsRepo.findAll().stream()
-        .map(
+            .filter(dataPoint -> dataPoint.getSatellite() != null && dataPoint.getSatellite().getId() != null)
+            .map(
             dataPoint ->
                 new DataPointMetadata(
                     dataPoint.getId().toHexString(),
@@ -355,6 +356,7 @@ public class CoreController {
     return dataPointsRepo
         .findAllByTimestampAfterOrderByTimestampDesc(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
         .stream()
+        .filter(dataPoint -> dataPoint.getSatellite() != null && dataPoint.getSatellite().getId() != null)
         .map(
             dataPoint ->
                 new DataPointMetadata(
