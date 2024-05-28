@@ -2,7 +2,7 @@
 # Dependencies stage
 #
 FROM maven:3.9.4-eclipse-temurin-21-alpine AS dependencies
-COPY pom.xml /build/
+COPY backend/pom.xml /build/
 WORKDIR /build/
 RUN mvn -B dependency:go-offline dependency:resolve-plugins
 
@@ -11,8 +11,8 @@ RUN mvn -B dependency:go-offline dependency:resolve-plugins
 #
 FROM dependencies AS builder
 COPY --from=dependencies /root/.m2 /root/.m2
-COPY src /build/src
-COPY pom.xml /build/
+COPY backend/src /build/src
+COPY backend/pom.xml /build/
 
 WORKDIR /build/
 RUN mvn -B -Dmaven.test.skip clean package spring-boot:repackage
@@ -23,6 +23,7 @@ RUN mvn -B -Dmaven.test.skip clean package spring-boot:repackage
 FROM espressif/idf:release-v5.2
 RUN apt update && apt install -y openjdk-21-jdk
 COPY --from=builder /build/target/*.jar /app.jar
+COPY ESP-OTA-MQTT /compiler/base
 
 ENV JAVA_TOOL_OPTIONS --enable-preview
 EXPOSE 8080
