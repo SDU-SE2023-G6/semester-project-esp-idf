@@ -125,7 +125,8 @@ public class MqttService {
       return;
     }
 
-    Satellite satellite = satelliteRepo.findByDeviceMACAddress(message.getSatelliteMacAddress());
+    Satellite satellite = satelliteRepo.findIdByDeviceMACAddress(message.getSatelliteMacAddress());
+
     if (satellite == null) {
       logger.warn("Received data point message from unknown satellite: {}", message.getSatelliteMacAddress());
       return;

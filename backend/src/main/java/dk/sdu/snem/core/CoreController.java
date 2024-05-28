@@ -65,8 +65,8 @@ public class CoreController {
         log.getTimestamp(),
         log.getMessage(),
         (log.getSatellite() == null || log.getSatellite().getId() == null)
-            ? null
-            : log.getSatellite().getId().toHexString(),
+            ? "system"
+            : log.getSatellite().getName(),
         log.getType());
   }
 

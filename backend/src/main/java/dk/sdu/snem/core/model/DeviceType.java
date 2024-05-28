@@ -17,7 +17,7 @@ public class DeviceType {
   private @MongoId ObjectId id;
   @Indexed(unique = true)
   private @NotBlank String name;
-  @DocumentReference()
+  @DocumentReference(lazy = true)
   private @Nullable Binary binary;
   private boolean deprecated = false;
 }
