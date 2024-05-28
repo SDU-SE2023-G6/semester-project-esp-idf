@@ -43,7 +43,7 @@
     let promises = [];
 
     for(let satellite of selectedSatellites.value) {
-      satellite.area = selectedArea.value;
+      satellite.area = selectedArea.value.id;
       promises.push(dataStore.editSatellite(satellite));
     }
 
@@ -74,7 +74,6 @@
   }
 
   const handleModal = (satellite = JSON.parse(JSON.stringify(helpSatellite))) => {
-    console.log("satellite", satellite)
     if(satellite.name === "") {
       return
     }

@@ -206,6 +206,7 @@ while True:
                 publish_log(mqttc, time.time(), "Downloading new firmware", "UPDATE_DOWNLOAD_START")
                 time.sleep(2)
                 publish_log(mqttc, time.time(), "Download complete, starting update", "UPDATE_DOWNLOAD_COMPLETE")
+                time.sleep(2)
                 publish_log(mqttc, time.time(), "Firmware update in progress", "UPDATE_START")
                 time.sleep(5)
                 ESP_firmware_hash = binary_discovery["binaryHash"]
