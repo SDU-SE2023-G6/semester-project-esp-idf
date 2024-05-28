@@ -142,8 +142,6 @@ public class MqttService {
     dataPoint.setCreatedDate(Instant.now());
 
     dataPointRepo.save(dataPoint);
-
-    logger.info(dataPoint.toString());
   }
 
   @ServiceActivator(inputChannel = "mqttInboundRegistrationChannel")
