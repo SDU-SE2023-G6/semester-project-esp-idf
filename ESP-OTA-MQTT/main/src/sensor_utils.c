@@ -1,18 +1,25 @@
 
-#include "esp_spiffs.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
+#include "sensor_utils.h"
+
+#include "shared_snem_library.h"
+#include "target_device_type.h"
+#include "mqtt_routine.h"
+#include "http_routine.h"
+
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
 #include "esp_spiffs.h"
 #include "esp_log.h"
-#include "mqtt5_client.h"
-#include "mqtt_routine.h"
+#include "esp_spiffs.h"
+#include "esp_mac.h"
 #include "cJSON.h"
-#include "shared_snem_library.h"
-#include "target_device_type.h"
+
 
 const char * T_SENSOR = "SENSOR_ROUTINE";
 
@@ -28,7 +35,7 @@ int64_t xx_time_get_time() {
 }
 
 
-void read_and_delete_file2(const char* sensor_path) {
+void read_and_delete_file(esp_mqtt_client_handle_t client, const char* sensor_path) {
 
     esp_err_t ret = ESP_FAIL;
     // Open the file for reading
@@ -201,13 +208,13 @@ void sensor_routine(void *pvParameter)
             for (int i = 0; i < base_device_type.sensorCount; i++) {
                 char sensor_path[215];
                 create_sensor_name(sensor_path, base_device_type.sensorInstantiations[i]);
-                read_and_delete_file2(sensor_path);
+                read_and_delete_file(client, sensor_path);
             }
             logged_count = 0;
 
             // TODO: Do it somewhere else later
             ESP_LOGI(T_SENSOR, "Sending heartbeat");
-            send_heartbeat();
+            send_heartbeat(client);
             ESP_LOGI(T_SENSOR, "Checking for OTA update");
             if(check_for_ota_update() == ESP_OK) {
                 ESP_LOGI(T_SENSOR, "OTA update found. Rebooting...");
