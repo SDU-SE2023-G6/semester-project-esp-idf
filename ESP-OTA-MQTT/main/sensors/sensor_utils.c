@@ -156,17 +156,14 @@ void run_sensor(void *pvParameter) {
     ESP_LOGI(T_SENSOR, "Running sensor %s", sensor_t->name);
 
     while (1) {
-        double *readings = sensor_t->sensor->readerFunction(sensor_t->pins, sensor_t->pinCount);
-
+        sensor_t->sensor->readerFunction(sensor_t);
         for (int index = 0; index < sensor_t->sensor->outCount; index++) {
-            sensor_t->readings[index] = readings[index];
             char sensor_path[215];
             create_sensor_name(sensor_path, sensor_t);
             char _char_reading[6] = {0};
-            sprintf(_char_reading, "%.2f", readings[index]);
+            sprintf(_char_reading, "%.2f", sensor_t->readings[index]);
             log_sensor_data(sensor_path, _char_reading);
         }
-        
 
         vTaskDelay(timeDurationToMs(sensor_t->samplingRate) / portTICK_PERIOD_MS);
     }

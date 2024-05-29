@@ -34,6 +34,10 @@ public class HelloWebValidator extends AbstractHelloWebValidator {
 
 
 	private final static Map<String, ReaderMethodMetadata> readers = new HashMap<>();
+	private final static Set<Integer> validPinNumbers = new HashSet<>(Set.of(
+            36, 37, 38, 39, 32, 33, 34, 35, // ADC1 GPIOs
+            4, 0, 2, 15, 13, 12, 14, 27, 25, 26 // ADC2 GPIOs
+	));
 
 	static {
 		Arrays.asList(
@@ -186,6 +190,7 @@ public class HelloWebValidator extends AbstractHelloWebValidator {
 		}
 	}
 
+
 	private SensorInstantiation findContainingSensorInstantiation(ValueRef ref) {
 		if(ref.getSensorInstantiation() != null) {
 			return ref.getSensorInstantiation();
@@ -232,6 +237,18 @@ public class HelloWebValidator extends AbstractHelloWebValidator {
 		}
 	}
 
+	@Check(CheckType.FAST)
+	public void checkValidPinNumber(SensorInstantiation instantiation) {
+		for (Integer pin : instantiation.getPins()) {
+			if (!validPinNumbers.contains(pin)) {
+				error("Invalid pin number: %s. Expected one of: %s".formatted(
+								pin,
+								validPinNumbers.stream().map(String::valueOf).collect(Collectors.joining(", "))
+						),
+						HelloWebPackage.Literals.SENSOR_INSTANTIATION__PINS);
+			}
+		}
+	}
 
 
 

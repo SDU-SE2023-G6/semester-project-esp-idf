@@ -37,7 +37,7 @@ struct Sensor {
     char units[MAX_UNITS][100];
     int unitCount;
     char reader[150];
-    double* (*readerFunction)(int*, int);
+    void (*readerFunction)(SensorInstantiation*);
     char pins[MAX_PINS][100];
     int pinCount;
     char out[MAX_OUTPUTS][100];
@@ -51,6 +51,8 @@ struct SensorInstantiation {
     int pinCount;
     TimeDuration samplingRate;
 	double* readings;
+    void* sensorConfig;
+    int configured;
 };
 
 struct DeviceType {

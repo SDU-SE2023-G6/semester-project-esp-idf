@@ -98,7 +98,9 @@ class HelloWebGenerator extends AbstractGenerator {
 	    .pins = {«instantiation.pins.join(', ')»},
 	    .pinCount = «instantiation.pins.size»,
 	    .samplingRate = «mapXTextTimeUnitToC(instantiation.samplingRate)»,
-		.readings = (double[]) {«FOR output : instantiation.sensor.out»0.0«IF output != instantiation.sensor.out.last», «ENDIF»«ENDFOR»}
+		.readings = (double[]) {«FOR output : instantiation.sensor.out»0.0«IF output != instantiation.sensor.out.last», «ENDIF»«ENDFOR»},
+		.configured = 0,
+		.sensorConfig = NULL
 	};
 	«ENDFOR»
 	
@@ -251,24 +253,26 @@ class HelloWebGenerator extends AbstractGenerator {
 		};
 		
 		struct Sensor {
-		    char name[100];
-		    char units[MAX_UNITS][100];
-		    int unitCount;
-		    char reader[150];
-		    double* (*readerFunction)(int*, int);
-		    char pins[MAX_PINS][100];
-		    int pinCount;
-		    char out[MAX_OUTPUTS][100];
-		    int outCount;
+			char name[100];
+			char units[MAX_UNITS][100];
+			int unitCount;
+			char reader[150];
+			void (*readerFunction)(SensorInstantiation*);
+			char pins[MAX_PINS][100];
+			int pinCount;
+			char out[MAX_OUTPUTS][100];
+			int outCount;
 		};
-		
+
 		struct SensorInstantiation {
-		    Sensor* sensor;
-		    char name[100];
-		    int pins[MAX_PINS];
-		    int pinCount;
-		    TimeDuration samplingRate;
+			Sensor* sensor;
+			char name[100];
+			int pins[MAX_PINS];
+			int pinCount;
+			TimeDuration samplingRate;
 			double* readings;
+			void* sensorConfig;
+			int configured;
 		};
 		
 		struct DeviceType {
