@@ -1,8 +1,10 @@
+#include "ntp.h"
+
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
-#include "esp_sntp.h"
 #include "esp_log.h"
+#include "esp_sntp.h"
 
 esp_err_t initialize_sntp(int max_retries, int delay_ms) {
     int retry = 0;

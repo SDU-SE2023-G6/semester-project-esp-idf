@@ -11,9 +11,10 @@
 
 #include "ota_routine.h"
 
+static const char *T_OTA = "OTA_ROUTINE";
 
 /* Event handler for catching system events */
-static void ota_event_handler(void* arg, esp_event_base_t event_base,
+void ota_event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
     if (event_base == ESP_HTTPS_OTA_EVENT) {
