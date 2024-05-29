@@ -25,6 +25,9 @@ services:
       - XTEXT_HOST=xtext_backend
       - COMPILER_BASE_PROJECT_PATH=/compiler/base
       - COMPILER_BASE_PROJECT_INSERT_PATH=/main
+      - EXTERNAL_SERVER_URL=http://localhost:8080
+      - EXTERNAL_BROKER_URL=mqtt://localhost:1883
+      - EXTERNAL_FIRMWARE_UPGRADE_URL=https://192.168.2.106:8080/program/binary/initial-image.bin
     command: "java -jar /app.jar"
 
   xtext_backend:

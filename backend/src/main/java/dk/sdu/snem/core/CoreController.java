@@ -15,11 +15,11 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -41,6 +41,7 @@ public class CoreController {
   private final CompilerService compilerService;
   private final BinaryRepository binaryRepo;
   private final MongoTemplate template;
+  private final byte[] initialDeviceImage;
 
   public CoreController(
       SatelliteRepository deviceRepo,
@@ -51,7 +52,8 @@ public class CoreController {
       ProgramRepository programRepo,
       CompilerService compilerService,
       BinaryRepository binaryRepo,
-      MongoTemplate template) {
+      MongoTemplate template,
+      byte[] initialDeviceImage) {
     this.satelliteRepo = deviceRepo;
     this.areaRepo = areaRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -61,6 +63,7 @@ public class CoreController {
     this.compilerService = compilerService;
     this.binaryRepo = binaryRepo;
     this.template = template;
+    this.initialDeviceImage = initialDeviceImage;
   }
 
   @NotNull
@@ -453,6 +456,18 @@ public class CoreController {
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
         .body(binary.getCompiledBinary());
+  }
+
+  @GetMapping("/program/binary/initial-image.bin")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation
+  @Cacheable(value = "initialImageCache")
+  public ResponseEntity<byte[]> downloadInitialBinary() {
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"initial-image.bin\"")
+        .body(initialDeviceImage);
   }
 
   @NotNull

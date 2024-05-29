@@ -21,6 +21,9 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -43,6 +46,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableAsync
 @EnableMongoAuditing
 @OpenAPIDefinition
+@EnableCaching
 public class ApplicationConfig implements WebMvcConfigurer {
   private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
 
@@ -117,6 +121,10 @@ public class ApplicationConfig implements WebMvcConfigurer {
     };
   }
 
+  @Bean
+  public CacheManager cacheManager() {
+    return new ConcurrentMapCacheManager("initialImageCache");
+  }
 
   @Bean
   public RestTemplate restTemplate() {

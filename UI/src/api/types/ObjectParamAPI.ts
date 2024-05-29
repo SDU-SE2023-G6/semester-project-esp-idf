@@ -391,6 +391,9 @@ export interface ProgramApiDownloadBinaryRequest {
     binaryId: string
 }
 
+export interface ProgramApiDownloadInitialBinaryRequest {
+}
+
 export interface ProgramApiGetProgramDslContentRequest {
 }
 
@@ -469,6 +472,20 @@ export class ObjectProgramApi {
      */
     public downloadBinary(param: ProgramApiDownloadBinaryRequest, options?: Configuration): Promise<Array<string>> {
         return this.api.downloadBinary(param.binaryId,  options).toPromise();
+    }
+
+    /**
+     * @param param the request object
+     */
+    public downloadInitialBinaryWithHttpInfo(param: ProgramApiDownloadInitialBinaryRequest = {}, options?: Configuration): Promise<HttpInfo<Array<string>>> {
+        return this.api.downloadInitialBinaryWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * @param param the request object
+     */
+    public downloadInitialBinary(param: ProgramApiDownloadInitialBinaryRequest = {}, options?: Configuration): Promise<Array<string>> {
+        return this.api.downloadInitialBinary( options).toPromise();
     }
 
     /**
