@@ -1,4 +1,5 @@
 export * from '../models/AreaMetadata';
+export * from '../models/BinaryCompileResult';
 export * from '../models/BinaryVersion';
 export * from '../models/DataPointMetadata';
 export * from '../models/DeviceTypeMetadata';
@@ -16,6 +17,7 @@ export * from '../models/SatelliteRegisterResponseDTO';
 export * from '../models/SatelliteStatus';
 
 import { AreaMetadata } from '../models/AreaMetadata';
+import { BinaryCompileResult } from '../models/BinaryCompileResult';
 import { BinaryVersion } from '../models/BinaryVersion';
 import { DataPointMetadata } from '../models/DataPointMetadata';
 import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';
@@ -25,7 +27,7 @@ import { LogType } from '../models/LogType';
 import { ProgramDslContent } from '../models/ProgramDslContent';
 import { ProgramMetadata       } from '../models/ProgramMetadata';
 import { ProgramStatus } from '../models/ProgramStatus';
-import { ProgramStatusProjection   } from '../models/ProgramStatusProjection';
+import { ProgramStatusProjection    } from '../models/ProgramStatusProjection';
 import { SatelliteDeviceTypeId } from '../models/SatelliteDeviceTypeId';
 import { SatelliteMetadata       } from '../models/SatelliteMetadata';
 import { SatelliteRegisterDTO } from '../models/SatelliteRegisterDTO';
@@ -52,6 +54,7 @@ let enumsMap: Set<string> = new Set<string>([
 
 let typeMap: {[index: string]: any} = {
     "AreaMetadata": AreaMetadata,
+    "BinaryCompileResult": BinaryCompileResult,
     "BinaryVersion": BinaryVersion,
     "DataPointMetadata": DataPointMetadata,
     "DeviceTypeMetadata": DeviceTypeMetadata,

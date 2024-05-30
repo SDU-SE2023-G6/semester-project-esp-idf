@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,7 +30,8 @@ public class Program {
   private @NotNull ProgramStatus status = ProgramStatus.UNCHANGED;
   private @Nullable Instant compiled;
   private Long iteration = 1L;
-
+  /** K is object id of device type, V is object id of binary */
+  private @NotNull Map<ObjectId, ObjectId> currentlyCompiling = new HashMap<>();
   /** Version used for concurrency validation. */
   private @Version Long version;
   private @CreatedDate Instant createdDate;

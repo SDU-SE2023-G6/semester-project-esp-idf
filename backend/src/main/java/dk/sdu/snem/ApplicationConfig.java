@@ -50,20 +50,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class ApplicationConfig implements WebMvcConfigurer {
   private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
 
-
   private final MongoDatabaseFactory databaseFactory;
   private final MappingMongoConverter mongoConverter;
   private final ReaderFunctionRepository readerFunctionRepo;
-  private final ProgramRepository programRepo;
 
   public ApplicationConfig(
       MongoDatabaseFactory databaseFactory,
       MappingMongoConverter mongoConverter,
-      ReaderFunctionRepository readerFunctionRepo, ProgramRepository programRepo) {
+      ReaderFunctionRepository readerFunctionRepo) {
     this.databaseFactory = databaseFactory;
     this.mongoConverter = mongoConverter;
     this.readerFunctionRepo = readerFunctionRepo;
-    this.programRepo = programRepo;
   }
 
 
@@ -214,15 +211,20 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private byte[] zipFiles(Resource[] files) throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    int readFiles = 0;
     try (ZipOutputStream zos = new ZipOutputStream(baos)) {
       for (Resource file : files) {
-        if (file.isReadable() && file.isFile()) {
+        if (file.isReadable()) {
           ZipEntry zipEntry = new ZipEntry(Objects.requireNonNull(file.getFilename()));
           zos.putNextEntry(zipEntry);
           zos.write(file.getInputStream().readAllBytes());
           zos.closeEntry();
+          readFiles++;
         }
       }
+    }
+    if(readFiles != files.length) {
+      throw new RuntimeException("Failed to find all expected files");
     }
     return baos.toByteArray();
   }

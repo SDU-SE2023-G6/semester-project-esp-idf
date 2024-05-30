@@ -195,7 +195,7 @@ void create_device_registration_payload(char *deviceName, char *deviceMACAddress
 // }
 
 
-esp_err_t check_for_ota_update()
+esp_err_t check_for_ota_update(void)
 {
     uint8_t base_mac_addr[6] = {0}; // MAC address of the ESP32
     esp_read_mac(base_mac_addr, ESP_MAC_WIFI_STA);
@@ -217,15 +217,15 @@ esp_err_t check_for_ota_update()
         .disable_auto_redirect = true,
     };
 
-    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_http_client_handle_t http_client = esp_http_client_init(&config);
 
     // GET
-    esp_err_t err = esp_http_client_perform(client);
+    esp_err_t err = esp_http_client_perform(http_client);
     if (err == ESP_OK) {
-        int status_code = esp_http_client_get_status_code(client);
+        int status_code = esp_http_client_get_status_code(http_client);
         ESP_LOGI(T_HTTP, "HTTP GET Status = %d, content_length = %"PRId64,
         status_code,
-        esp_http_client_get_content_length(client));
+        esp_http_client_get_content_length(http_client));
         // TODO: log update avaialable
         if (status_code != 200) {
             ESP_LOGE(T_HTTP, "Failed to get update with code %d", status_code);
@@ -233,7 +233,7 @@ esp_err_t check_for_ota_update()
         }
 
         char* buffer = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER);
-        esp_http_client_read(client, buffer, MAX_HTTP_OUTPUT_BUFFER);
+        esp_http_client_read(http_client, buffer, MAX_HTTP_OUTPUT_BUFFER);
         // get response content 
         cJSON *root = cJSON_Parse(buffer);
         free(buffer); //  clear the buffer

@@ -19,12 +19,17 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
-#include "mqtt_routine.c"
+#include "esp_wifi_types.h"
 #include "http_routine.h"
-#include "files/spiffs.c"
-#include "sensors/sensor_utils.c"
-#include "ntp.c"
+
 #include "freertos/semphr.h"
+
+// Project imports
+#include "sensor_utils.h"
+#include "spiffs.h"
+#include "mqtt_routine.h"
+#include "ota_routine.h"
+#include "ntp.h"
 
 #if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 #include "esp_efuse.h"
@@ -37,7 +42,8 @@
 SemaphoreHandle_t init_lock;
 
 TaskHandle_t gatherData = NULL;
-TaskHandle_t send_data = NULL;
+// TaskHandle_t send_data = NULL;
+
 
 static const char *TAG = "MAIN_ROUTINE";
 
@@ -45,6 +51,7 @@ static const char *TAG = "MAIN_ROUTINE";
 
 void app_main(void)
 {
+
     // Create a initial lock for better control of the initialization
     init_lock = xSemaphoreCreateMutex();
 
@@ -103,9 +110,6 @@ void app_main(void)
     ESP_LOGI(TAG, "RELASING LOCK");
     xSemaphoreGive(init_lock);
 
-    ESP_LOGI(TAG, "Registering device");
-    register_device();
-    ESP_LOGI(TAG, "Done registering");
 
     /* CODE FOR MAIN LOOP */
     // Initialize SNTP and go to the sensor routine
@@ -117,4 +121,5 @@ void app_main(void)
         ESP_LOGE(TAG, "SNTP initialization failed");
         // TODO: Log error and reboot
     }
+    return;
 }

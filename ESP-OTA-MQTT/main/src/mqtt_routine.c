@@ -1,13 +1,7 @@
-/*
- * @brief Event handler registered to receive MQTT events
- *
- *  This function is called by the MQTT client event loop.
- *
- * @param handler_args user data registered to the event.
- * @param base Event base for the handler(always MQTT Base in this example).
- * @param event_id The id for the received event.
- * @param event_data The data for the event, esp_mqtt_event_handle_t.
- */
+#include "mqtt_routine.h"
+
+#include "sensor_utils.h"
+#include "ota_routine.h"
 
 #include <stdio.h>
 #include <stddef.h>
@@ -22,7 +16,6 @@
 #include "mqtt5_client.h"
 #include "esp_mac.h"
 #include "cJSON.h"
-#include "ota_routine.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -31,19 +24,34 @@
 
 #include "sdkconfig.h" // Load the config files
 
-#include "sensor_utils.h"
-#include "mqtt_routine.h"
+static const char *T_MQTT = "MQTT";
+
+esp_mqtt_client_handle_t client = NULL;
 
 void copy_mac_address(char *dest)
 {
+    uint8_t base_mac_addr[6] = {0}; // MAC address of the ESP32
     esp_read_mac(base_mac_addr, ESP_MAC_WIFI_STA);
     sprintf(dest, "%02x%02x%02x%02x%02x%02x", 
         base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
         base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
 }
 
+void copy_update_topic(char* dest) {
+    char device_id[18] = {0};
+    copy_mac_address(device_id);
+    // Set the device update and heartbeat topics
+    sprintf(dest, "%s/update", device_id);
+}
 
-void send_heartbeat() {
+void copy_heartbeat_topic(char* dest) {
+    char device_id[18] = {0};
+    copy_mac_address(device_id);
+    // Set the device update and heartbeat topics
+    sprintf(dest,"%s/satellite/logs", device_id);
+}
+
+void send_heartbeat(esp_mqtt_client_handle_t client) {
     cJSON *root = cJSON_CreateObject();
 
     char device_id[18] = {0};
@@ -64,6 +72,9 @@ void send_heartbeat() {
 
     char data[512] = {0};
     sprintf(data, "%s", cJSON_PrintUnformatted(root));
+
+    char device_heartbeat_topic[50] = {0}; // Topic for receiving OTA updates
+    copy_heartbeat_topic(device_heartbeat_topic);
 
      // create a topic string for the device
     esp_mqtt_client_publish(client, device_heartbeat_topic, data, 0, 0, 0);
@@ -125,6 +136,9 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
 
+    char device_update_topic[50] = {0}; // Topic for receiving OTA updates
+    char device_heartbeat_topic[50] = {0};
+
     ESP_LOGD(T_MQTT, "free heap size is %" PRIu32 ", minimum %" PRIu32, esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
     switch ((esp_mqtt_event_id_t) event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -136,7 +150,7 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
 
         // subscribe to the device update topic
         msg_id = esp_mqtt_client_subscribe(client, device_update_topic, 0);
-        send_heartbeat();
+        send_heartbeat(client);
 
         // TODO: Consider using a enum here.
         // Publish a i am alive message
@@ -222,24 +236,13 @@ void mqtt5_app_start(void)
 {
     /*** SETUP THE MAC ADDRESS STUFF ***/
     // Get and set the mac address of the device
-    esp_read_mac(base_mac_addr, ESP_MAC_WIFI_STA);
 
      // create a topic string for the device
     char device_topic[32] = {0};
-    sprintf(device_topic, "%02x%02x%02x%02x%02x%02x", 
-        base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
-        base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
+    copy_mac_address(device_topic);
 
     // print the base topic the device is using
-    ESP_LOGI(T_MQTT, "Connect on /topic/%02x%02x%02x%02x%02x%02x", 
-        base_mac_addr[0], base_mac_addr[1], base_mac_addr[2], 
-        base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
-
-
-    // Set the device update and heartbeat topics
-    sprintf(device_update_topic, "%s/update", device_topic);
-    sprintf(device_heartbeat_topic,"%s/satellite/logs", device_topic);
-
+    ESP_LOGI(T_MQTT, "Connect on %s", device_topic);
 
     esp_mqtt5_connection_property_config_t connect_property = {
         .session_expiry_interval = 10,
@@ -269,7 +272,7 @@ void mqtt5_app_start(void)
         .session.last_will.retain = true,
     };
 
-    client = esp_mqtt_client_init(&mqtt5_cfg);
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt5_cfg);
 
     /* Set connection properties and user properties */
     esp_mqtt5_client_set_user_property(&connect_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
@@ -285,11 +288,14 @@ void mqtt5_app_start(void)
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt5_event_handler, NULL);
     esp_mqtt_client_start(client);
+
+    // Register the device
+    register_device(client);
 }
 
 
 
-esp_err_t register_device(void)
+esp_err_t register_device(esp_mqtt_client_handle_t client)
 {
     cJSON *root = cJSON_CreateObject();
 

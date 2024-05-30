@@ -16,11 +16,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang3.NotImplementedException;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -92,6 +97,17 @@ public class CoreController {
   @NotNull
   private static DeviceTypeMetadata mapDeviceType(DeviceType x) {
     return new DeviceTypeMetadata(x.getId().toHexString(), x.getName(), x.isDeprecated());
+  }
+
+  @NotNull
+  private static BinaryCompileResult mapBinaryResult(Binary x) {
+    return new BinaryCompileResult(
+        x.getId().toHexString(),
+        x.getDeviceType().getId().toHexString(),
+        x.getCompileOutput(),
+        x.getCompileErrors(),
+        x.getCompileFailed(),
+        x.getCompilationTime());
   }
 
   @GetMapping("/areas")
@@ -406,7 +422,12 @@ public class CoreController {
   @Operation(summary = "Get program status")
   public ProgramStatusProjection getProgramStatus() {
     var program = getLatestProgramOrCreateOne();
-    return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
+    return new ProgramStatusProjection(
+        program.getId().toHexString(),
+        program.getStatus(),
+        binaryRepo.findAllById(program.getCurrentlyCompiling().values()).stream()
+            .map(CoreController::mapBinaryResult)
+            .toList());
   }
 
   @PostMapping("/program/compile")
@@ -415,8 +436,11 @@ public class CoreController {
   @Operation(summary = "Get program DSL definition")
   public ProgramStatusProjection compileProgram() {
     var program = getLatestProgramOrCreateOne();
-    compilerService.compileProgramSafely(program);
-    return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
+    var compiling = compilerService.beginCompile(program);
+    return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus(),
+        binaryRepo.findAllById(compiling.values()).stream()
+            .map(CoreController::mapBinaryResult)
+            .toList());
   }
 
   @PostMapping("/program/compile/override")
@@ -424,9 +448,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Continue compilation despite warnings")
   public ProgramStatusProjection compileProgramContinueDestructively() {
-    var program = getLatestProgramOrCreateOne();
-    compilerService.compileProgramDestructively(program);
-    return new ProgramStatusProjection(program.getId().toHexString(), program.getStatus());
+    throw new NotImplementedException("Not implemented");
   }
 
   @GetMapping("/program/binary-discovery/{deviceMac}")
@@ -436,12 +458,14 @@ public class CoreController {
   public ResponseEntity<BinaryVersion> provideBinaryVersion(@PathVariable String deviceMac) {
     Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(deviceMac);
     DeviceType currentDeviceType = currentSatellite.getDeviceType();
-    assert currentDeviceType != null;
-    Binary currentBinary = currentDeviceType.getBinary();
+    Binary currentBinary = null;
+    if (currentDeviceType != null) {
+      currentBinary = currentDeviceType.getBinary();
+    }
 
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_JSON)
-        .body(
+        .body( (currentDeviceType == null || currentBinary == null) ? null :
             new BinaryVersion(currentBinary.getId().toHexString(), currentBinary.getBinaryHash()));
   }
 
@@ -489,7 +513,16 @@ public class CoreController {
 
   public record ProgramDslContent(String dslText) {}
 
-  public record ProgramStatusProjection(String id, Program.ProgramStatus status) {}
+  public record BinaryCompileResult(
+      String id,
+      String deviceTypeId,
+      String compileOutput,
+      String compileErrors,
+      Boolean compileFailed,
+      Instant compileTime) {}
+
+  public record ProgramStatusProjection(
+      String id, Program.ProgramStatus status, List<BinaryCompileResult> binaryCompileResults) {}
 
   public record SatelliteMetadata(
       String id,

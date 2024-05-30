@@ -1,5 +1,5 @@
-idf_component_register(SRCS "main.c" "ota_routine.c" "ntp.c" "mqtt_routine.c" "http_routine.c" "dht11Reader_reader.c" "DHT11_sensor.c" "lightResReader_reader.c" "lmt86Reader_reader.c" "light_sensor.c" "shared_snem_library.c" "target_device_type.c" 
-                    INCLUDE_DIRS "." "files" "sensors"
+idf_component_register(SRCS "src/spiffs.c" "src/ota_routine.c" "src/ntp.c" "src/sensor_utils.c" "src/http_routine.c" "src/mqtt_routine.c" "sensors/dht11Reader_reader.c" "sensors/light_sensor.c" "sensors/lightResReader_reader.c" "sensors/target_device_type.c" "sensors/DHT11_sensor.c" "sensors/shared_snem_library.c" "main.c" "lmt86Reader_reader.c" 
+                    INCLUDE_DIRS "." "headers" "sensors"
                     # Embed the server root certificate into the final binary
                     EMBED_TXTFILES ${project_dir}/server_certs/ca_cert.pem
                     REQUIRES json esp_event esp_netif mqtt esp_http_client app_update esp_https_ota nvs_flash esp_wifi spiffs esp_adc

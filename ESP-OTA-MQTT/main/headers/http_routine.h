@@ -6,9 +6,7 @@
 
 void satellite_register_device(void *pvParameters);
 
-
 void init_http_client(esp_http_client_config_t* config);
-
 
 esp_err_t check_for_ota_update(void);
 
