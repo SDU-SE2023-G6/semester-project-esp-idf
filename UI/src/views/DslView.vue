@@ -3,51 +3,151 @@ import { ProgramStatus } from '@/api';
 import { ProgramApi } from '@/stores/api';
 import { computed, ref } from 'vue';
 import { useInterval } from '@/composables/useInterval';
+import type { Satellite } from '@/types/Satellite';
+import { useDataStore } from '@/stores/dataStore';
+import HomeSatellite from '@/components/HomeSatellite.vue';
+
 const { setSafeInterval } = useInterval();
 
 
 //import XtextEditor from '@/components/XtextEditor.vue'
 const programStatus = ref<ProgramStatus>(ProgramStatus.Unchanged);
 const pollProgramStatus = async () => {
+    const oldStatus = programStatus.value;
     const status = await ProgramApi.getProgramStatus();
     programStatus.value = status.status ?? ProgramStatus.ErrorUnexpected;
+    if(oldStatus !== programStatus.value) {
+        updateBasedOnStatus();
+        if(!hasStateBeenInitialized.value) {
+            hasStateBeenInitialized.value = true;
+        } else {
+            isInitialState.value = false;
+        }
+    }
 };
 
 setSafeInterval(pollProgramStatus, 1000);
 pollProgramStatus();
 
 const actionInProgress = ref(false);
+const isDialogShown = ref(true);
+const isDialogCloseButtonShown = ref(false);
+const isDialogOverrideButtonShown = ref(false);
+const isCompiling = ref(false);
+const isSuccessfullyCompiled = ref(false);
+const hasStateBeenInitialized = ref(false);
+const isInitialState = ref(true);
+
+const dataStore = useDataStore();
+
+let satellites = ref<Satellite[]>([]);
+
+async function fetchSatellites() {
+    if(isSuccessfullyCompiled.value) {
+        satellites.value = await dataStore.getSatellites();
+    }
+}
+
+setSafeInterval(() => {
+  fetchSatellites();
+}, 1000);
+
+fetchSatellites();
+
+//First character uppercase, replace underscores with spaces and lowercase
+const statusText = computed(() => programStatus.value.replace(/_/g, ' ').toLowerCase().replace(/(?:^|\s)\S/g, (a) => a.toUpperCase()));
+
+function updateBasedOnStatus() {
+    switch (programStatus.value) {
+        case ProgramStatus.CodeGeneratedRequiresOverride:
+            isDialogCloseButtonShown.value = true;
+            isDialogShown.value = true;
+            isDialogOverrideButtonShown.value = true;
+            isCompiling.value = false;
+            isSuccessfullyCompiled.value = false;
+            break;
+        case ProgramStatus.CompilingBinaries:
+            isDialogCloseButtonShown.value = false;
+            isDialogShown.value = true;
+            isDialogOverrideButtonShown.value = false;
+            isCompiling.value = true;
+            isSuccessfullyCompiled.value = false;
+            break;
+        case ProgramStatus.CompiledCompletely:
+            isSuccessfullyCompiled.value = true;
+            if(isInitialState.value) {
+                isDialogCloseButtonShown.value = false;
+                isDialogShown.value = false;
+                isDialogOverrideButtonShown.value = false;
+                isCompiling.value = false;
+            } else {
+                isDialogCloseButtonShown.value = true;
+                isDialogShown.value = true;
+                isDialogOverrideButtonShown.value = false;
+                isCompiling.value = false;
+            }
+            break;
+        case ProgramStatus.ErrorCompilingBinaries:
+            isDialogCloseButtonShown.value = true;
+            isDialogShown.value = true;
+            isDialogOverrideButtonShown.value = false;
+            isCompiling.value = false;
+            isSuccessfullyCompiled.value = false;
+            break;
+        case ProgramStatus.ErrorGeneratingCode:
+            isDialogCloseButtonShown.value = true;
+            isDialogShown.value = true;
+            isDialogOverrideButtonShown.value = false;
+            isCompiling.value = false;
+            isSuccessfullyCompiled.value = false;
+            break;
+        case ProgramStatus.ErrorUnexpected:
+            isDialogCloseButtonShown.value = true;
+            isDialogShown.value = true;
+            isDialogOverrideButtonShown.value = false;
+            isCompiling.value = false;
+            isSuccessfullyCompiled.value = false;
+            break;
+        default:
+            isDialogCloseButtonShown.value = true;
+            isDialogShown.value = false;
+            isDialogOverrideButtonShown.value = false;
+            isCompiling.value = false;
+            isSuccessfullyCompiled.value = false;
+            break;
+    }
+}
 
 const statusClass = computed(() => {
     switch (programStatus.value) {
         case ProgramStatus.Unchanged:
-        return 'unchanged';
+            return 'unchanged';
         case ProgramStatus.Changed:
-        return 'changed';
+            return 'changed';
         case ProgramStatus.GeneratingCode:
-        return 'generating-code';
+            return 'generating-code';
         case ProgramStatus.CodeGeneratedRequiresOverride:
-        return 'code-generated-override-required';
+            return 'code-generated-override-required';
         case ProgramStatus.ErrorGeneratingCode:
-        return 'error-generating-code';
+            return 'error-generating-code';
         case ProgramStatus.CodeGenerated:
-        return 'code-generated';
+            return 'code-generated';
         case ProgramStatus.CompilingBinaries:
-        return 'compiling-binaries';
+            return 'compiling-binaries';
         case ProgramStatus.ErrorCompilingBinaries:
-        return 'error-compiling-binaries';
+            return 'error-compiling-binaries';
         case ProgramStatus.CompiledCompletely:
-        return 'compiled-completely';
+            return 'compiled-completely';
         case ProgramStatus.ErrorUnexpected:
-        return 'error-unexpected';
+            return 'error-unexpected';
         default:
-        return '';
+            return '';
     }
 });
 const compilationDisabled = computed(() => {
     const inProgress = actionInProgress.value;
     const status = programStatus.value;
-    
+
     return inProgress ||
         status === ProgramStatus.Unchanged ||
         status === ProgramStatus.GeneratingCode ||
@@ -62,7 +162,7 @@ const compile = async () => {
         const status = await ProgramApi.compileProgram();
         programStatus.value = status.status ?? programStatus.value;
     } finally {
-        actionInProgress.value = false; 
+        actionInProgress.value = false;
     }
 };
 
@@ -86,16 +186,46 @@ const overrideCompile = async () => {
                 <i class="i-bx-code-block" />
                 Compile
             </ABtn>
-            <ABtn v-if="programStatus === ProgramStatus.CodeGeneratedRequiresOverride" class="override-button" @click="overrideCompile" :disabled="actionInProgress">
+            <ABtn v-if="programStatus === ProgramStatus.CodeGeneratedRequiresOverride" class="override-button"
+                @click="overrideCompile" :disabled="actionInProgress">
                 Continue compile
             </ABtn>
             <div class="status">
                 <p class="status-text">Current Status:</p>
-                <p :class="statusClass">{{ programStatus.replace(/_/g, ' ') }}</p>
+                <p :class="statusClass">{{ statusText }}</p>
             </div>
         </div>
         <iframe src="http://localhost:8081"></iframe>
     </div>
+
+    <ADialog v-model="isDialogShown" 
+        :title="!isSuccessfullyCompiled ? 'Compiling' : 'Compilation successful'"
+        :subtitle="!isSuccessfullyCompiled ? 'Follow your compilation request status here.'  : 'Monitoring satellite OTA updates.'"
+    persistent>
+    <div class="a-card-body min-w-70 min-h-50 flex flex-col justify-center items-center">
+        <ACard class="min-h=50 min-w=50"
+            style="--a-loader-overlay-bg-opacity: 1; height: 100px; width: 200px;" v-if="!isSuccessfullyCompiled">
+            <ALoader :title=statusText
+                class="[--a-loader-overlay-bg-c:var(--a-surface-c)] min-h=20 ">
+                <ASpinner class="big-loader" :style="isCompiling ? 'display: block' : 'display: none'" />
+            </ALoader>
+        </ACard>
+        <div v-if="isSuccessfullyCompiled" class="a-card-body min-w-70 min-h-50 flex flex-col justify-center items-center">
+            <div class="area-satellites">
+                <HomeSatellite v-for="satellite in satellites" :key="satellite.id" :satellite="satellite" />
+            </div>
+        </div>
+    </div>
+    <div class="a-card-footer flex justify-center items-center m-5">
+        <ABtn variant="light" class="text-sm" @click="isDialogShown = false" v-if="isDialogCloseButtonShown">
+            Close
+        </ABtn>
+        <ABtn variant="light" class="text-sm" @click="overrideCompile" v-if="isDialogOverrideButtonShown">
+            Override
+        </ABtn>
+    </div>
+</ADialog>
+
 </template>
 
 <style scoped>
@@ -104,12 +234,14 @@ const overrideCompile = async () => {
     display: flex;
     flex-direction: column;
 }
+
 .top-bar {
     display: flex;
     align-items: center;
     margin-bottom: 1em;
     gap: 1em;
 }
+
 .button {
     display: flex;
     align-items: center;
@@ -118,42 +250,84 @@ const overrideCompile = async () => {
     padding: 0.5em 1em;
     border-radius: 4px;
 }
-.button:disabled{
-  cursor: not-allowed;
-  pointer-events: all; /* This line is optional depending on your needs */
+
+.button:disabled {
+    cursor: not-allowed;
+    pointer-events: all;
+    /* This line is optional depending on your needs */
 }
+
 .status {
     display: flex;
     align-items: center;
 }
+
 .status-text {
     font-size: 1.2em;
     font-weight: bold;
     color: #777575;
     margin-right: 0.5em;
 }
+
 .status p {
     font-size: 1.2em;
     font-weight: bold;
     text-transform: lowercase;
 }
+
 .status p::first-letter {
     text-transform: uppercase;
 }
+
+.big-loader {
+    width: 3em !important;
+    height: 3em !important;
+}
+
 iframe {
     border: 0px none;
     width: 100%;
     margin-top: 1em;
     height: 100%;
 }
-.unchanged { color: white; }
-.changed { color: orange; }
-.generating-code { color: orange; }
-.code-generated-override-required { color: yellow; }
-.error-generating-code { color: red; }
-.code-generated { color: green; }
-.compiling-binaries { color: orange; }
-.error-compiling-binaries { color: red; }
-.compiled-completely { color: green; }
-.error-unexpected { color: red; }
+
+.unchanged {
+    color: white;
+}
+
+.changed {
+    color: orange;
+}
+
+.generating-code {
+    color: orange;
+}
+
+.code-generated-override-required {
+    color: yellow;
+}
+
+.error-generating-code {
+    color: red;
+}
+
+.code-generated {
+    color: green;
+}
+
+.compiling-binaries {
+    color: orange;
+}
+
+.error-compiling-binaries {
+    color: red;
+}
+
+.compiled-completely {
+    color: green;
+}
+
+.error-unexpected {
+    color: red;
+}
 </style>
