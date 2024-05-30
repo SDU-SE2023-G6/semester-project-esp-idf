@@ -3,12 +3,33 @@
  */
 package org.example.helloweb.generator;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Iterables;
+import java.util.function.Consumer;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.generator.AbstractGenerator;
 import org.eclipse.xtext.generator.IFileSystemAccess2;
 import org.eclipse.xtext.generator.IGeneratorContext;
+import org.eclipse.xtext.xbase.lib.Functions.Function1;
+import org.eclipse.xtext.xbase.lib.IterableExtensions;
+import org.eclipse.xtext.xbase.lib.ListExtensions;
+import org.example.helloweb.helloWeb.Comparison;
+import org.example.helloweb.helloWeb.ComparisonValue;
+import org.example.helloweb.helloWeb.Condition;
+import org.example.helloweb.helloWeb.Constraint;
+import org.example.helloweb.helloWeb.Decimal;
+import org.example.helloweb.helloWeb.DeviceType;
+import org.example.helloweb.helloWeb.NestedLogicalCondition;
+import org.example.helloweb.helloWeb.Output;
+import org.example.helloweb.helloWeb.Pin;
+import org.example.helloweb.helloWeb.Sensor;
+import org.example.helloweb.helloWeb.SensorConfig;
+import org.example.helloweb.helloWeb.SensorInstantiation;
+import org.example.helloweb.helloWeb.SensorUnit;
+import org.example.helloweb.helloWeb.TimeUnit;
+import org.example.helloweb.helloWeb.ValueRef;
 
 /**
  * Generates code from your model files on save.
@@ -19,179 +40,515 @@ import org.eclipse.xtext.generator.IGeneratorContext;
 public class HelloWebGenerator extends AbstractGenerator {
   @Override
   public void doGenerate(final Resource resource, final IFileSystemAccess2 fsa, final IGeneratorContext context) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nThe method or field SensorConfig is undefined"
-      + "\nThe method or field deviceTypes is undefined for the type EObject"
-      + "\nThe method or field sensors is undefined for the type EObject"
-      + "\nThe method or field sensors is undefined for the type EObject"
-      + "\nThe method or field deviceTypes is undefined for the type EObject"
-      + "\nThe method generateJsonLogs(EList<DeviceType>, EList<Sensor>, IFileSystemAccess2) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nThere is no context to infer the closure\'s argument types from. Consider typing the arguments or put the closures into a typed context."
-      + "\nThe method generateSensorCode(Sensor, IFileSystemAccess2) from the type HelloWebGenerator refers to the missing type Sensor"
-      + "\nThere is no context to infer the closure\'s argument types from. Consider typing the arguments or put the closures into a typed context."
-      + "\nThe method generateDeviceTypeCode(DeviceType, IFileSystemAccess2) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nforEach cannot be resolved"
-      + "\nforEach cannot be resolved");
+    this.generateSharedLibraryCode(fsa);
+    Iterable<SensorConfig> _filter = Iterables.<SensorConfig>filter(resource.getContents(), SensorConfig.class);
+    for (final SensorConfig sensorConfig : _filter) {
+      {
+        this.generateJsonLogs(sensorConfig.getDeviceTypes(), sensorConfig.getSensors(), fsa);
+        final Consumer<Sensor> _function = (Sensor sensor) -> {
+          this.generateSensorCode(sensor, fsa);
+        };
+        sensorConfig.getSensors().forEach(_function);
+        final Consumer<DeviceType> _function_1 = (DeviceType deviceType) -> {
+          this.generateDeviceTypeCode(deviceType, fsa);
+        };
+        sensorConfig.getDeviceTypes().forEach(_function_1);
+      }
+    }
   }
 
-  public void generateSensorCode(final /* Sensor */Object sensor, final IFileSystemAccess2 fsa) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nreader cannot be resolved"
-      + "\nreader cannot be resolved"
-      + "\nunits cannot be resolved"
-      + "\nunits cannot be resolved"
-      + "\nindexOf cannot be resolved"
-      + "\nvalue cannot be resolved"
-      + "\nunits cannot be resolved"
-      + "\nsize cannot be resolved"
-      + "\npins cannot be resolved"
-      + "\npins cannot be resolved"
-      + "\nindexOf cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\npins cannot be resolved"
-      + "\nsize cannot be resolved"
-      + "\nout cannot be resolved"
-      + "\nout cannot be resolved"
-      + "\nindexOf cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nout cannot be resolved"
-      + "\nsize cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\ntoUpperCase cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\ntoUpperCase cannot be resolved"
-      + "\nreader cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\ntoUpperCase cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\n+ cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\n+ cannot be resolved");
+  public void generateSensorCode(final Sensor sensor, final IFileSystemAccess2 fsa) {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("#include \"");
+    String _name = sensor.getName();
+    _builder.append(_name);
+    _builder.append("_sensor.h\"");
+    _builder.newLineIfNotEmpty();
+    _builder.newLine();
+    _builder.append("Sensor ");
+    String _name_1 = sensor.getName();
+    _builder.append(_name_1);
+    _builder.append("_sensor = {");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".name = \"");
+    String _name_2 = sensor.getName();
+    _builder.append(_name_2, "    ");
+    _builder.append("\",");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".reader = \"");
+    String _reader = sensor.getReader();
+    _builder.append(_reader, "    ");
+    _builder.append("\",");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".readerFunction = &");
+    String _reader_1 = sensor.getReader();
+    _builder.append(_reader_1, "    ");
+    _builder.append("_ReaderFunction,");
+    _builder.newLineIfNotEmpty();
+    {
+      EList<SensorUnit> _units = sensor.getUnits();
+      for(final SensorUnit unit : _units) {
+        _builder.append("    ");
+        _builder.append(".units[");
+        int _indexOf = sensor.getUnits().indexOf(unit);
+        _builder.append(_indexOf, "    ");
+        _builder.append("] = \"");
+        String _value = unit.getValue();
+        _builder.append(_value, "    ");
+        _builder.append("\",");
+        _builder.newLineIfNotEmpty();
+      }
+    }
+    _builder.append("    ");
+    _builder.append(".unitCount = ");
+    int _size = sensor.getUnits().size();
+    _builder.append(_size, "    ");
+    _builder.append(",");
+    _builder.newLineIfNotEmpty();
+    {
+      EList<Pin> _pins = sensor.getPins();
+      for(final Pin pin : _pins) {
+        _builder.append("    ");
+        _builder.append(".pins[");
+        int _indexOf_1 = sensor.getPins().indexOf(pin);
+        _builder.append(_indexOf_1, "    ");
+        _builder.append("] = \"");
+        String _name_3 = pin.getName();
+        _builder.append(_name_3, "    ");
+        _builder.append("\",");
+        _builder.newLineIfNotEmpty();
+      }
+    }
+    _builder.append("    ");
+    _builder.append(".pinCount = ");
+    int _size_1 = sensor.getPins().size();
+    _builder.append(_size_1, "    ");
+    _builder.append(",");
+    _builder.newLineIfNotEmpty();
+    {
+      EList<Output> _out = sensor.getOut();
+      for(final Output out : _out) {
+        _builder.append("    ");
+        _builder.append(".out[");
+        int _indexOf_2 = sensor.getOut().indexOf(out);
+        _builder.append(_indexOf_2, "    ");
+        _builder.append("] = \"");
+        String _name_4 = out.getName();
+        _builder.append(_name_4, "    ");
+        _builder.append("\",");
+        _builder.newLineIfNotEmpty();
+      }
+    }
+    _builder.append("    ");
+    _builder.append(".outCount = ");
+    int _size_2 = sensor.getOut().size();
+    _builder.append(_size_2, "    ");
+    _builder.newLineIfNotEmpty();
+    _builder.append("};   \t    ");
+    _builder.newLine();
+    String sensorCode = _builder.toString();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("#ifndef ");
+    String _upperCase = sensor.getName().toUpperCase();
+    _builder_1.append(_upperCase);
+    _builder_1.append("_SENSOR_H");
+    _builder_1.newLineIfNotEmpty();
+    _builder_1.append("#define ");
+    String _upperCase_1 = sensor.getName().toUpperCase();
+    _builder_1.append(_upperCase_1);
+    _builder_1.append("_SENSOR_H");
+    _builder_1.newLineIfNotEmpty();
+    _builder_1.append("#include <stdio.h>");
+    _builder_1.newLine();
+    _builder_1.append("#include \"shared_snem_library.h\"");
+    _builder_1.newLine();
+    _builder_1.append("#include \"");
+    String _reader_2 = sensor.getReader();
+    _builder_1.append(_reader_2);
+    _builder_1.append("_reader.h\"");
+    _builder_1.newLineIfNotEmpty();
+    _builder_1.newLine();
+    _builder_1.append("extern Sensor ");
+    String _name_5 = sensor.getName();
+    _builder_1.append(_name_5);
+    _builder_1.append("_sensor;");
+    _builder_1.newLineIfNotEmpty();
+    _builder_1.newLine();
+    _builder_1.append("#endif /* ");
+    String _upperCase_2 = sensor.getName().toUpperCase();
+    _builder_1.append(_upperCase_2);
+    _builder_1.append("_SENSOR_H */");
+    _builder_1.newLineIfNotEmpty();
+    final String headerFile = _builder_1.toString();
+    String _name_6 = sensor.getName();
+    String _plus = (_name_6 + "_sensor.c");
+    fsa.generateFile(_plus, sensorCode);
+    String _name_7 = sensor.getName();
+    String _plus_1 = (_name_7 + "_sensor.h");
+    fsa.generateFile(_plus_1, headerFile);
   }
 
-  public void generateDeviceTypeCode(final /* DeviceType */Object deviceType, final IFileSystemAccess2 fsa) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nThe method or field sensor is undefined for the type Object"
-      + "\nThe method or field name is undefined for the type Object"
-      + "\nThere is no context to infer the closure\'s argument types from. Consider typing the arguments or put the closures into a typed context."
-      + "\nThe method generateCondition(DeviceType, SensorInstantiation, Condition) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nname cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nsensor cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nsensor cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\npins cannot be resolved"
-      + "\njoin cannot be resolved"
-      + "\npins cannot be resolved"
-      + "\nsize cannot be resolved"
-      + "\nsamplingRate cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nmap cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\njoin cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nsize cannot be resolved"
-      + "\nbatchRatePolicy cannot be resolved"
-      + "\nbatchSizePolicy cannot be resolved"
-      + "\nheartBeatPolicy cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nsensor cannot be resolved"
-      + "\nout cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nconstraints cannot be resolved"
-      + "\ncondition cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nindexOf cannot be resolved"
-      + "\nsamplingRate cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nindexOf cannot be resolved"
-      + "\nsamplingRate cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\ntoUpperCase cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\ntoUpperCase cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nsensor cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\ntoUpperCase cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\n+ cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\n+ cannot be resolved");
+  public void generateDeviceTypeCode(final DeviceType deviceType, final IFileSystemAccess2 fsa) {
+    int readingIncrement = 0;
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("#include \"target_device_type.h\"");
+    _builder.newLine();
+    _builder.newLine();
+    {
+      EList<SensorInstantiation> _sensorInstantiations = deviceType.getSensorInstantiations();
+      for(final SensorInstantiation instantiation : _sensorInstantiations) {
+        _builder.append("SensorInstantiation ");
+        String _name = deviceType.getName();
+        _builder.append(_name);
+        _builder.append("_");
+        String _name_1 = instantiation.getSensor().getName();
+        _builder.append(_name_1);
+        _builder.append("_");
+        String _name_2 = instantiation.getName();
+        _builder.append(_name_2);
+        _builder.append(" = {");
+        _builder.newLineIfNotEmpty();
+        _builder.append("    ");
+        _builder.append(".sensor = &");
+        String _name_3 = instantiation.getSensor().getName();
+        _builder.append(_name_3, "    ");
+        _builder.append("_sensor,");
+        _builder.newLineIfNotEmpty();
+        _builder.append("    ");
+        _builder.append(".name = \"");
+        String _name_4 = instantiation.getName();
+        _builder.append(_name_4, "    ");
+        _builder.append("\",");
+        _builder.newLineIfNotEmpty();
+        _builder.append("    ");
+        _builder.append(".pins = {");
+        String _join = IterableExtensions.join(instantiation.getPins(), ", ");
+        _builder.append(_join, "    ");
+        _builder.append("},");
+        _builder.newLineIfNotEmpty();
+        _builder.append("    ");
+        _builder.append(".pinCount = ");
+        int _size = instantiation.getPins().size();
+        _builder.append(_size, "    ");
+        _builder.append(",");
+        _builder.newLineIfNotEmpty();
+        _builder.append("    ");
+        _builder.append(".samplingRate = ");
+        String _mapXTextTimeUnitToC = this.mapXTextTimeUnitToC(instantiation.getSamplingRate());
+        _builder.append(_mapXTextTimeUnitToC, "    ");
+        _builder.append(",");
+        _builder.newLineIfNotEmpty();
+        _builder.append("\t");
+        _builder.append(".readings = (double[]) {");
+        {
+          EList<Output> _out = instantiation.getSensor().getOut();
+          for(final Output output : _out) {
+            _builder.append("0.0");
+            {
+              Output _last = IterableExtensions.<Output>last(instantiation.getSensor().getOut());
+              boolean _notEquals = (!Objects.equal(output, _last));
+              if (_notEquals) {
+                _builder.append(", ");
+              }
+            }
+          }
+        }
+        _builder.append("}");
+        _builder.newLineIfNotEmpty();
+        _builder.append("};");
+        _builder.newLine();
+      }
+    }
+    _builder.newLine();
+    _builder.append("DeviceType base_device_type = {");
+    _builder.newLine();
+    _builder.append("    ");
+    _builder.append(".name = \"");
+    String _name_5 = deviceType.getName();
+    _builder.append(_name_5, "    ");
+    _builder.append("\",");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".sensorInstantiations = {");
+    final Function1<SensorInstantiation, String> _function = (SensorInstantiation instantiation_1) -> {
+      StringConcatenation _builder_1 = new StringConcatenation();
+      _builder_1.append("&");
+      String _name_6 = deviceType.getName();
+      _builder_1.append(_name_6);
+      _builder_1.append("_");
+      String _name_7 = instantiation_1.getSensor().getName();
+      _builder_1.append(_name_7);
+      _builder_1.append("_");
+      String _name_8 = instantiation_1.getName();
+      _builder_1.append(_name_8);
+      return _builder_1.toString();
+    };
+    String _join_1 = IterableExtensions.join(ListExtensions.<SensorInstantiation, String>map(deviceType.getSensorInstantiations(), _function), ", ");
+    _builder.append(_join_1, "    ");
+    _builder.append("},");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".sensorCount = ");
+    int _size_1 = deviceType.getSensorInstantiations().size();
+    _builder.append(_size_1, "    ");
+    _builder.append(",");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".batchRatePolicy = ");
+    String _mapXTextTimeUnitToC_1 = this.mapXTextTimeUnitToC(deviceType.getBatchRatePolicy());
+    _builder.append(_mapXTextTimeUnitToC_1, "    ");
+    _builder.append(",");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".batchSizePolicy = ");
+    int _batchSizePolicy = deviceType.getBatchSizePolicy();
+    _builder.append(_batchSizePolicy, "    ");
+    _builder.append(",");
+    _builder.newLineIfNotEmpty();
+    _builder.append("    ");
+    _builder.append(".heartBeatPolicy = ");
+    String _mapXTextTimeUnitToC_2 = this.mapXTextTimeUnitToC(deviceType.getHeartBeatPolicy());
+    _builder.append(_mapXTextTimeUnitToC_2, "    ");
+    _builder.newLineIfNotEmpty();
+    _builder.append("};");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.newLine();
+    _builder.append("void constrain_device_type(DeviceType* device_type) {");
+    _builder.newLine();
+    {
+      EList<SensorInstantiation> _sensorInstantiations_1 = deviceType.getSensorInstantiations();
+      for(final SensorInstantiation instantiation_1 : _sensorInstantiations_1) {
+        {
+          EList<Output> _out_1 = instantiation_1.getSensor().getOut();
+          for(final Output output_1 : _out_1) {
+            _builder.append("\t");
+            _builder.append("double ");
+            String _name_6 = instantiation_1.getName();
+            _builder.append(_name_6, "\t");
+            _builder.append("_");
+            String _name_7 = output_1.getName();
+            _builder.append(_name_7, "\t");
+            _builder.append(" = device_type->sensorInstantiations[");
+            int _indexOf = deviceType.getSensorInstantiations().indexOf(instantiation_1);
+            _builder.append(_indexOf, "\t");
+            _builder.append("]->readings[");
+            int _indexOf_1 = instantiation_1.getSensor().getOut().indexOf(output_1);
+            _builder.append(_indexOf_1, "\t");
+            _builder.append("];");
+            _builder.newLineIfNotEmpty();
+          }
+        }
+      }
+    }
+    {
+      EList<SensorInstantiation> _sensorInstantiations_2 = deviceType.getSensorInstantiations();
+      for(final SensorInstantiation instantiation_2 : _sensorInstantiations_2) {
+        {
+          EList<Constraint> _constraints = instantiation_2.getConstraints();
+          for(final Constraint constraint : _constraints) {
+            _builder.append("\t");
+            _builder.append("if (");
+            String _generateCondition = this.generateCondition(deviceType, instantiation_2, constraint.getCondition());
+            _builder.append(_generateCondition, "\t");
+            _builder.append(") {");
+            _builder.newLineIfNotEmpty();
+            _builder.append("\t");
+            _builder.append("\t");
+            _builder.append("device_type->sensorInstantiations[");
+            int _indexOf_2 = deviceType.getSensorInstantiations().indexOf(instantiation_2);
+            _builder.append(_indexOf_2, "\t\t");
+            _builder.append("]->samplingRate.value = ");
+            int _value = constraint.getSamplingRate().getValue();
+            _builder.append(_value, "\t\t");
+            _builder.append(";");
+            _builder.newLineIfNotEmpty();
+            _builder.append("\t");
+            _builder.append("\t");
+            _builder.append("device_type->sensorInstantiations[");
+            int _indexOf_3 = deviceType.getSensorInstantiations().indexOf(instantiation_2);
+            _builder.append(_indexOf_3, "\t\t");
+            _builder.append("]->samplingRate.unit = ");
+            String _extractXTextTimeUnit = this.extractXTextTimeUnit(constraint.getSamplingRate());
+            _builder.append(_extractXTextTimeUnit, "\t\t");
+            _builder.append(";");
+            _builder.newLineIfNotEmpty();
+            _builder.append("\t");
+            _builder.append("}");
+            _builder.newLine();
+          }
+        }
+      }
+    }
+    _builder.append("}");
+    _builder.newLine();
+    String deviceTypeCode = _builder.toString();
+    StringConcatenation _builder_1 = new StringConcatenation();
+    _builder_1.append("#ifndef TARGET_DEVICE_TYPE_H");
+    _builder_1.newLine();
+    _builder_1.append("#define TARGET_DEVICE_TYPE_H");
+    _builder_1.newLine();
+    _builder_1.append("#include <stdio.h>");
+    _builder_1.newLine();
+    _builder_1.append("#include \"shared_snem_library.h\"");
+    _builder_1.newLine();
+    {
+      EList<SensorInstantiation> _sensorInstantiations_3 = deviceType.getSensorInstantiations();
+      for(final SensorInstantiation instantiation_3 : _sensorInstantiations_3) {
+        _builder_1.append("#include \"");
+        String _name_8 = instantiation_3.getSensor().getName();
+        _builder_1.append(_name_8);
+        _builder_1.append("_sensor.h\"");
+        _builder_1.newLineIfNotEmpty();
+      }
+    }
+    _builder_1.append("extern DeviceType base_device_type;");
+    _builder_1.newLine();
+    _builder_1.append("void constrain_device_type(DeviceType* device_type);");
+    _builder_1.newLine();
+    _builder_1.newLine();
+    _builder_1.append("#endif /* TARGET_DEVICE_TYPE_H */");
+    _builder_1.newLine();
+    final String headerFile = _builder_1.toString();
+    String _name_9 = deviceType.getName();
+    String _plus = (_name_9 + "_device_type.c");
+    fsa.generateFile(_plus, deviceTypeCode);
+    String _name_10 = deviceType.getName();
+    String _plus_1 = (_name_10 + "_device_type.h");
+    fsa.generateFile(_plus_1, headerFile);
   }
 
-  public String generateCondition(final /* DeviceType */Object type, final /* SensorInstantiation */Object instantiation, final /* Condition */Object condition) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nComparison cannot be resolved to a type."
-      + "\nComparison cannot be resolved to a type."
-      + "\nNestedLogicalCondition cannot be resolved to a type."
-      + "\nNestedLogicalCondition cannot be resolved to a type."
-      + "\nUnreachable code: The if condition can never match. It is already handled by a previous condition."
-      + "\nThe method generateComparison(DeviceType, SensorInstantiation, Comparison) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nThe method generateNestedLogicalCondition(DeviceType, SensorInstantiation, NestedLogicalCondition) from the type HelloWebGenerator refers to the missing type DeviceType");
+  public String generateCondition(final DeviceType type, final SensorInstantiation instantiation, final Condition condition) {
+    if ((condition instanceof Comparison)) {
+      return this.generateComparison(type, instantiation, ((Comparison) condition));
+    } else {
+      if ((condition instanceof NestedLogicalCondition)) {
+        return this.generateNestedLogicalCondition(type, instantiation, ((NestedLogicalCondition) condition));
+      } else {
+        throw new RuntimeException();
+      }
+    }
   }
 
-  public String generateComparison(final /* DeviceType */Object type, final /* SensorInstantiation */Object instantiation, final /* Comparison */Object comparison) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nThe method generateComparisonValue(DeviceType, SensorInstantiation, ComparisonValue) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nThe method generateComparisonValue(DeviceType, SensorInstantiation, ComparisonValue) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nleft cannot be resolved"
-      + "\nright cannot be resolved"
-      + "\noperator cannot be resolved"
-      + "\noperator cannot be resolved"
-      + "\ntoString cannot be resolved");
+  public String generateComparison(final DeviceType type, final SensorInstantiation instantiation, final Comparison comparison) {
+    final String left = this.generateComparisonValue(type, instantiation, comparison.getLeft());
+    final String right = this.generateComparisonValue(type, instantiation, comparison.getRight());
+    String _switchResult = null;
+    String _operator = comparison.getOperator();
+    if (_operator != null) {
+      switch (_operator) {
+        case ">":
+          _switchResult = ">";
+          break;
+        case "<":
+          _switchResult = "<";
+          break;
+        case ">=":
+          _switchResult = ">=";
+          break;
+        case "<=":
+          _switchResult = "<=";
+          break;
+        case "=":
+          _switchResult = "==";
+          break;
+        case "!=":
+          _switchResult = "!=";
+          break;
+        default:
+          String _string = comparison.getOperator().toString();
+          String _plus = ("Operator not supported " + _string);
+          throw new RuntimeException(_plus);
+      }
+    } else {
+      String _string = comparison.getOperator().toString();
+      String _plus = ("Operator not supported " + _string);
+      throw new RuntimeException(_plus);
+    }
+    final String operator = _switchResult;
+    return ((((left + " ") + operator) + " ") + right);
   }
 
-  public String generateComparisonValue(final /* DeviceType */Object type, final /* SensorInstantiation */Object instantiation, final /* ComparisonValue */Object value) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nValueRef cannot be resolved to a type."
-      + "\nDecimal cannot be resolved to a type."
-      + "\nComparisonValue cannot be resolved to a type."
-      + "\nUnreachable code: The case can never match. It is already handled by a previous condition."
-      + "\nUnreachable code: The case can never match. It is already handled by a previous condition."
-      + "\nsensorInstantiation cannot be resolved"
-      + "\n!== cannot be resolved"
-      + "\nsensorInstantiation cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nout cannot be resolved"
-      + "\nleft cannot be resolved"
-      + "\n+ cannot be resolved"
-      + "\n+ cannot be resolved"
-      + "\nright cannot be resolved"
-      + "\nvalue cannot be resolved"
-      + "\ntoString cannot be resolved"
-      + "\ntoString cannot be resolved");
+  public String generateComparisonValue(final DeviceType type, final SensorInstantiation instantiation, final ComparisonValue value) {
+    String _switchResult = null;
+    boolean _matched = false;
+    if (value instanceof ValueRef) {
+      _matched=true;
+      String sensorInstantiationName = "";
+      SensorInstantiation _sensorInstantiation = ((ValueRef)value).getSensorInstantiation();
+      boolean _tripleNotEquals = (_sensorInstantiation != null);
+      if (_tripleNotEquals) {
+        String _sensorInstantiationName = sensorInstantiationName;
+        String _name = ((ValueRef)value).getSensorInstantiation().getName();
+        sensorInstantiationName = (_sensorInstantiationName + _name);
+      } else {
+        String _sensorInstantiationName_1 = sensorInstantiationName;
+        String _name_1 = instantiation.getName();
+        sensorInstantiationName = (_sensorInstantiationName_1 + _name_1);
+      }
+      String _out = ((ValueRef)value).getOut();
+      return ((sensorInstantiationName + "_") + _out);
+    }
+    if (!_matched) {
+      if (value instanceof Decimal) {
+        _matched=true;
+        int _left = ((Decimal)value).getLeft();
+        String _plus = (Integer.valueOf(_left) + ".");
+        int _right = ((Decimal)value).getRight();
+        _switchResult = (_plus + Integer.valueOf(_right));
+      }
+    }
+    if (!_matched) {
+      if (value instanceof ComparisonValue) {
+        _matched=true;
+        _switchResult = Integer.valueOf(value.getValue()).toString();
+      }
+    }
+    if (!_matched) {
+      String _string = value.toString();
+      String _plus = ("Unsupported Comparison Value " + _string);
+      throw new RuntimeException(_plus);
+    }
+    return _switchResult;
   }
 
-  public String generateNestedLogicalCondition(final /* DeviceType */Object type, final /* SensorInstantiation */Object instantiation, final /* NestedLogicalCondition */Object condition) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nThe method generateCondition(DeviceType, SensorInstantiation, Condition) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nThe method generateCondition(DeviceType, SensorInstantiation, Condition) from the type HelloWebGenerator refers to the missing type DeviceType"
-      + "\nleft cannot be resolved"
-      + "\nright cannot be resolved"
-      + "\noperator cannot be resolved"
-      + "\noperator cannot be resolved"
-      + "\ntoString cannot be resolved"
-      + "\noperator cannot be resolved"
-      + "\n== cannot be resolved");
+  public String generateNestedLogicalCondition(final DeviceType type, final SensorInstantiation instantiation, final NestedLogicalCondition condition) {
+    final String leftCondition = this.generateCondition(type, instantiation, condition.getLeft());
+    final String rightCondition = this.generateCondition(type, instantiation, condition.getRight());
+    String _switchResult = null;
+    String _operator = condition.getOperator();
+    if (_operator != null) {
+      switch (_operator) {
+        case "AND":
+          _switchResult = "&&";
+          break;
+        case "OR":
+          _switchResult = "||";
+          break;
+        case "NOT":
+          _switchResult = "!";
+          break;
+        default:
+          String _string = condition.getOperator().toString();
+          String _plus = ("Logical operator not supported " + _string);
+          throw new RuntimeException(_plus);
+      }
+    } else {
+      String _string = condition.getOperator().toString();
+      String _plus = ("Logical operator not supported " + _string);
+      throw new RuntimeException(_plus);
+    }
+    final String operator = _switchResult;
+    String _operator_1 = condition.getOperator();
+    boolean _equals = Objects.equal(_operator_1, "NOT");
+    if (_equals) {
+      return (((((operator + "(") + leftCondition) + " ") + rightCondition) + ")");
+    } else {
+      return (((((("(" + leftCondition) + " ") + operator) + " ") + rightCondition) + ")");
+    }
   }
 
   public void generateSharedLibraryCode(final IFileSystemAccess2 fsa) {
@@ -311,6 +668,9 @@ public class HelloWebGenerator extends AbstractGenerator {
     _builder.newLine();
     _builder.append("    ");
     _builder.append("TimeDuration samplingRate;");
+    _builder.newLine();
+    _builder.append("\t");
+    _builder.append("double* readings;");
     _builder.newLine();
     _builder.append("};");
     _builder.newLine();
@@ -465,24 +825,13 @@ public class HelloWebGenerator extends AbstractGenerator {
     fsa.generateFile("shared_snem_library.c", sourceFile);
   }
 
-  public String extractXTextTimeUnitCount(final String timeDuration) {
-    String _xblockexpression = null;
-    {
-      if (((timeDuration == null) || timeDuration.isEmpty())) {
-        return "1";
-      }
-      _xblockexpression = timeDuration.replaceAll("\\D", "");
-    }
-    return _xblockexpression;
-  }
-
-  public String extractXTextTimeUnit(final String timeDuration) {
-    if (((timeDuration == null) || timeDuration.isEmpty())) {
+  public String extractXTextTimeUnit(final TimeUnit timeDuration) {
+    if ((timeDuration == null)) {
       return "SECOND";
     }
-    timeDuration.replaceAll("\\d", "");
-    if (timeDuration != null) {
-      switch (timeDuration) {
+    String _unit = timeDuration.getUnit();
+    if (_unit != null) {
+      switch (_unit) {
         case "s":
           return "SECOND";
         case "m":
@@ -499,61 +848,182 @@ public class HelloWebGenerator extends AbstractGenerator {
     }
   }
 
-  public String mapXTextTimeUnitToC(final String timeDuration) {
-    if (((timeDuration == null) || timeDuration.isEmpty())) {
+  public String mapXTextTimeUnitToC(final TimeUnit timeDuration) {
+    if ((timeDuration == null)) {
       return "{1, SECOND}";
     }
-    final String count = timeDuration.replaceAll("\\D", "");
-    final String unit = timeDuration.replaceAll("\\d", "");
-    if (unit != null) {
-      switch (unit) {
-        case "s":
-          return (("{" + count) + ", SECOND}");
-        case "m":
-          return (("{" + count) + ", MINUTE}");
-        case "h":
-          return (("{" + count) + ", HOUR}");
-        case "d":
-          return (("{" + count) + ", DAY}");
-        default:
-          return "{1, SECOND}";
-      }
-    } else {
-      return "{1, SECOND}";
-    }
+    int _value = timeDuration.getValue();
+    String _plus = ("{" + Integer.valueOf(_value));
+    String _plus_1 = (_plus + ", ");
+    String _extractXTextTimeUnit = this.extractXTextTimeUnit(timeDuration);
+    String _plus_2 = (_plus_1 + _extractXTextTimeUnit);
+    return (_plus_2 + "}");
   }
 
-  public void generateJsonLogs(final /* EList<DeviceType> */Object deviceTypes, final /* EList<Sensor> */Object sensors, final IFileSystemAccess2 fsa) {
-    throw new Error("Unresolved compilation problems:"
-      + "\nThe method or field value is undefined for the type Object"
-      + "\nThe method or field name is undefined for the type Object"
-      + "\nThe method or field name is undefined for the type Object"
-      + "\nThere is no context to infer the closure\'s argument types from. Consider typing the arguments or put the closures into a typed context."
-      + "\nThere is no context to infer the closure\'s argument types from. Consider typing the arguments or put the closures into a typed context."
-      + "\nThere is no context to infer the closure\'s argument types from. Consider typing the arguments or put the closures into a typed context."
-      + "\nname cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nsensor cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\npins cannot be resolved"
-      + "\njoin cannot be resolved"
-      + "\nsamplingRate cannot be resolved"
-      + "\n!= cannot be resolved"
-      + "\nsensorInstantiations cannot be resolved"
-      + "\nlast cannot be resolved"
-      + "\n!= cannot be resolved"
-      + "\nname cannot be resolved"
-      + "\nreader cannot be resolved"
-      + "\nunits cannot be resolved"
-      + "\nmap cannot be resolved"
-      + "\njoin cannot be resolved"
-      + "\npins cannot be resolved"
-      + "\nmap cannot be resolved"
-      + "\njoin cannot be resolved"
-      + "\nout cannot be resolved"
-      + "\nmap cannot be resolved"
-      + "\njoin cannot be resolved"
-      + "\n!= cannot be resolved");
+  public void generateJsonLogs(final EList<DeviceType> deviceTypes, final EList<Sensor> sensors, final IFileSystemAccess2 fsa) {
+    StringConcatenation _builder = new StringConcatenation();
+    _builder.append("{");
+    _builder.newLine();
+    _builder.append("    ");
+    _builder.append("\"deviceTypes\": [");
+    _builder.newLine();
+    {
+      for(final DeviceType deviceType : deviceTypes) {
+        _builder.append("        ");
+        _builder.append("{");
+        _builder.newLine();
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("\"name\": \"");
+        String _name = deviceType.getName();
+        _builder.append(_name, "            ");
+        _builder.append("\",");
+        _builder.newLineIfNotEmpty();
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("\"sensors\": [");
+        _builder.newLine();
+        {
+          EList<SensorInstantiation> _sensorInstantiations = deviceType.getSensorInstantiations();
+          for(final SensorInstantiation instantiation : _sensorInstantiations) {
+            _builder.append("        ");
+            _builder.append("        ");
+            _builder.append("{");
+            _builder.newLine();
+            _builder.append("        ");
+            _builder.append("        ");
+            _builder.append("    ");
+            _builder.append("\"name\": \"");
+            String _name_1 = instantiation.getName();
+            _builder.append(_name_1, "                    ");
+            _builder.append("\",");
+            _builder.newLineIfNotEmpty();
+            _builder.append("        ");
+            _builder.append("        ");
+            _builder.append("    ");
+            _builder.append("\"sensor\": \"");
+            String _name_2 = instantiation.getSensor().getName();
+            _builder.append(_name_2, "                    ");
+            _builder.append("\",");
+            _builder.newLineIfNotEmpty();
+            _builder.append("        ");
+            _builder.append("        ");
+            _builder.append("    ");
+            _builder.append("\"pins\": [");
+            String _join = IterableExtensions.join(instantiation.getPins(), ", ");
+            _builder.append(_join, "                    ");
+            _builder.append("],");
+            _builder.newLineIfNotEmpty();
+            _builder.append("        ");
+            _builder.append("        ");
+            _builder.append("    ");
+            _builder.append("\"samplingRate\": \"");
+            TimeUnit _samplingRate = instantiation.getSamplingRate();
+            _builder.append(_samplingRate, "                    ");
+            _builder.append("\"");
+            _builder.newLineIfNotEmpty();
+            _builder.append("        ");
+            _builder.append("        ");
+            _builder.append("}");
+            {
+              SensorInstantiation _last = IterableExtensions.<SensorInstantiation>last(deviceType.getSensorInstantiations());
+              boolean _notEquals = (!Objects.equal(instantiation, _last));
+              if (_notEquals) {
+                _builder.append(",");
+              }
+            }
+            _builder.newLineIfNotEmpty();
+          }
+        }
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("]");
+        _builder.newLine();
+        _builder.append("        ");
+        _builder.append("}");
+        {
+          DeviceType _last_1 = IterableExtensions.<DeviceType>last(deviceTypes);
+          boolean _notEquals_1 = (!Objects.equal(deviceType, _last_1));
+          if (_notEquals_1) {
+            _builder.append(",");
+          }
+        }
+        _builder.newLineIfNotEmpty();
+      }
+    }
+    _builder.append("    ");
+    _builder.append("],");
+    _builder.newLine();
+    _builder.append("    ");
+    _builder.append("\"sensors\": [");
+    _builder.newLine();
+    {
+      for(final Sensor sensor : sensors) {
+        _builder.append("        ");
+        _builder.append("{");
+        _builder.newLine();
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("\"name\": \"");
+        String _name_3 = sensor.getName();
+        _builder.append(_name_3, "            ");
+        _builder.append("\",");
+        _builder.newLineIfNotEmpty();
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("\"reader\": \"");
+        String _reader = sensor.getReader();
+        _builder.append(_reader, "            ");
+        _builder.append("\",");
+        _builder.newLineIfNotEmpty();
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("\"units\": [\"");
+        final Function1<SensorUnit, String> _function = (SensorUnit unit) -> {
+          return unit.getValue();
+        };
+        String _join_1 = IterableExtensions.join(ListExtensions.<SensorUnit, String>map(sensor.getUnits(), _function), "\", \"");
+        _builder.append(_join_1, "            ");
+        _builder.append("\"],");
+        _builder.newLineIfNotEmpty();
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("\"pins\": [\"");
+        final Function1<Pin, String> _function_1 = (Pin unit) -> {
+          return unit.getName();
+        };
+        String _join_2 = IterableExtensions.join(ListExtensions.<Pin, String>map(sensor.getPins(), _function_1), "\", \"");
+        _builder.append(_join_2, "            ");
+        _builder.append("\"],");
+        _builder.newLineIfNotEmpty();
+        _builder.append("        ");
+        _builder.append("    ");
+        _builder.append("\"out\": [\"");
+        final Function1<Output, String> _function_2 = (Output unit) -> {
+          return unit.getName();
+        };
+        String _join_3 = IterableExtensions.join(ListExtensions.<Output, String>map(sensor.getOut(), _function_2), "\", \"");
+        _builder.append(_join_3, "            ");
+        _builder.append("\"]");
+        _builder.newLineIfNotEmpty();
+        _builder.append("        ");
+        _builder.append("}");
+        {
+          Sensor _last_2 = IterableExtensions.<Sensor>last(sensors);
+          boolean _notEquals_2 = (!Objects.equal(sensor, _last_2));
+          if (_notEquals_2) {
+            _builder.append(",");
+          }
+        }
+        _builder.newLineIfNotEmpty();
+      }
+    }
+    _builder.append("    ");
+    _builder.append("]");
+    _builder.newLine();
+    _builder.append("}");
+    _builder.newLine();
+    String json = _builder.toString();
+    fsa.generateFile("output.json", json);
   }
 }

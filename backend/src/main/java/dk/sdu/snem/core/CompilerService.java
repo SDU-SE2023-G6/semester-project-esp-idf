@@ -7,13 +7,13 @@ import dk.sdu.snem.core.model.Binary;
 import dk.sdu.snem.core.model.DeviceType;
 import dk.sdu.snem.core.model.Program;
 import dk.sdu.snem.core.model.ReaderFunction;
-import dk.sdu.snem.core.serialization.DeviceTypeMetadata;
-import dk.sdu.snem.core.serialization.GeneratedCodeMetadata;
-import dk.sdu.snem.core.serialization.SensorInstantiationMetadata;
 import dk.sdu.snem.core.repo.BinaryRepository;
 import dk.sdu.snem.core.repo.DeviceTypeRepository;
 import dk.sdu.snem.core.repo.ProgramRepository;
 import dk.sdu.snem.core.repo.ReaderFunctionRepository;
+import dk.sdu.snem.core.serialization.DeviceTypeMetadata;
+import dk.sdu.snem.core.serialization.GeneratedCodeMetadata;
+import dk.sdu.snem.core.serialization.SensorInstantiationMetadata;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -28,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -40,6 +41,7 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -62,28 +64,34 @@ public class CompilerService {
   private final ObjectMapper objectMapper;
   private final ReaderFunctionRepository readerRepo;
   private final String compilerFolder;
-  /**
-   * Base compiler project.
-   */
+
+  /** Base compiler project. */
   private final String baseCompilerProjectFolder;
-  /**
-   * Where to insert generated files into the base compiler project.
-   */
+
+  /** Where to insert generated files into the base compiler project. */
   private final String baseCompilerProjectInsertLocation;
+
   private final String xtextHost;
   private final CompilerService asyncSelf;
+  private final String externalServerUrl;
+  private final String externalBrokerUrl;
+  private final String externalFirmwareUpgradeUrl;
 
   public CompilerService(
       RestTemplate restTemplate,
       ProgramRepository programRepo,
       DeviceTypeRepository deviceTypeRepo,
       BinaryRepository binaryRepo,
-      ObjectMapper objectMapper, ReaderFunctionRepository readerRepo,
+      ObjectMapper objectMapper,
+      ReaderFunctionRepository readerRepo,
       @Value("${compiler.folder}") String compilerFolder,
       @Value("${compiler.project.location}") String baseCompilerProjectFolder,
       @Value("${compiler.project.insert}") String baseCompilerProjectInsertLocation,
       @Value("${compiler.xtext.host}") String xtextHost,
-      @Lazy CompilerService asyncSelf) {
+      @Lazy CompilerService asyncSelf,
+      @Value("${external.server.url}") String externalServerUrl,
+      @Value("${external.broker.url}") String externalBrokerUrl,
+      @Value("${external.firmware.upgrade.url}") String externalFirmwareUpgradeUrl) {
     this.restTemplate = restTemplate;
     this.programRepo = programRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -95,6 +103,117 @@ public class CompilerService {
     this.baseCompilerProjectInsertLocation = baseCompilerProjectInsertLocation;
     this.xtextHost = xtextHost;
     this.asyncSelf = asyncSelf;
+    this.externalServerUrl = externalServerUrl;
+    this.externalBrokerUrl = externalBrokerUrl;
+    this.externalFirmwareUpgradeUrl = externalFirmwareUpgradeUrl;
+  }
+
+  public static void compile(String directory, Map<String, String> environmentVariables) throws IOException, InterruptedException {
+    ProcessBuilder processBuilder = new ProcessBuilder(List.of("./auto-build.sh"));
+    processBuilder.environment().putAll(environmentVariables);
+    processBuilder.directory(new File(directory));
+    Process process;
+    try {
+      process = processBuilder.start();
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw e;
+    }
+
+    BufferedReader outputReader =
+        new BufferedReader(new InputStreamReader(process.getInputStream()));
+    String line;
+    while ((line = outputReader.readLine()) != null) {
+      log.info(line);
+    }
+
+    BufferedReader errorReader =
+        new BufferedReader(new InputStreamReader(process.getErrorStream()));
+    while ((line = errorReader.readLine()) != null) {
+      log.info(line);
+    }
+
+    int exitCode = process.waitFor();
+    log.info("Compiling completed");
+
+    if (exitCode != 0) {
+      throw new RuntimeException("Program failed unexpectedly");
+    }
+  }
+
+  private static void copyFolderAndContents(File source, File destination) throws IOException {
+    if (source.isDirectory()) {
+      if (!destination.exists()) {
+        destination.mkdirs();
+      }
+
+      String[] files = source.list();
+      if (files == null) {
+        return;
+      }
+      for (String file : files) {
+        File srcFile = new File(source, file);
+        File destFile = new File(destination, file);
+        copyFolderAndContents(srcFile, destFile);
+      }
+    } else {
+      if (!destination.getParentFile().exists()) {
+        destination.getParentFile().mkdirs();
+      }
+      Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+  }
+
+  private static TargetFilesAndReaders extractTargetFilesAndReaders(
+      GeneratedCodeMetadata metadata, DeviceTypeMetadata target) {
+    Set<String> targetFiles =
+        new HashSet<>(
+            List.of(
+                "shared_snem_library.c",
+                "shared_snem_library.h",
+                target.getName() + "_device_type.c",
+                target.getName() + "_device_type.h"));
+
+    Set<String> readers = new HashSet<>();
+    targetFiles.addAll(
+        target.getSensors().stream()
+            .map(SensorInstantiationMetadata::getSensor)
+            .map(
+                instance ->
+                    metadata.getSensors().stream()
+                        .filter(x -> x.getName().equals(instance))
+                        .findFirst())
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .flatMap(
+                x -> {
+                  readers.add(x.getReader());
+                  return Stream.of(x.getName() + "_sensor.c", x.getName() + "_sensor.h");
+                })
+            .toList());
+
+    return new TargetFilesAndReaders(targetFiles, readers);
+  }
+
+  private static String bytesToSha256Hash(byte[] bytes) {
+    MessageDigest digest;
+    try {
+      digest = MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+
+    digest.update(bytes);
+    byte[] hash = digest.digest();
+
+    StringBuilder hexString = new StringBuilder();
+    for (byte b : hash) {
+      String hex = Integer.toHexString(0xff & b);
+      if (hex.length() == 1) hexString.append('0');
+      hexString.append(hex);
+    }
+
+    return hexString.toString();
   }
 
   @Async
@@ -159,7 +278,9 @@ public class CompilerService {
   @Async
   public CompletableFuture<Void> compileBinary(
       Program program,
-    byte[] codeGeneratedZipFile, GeneratedCodeMetadata metadata, DeviceTypeMetadata target) {
+      byte[] codeGeneratedZipFile,
+      GeneratedCodeMetadata metadata,
+      DeviceTypeMetadata target) {
     final DeviceType deviceType =
         deviceTypeRepo
             .findByName(target.getName())
@@ -177,11 +298,9 @@ public class CompilerService {
     binary.setDeviceType(deviceType);
     log.info("Starting compile with id %s".formatted(binary.getId().toHexString()));
 
-    Optional<Binary> oldBinary = binaryRepo.findFirstByDeviceTypeAndWithdrawnOrderByCompilationTimeDesc(deviceType, false);
+    Optional<Binary> oldBinary =
+        binaryRepo.findFirstByDeviceTypeAndWithdrawnOrderByCompilationTimeDesc(deviceType, false);
     oldBinary.ifPresent(value -> binary.setVersion(value.getVersion() + 1));
-
-
-
 
     TargetFilesAndReaders targets = extractTargetFilesAndReaders(metadata, target);
     List<ReaderFunction> readers = readerRepo.findByNameIn(targets.readers());
@@ -191,14 +310,20 @@ public class CompilerService {
     }
 
     File baseCompilerProjectFolderFile = new File(baseCompilerProjectFolder);
-    boolean baseProjectExists = baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
-    final String destinationFolder = compilerFolder+binary.getId().toHexString();
-    final String generatedCodeInsertFolder = baseProjectExists ? destinationFolder+baseCompilerProjectInsertLocation : destinationFolder;
+    boolean baseProjectExists =
+        baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
+    final String destinationFolder = compilerFolder + binary.getId().toHexString();
+    final String generatedCodeInsertFolder =
+        baseProjectExists
+            ? destinationFolder + baseCompilerProjectInsertLocation
+            : destinationFolder;
     if (baseProjectExists) {
       try {
         copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
       } catch (IOException e) {
-        log.warn("Failed to copy base compiler project at %s destination is %s".formatted(baseCompilerProjectFolder, destinationFolder));
+        log.warn(
+            "Failed to copy base compiler project at %s destination is %s"
+                .formatted(baseCompilerProjectFolder, destinationFolder));
         e.printStackTrace();
         File folderToDelete = new File(destinationFolder);
         FileSystemUtils.deleteRecursively(folderToDelete);
@@ -206,21 +331,24 @@ public class CompilerService {
       }
     }
 
-    int filesFound = extractFilesToFolder(codeGeneratedZipFile, targets.files.stream().toList(), generatedCodeInsertFolder);
+    int filesFound =
+        extractFilesToFolder(
+            codeGeneratedZipFile, targets.files.stream().toList(), generatedCodeInsertFolder);
     if (filesFound != targets.files().size()) {
       log.warn("Failed to find required files");
-      return CompletableFuture.failedFuture(new RuntimeException("Was unable to find all expected files"));
+      return CompletableFuture.failedFuture(
+          new RuntimeException("Was unable to find all expected files"));
     }
-    readers.forEach(x -> extractFilesToFolder(x.getSourceFiles(), List.of(
-        x.getName()+"_reader.h",
-        x.getName()+"_reader.c"
-    ), generatedCodeInsertFolder));
-
-
+    readers.forEach(
+        x ->
+            extractFilesToFolder(
+                x.getSourceFiles(),
+                List.of(x.getName() + "_reader.h", x.getName() + "_reader.c"),
+                generatedCodeInsertFolder));
 
     try {
       log.info("Starting compile of C code");
-      compile(destinationFolder);
+      compile(destinationFolder, Map.of());
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
       File folderToDelete = new File(destinationFolder);
@@ -228,9 +356,9 @@ public class CompilerService {
       return CompletableFuture.failedFuture(e);
     }
 
-
     try {
-      byte[] compiledBinary = Files.readAllBytes(Paths.get(destinationFolder+"/build/ESP-OTA-MQTT.bin"));
+      byte[] compiledBinary =
+          Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.bin"));
       binary.setCompiledBinary(compiledBinary);
       binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
     } catch (IOException e) {
@@ -240,9 +368,8 @@ public class CompilerService {
       return CompletableFuture.failedFuture(e);
     }
 
-
     File folderToDelete = new File(destinationFolder);
-    //FileSystemUtils.deleteRecursively(folderToDelete);
+    FileSystemUtils.deleteRecursively(folderToDelete);
 
     binary.setCompilationTime(Instant.now());
     binaryRepo.save(binary);
@@ -252,93 +379,66 @@ public class CompilerService {
     return CompletableFuture.completedFuture(null);
   }
 
-  public static void compile(String directory) throws IOException, InterruptedException {
-    ProcessBuilder processBuilder = new ProcessBuilder(List.of("./auto-build.sh"));
-    processBuilder.directory(new File(directory));
-    Process process;
-    try{
-      process =  processBuilder.start();
-    } catch (Exception e){
-      e.printStackTrace();
-      throw e;
-    }
+  public byte[] compileBaseProject() {
+    ObjectId id = ObjectId.get();
+    log.info("Starting base compile with id %s".formatted(id.toHexString()));
 
-    BufferedReader outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-    String line;
-    while ((line = outputReader.readLine()) != null) {
-      log.info(line);
-    }
-
-    BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-    while ((line = errorReader.readLine()) != null) {
-      log.info(line);
-    }
-
-    int exitCode = process.waitFor();
-    log.info("Compiling completed");
-
-    if (exitCode != 0) {
-      throw new RuntimeException("Program failed unexpectedly");
-    }
-  }
-
-
-  private static void copyFolderAndContents(File source, File destination) throws IOException {
-    if (source.isDirectory()) {
-      if (!destination.exists()) {
-        destination.mkdirs();
-      }
-
-      String[] files = source.list();
-      if (files == null) {
-        return;
-      }
-      for (String file : files) {
-        File srcFile = new File(source, file);
-        File destFile = new File(destination, file);
-        copyFolderAndContents(srcFile, destFile);
+    File baseCompilerProjectFolderFile = new File(baseCompilerProjectFolder);
+    boolean baseProjectExists =
+        baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
+    final String destinationFolder = compilerFolder + id.toHexString();
+    final String generatedCodeInsertFolder =
+        baseProjectExists
+            ? destinationFolder + baseCompilerProjectInsertLocation
+            : destinationFolder;
+    if (baseProjectExists) {
+      try {
+        copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
+      } catch (IOException e) {
+        log.warn(
+            "Failed to copy base compiler project at %s destination is %s"
+                .formatted(baseCompilerProjectFolder, destinationFolder));
+        File folderToDelete = new File(destinationFolder);
+        FileSystemUtils.deleteRecursively(folderToDelete);
+        throw new RuntimeException(e);
       }
     } else {
-      if (!destination.getParentFile().exists()) {
-        destination.getParentFile().mkdirs();
-      }
-      Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      throw new RuntimeException("Base compiler project does not exist");
     }
+
+    try {
+      log.info("Starting compile of C code");
+      compile(destinationFolder, Map.of(
+        "EXAMPLE_FIRMWARE_UPGRADE_URL", externalFirmwareUpgradeUrl,
+        "BROKER_URL", externalServerUrl,
+        "SERVER_URL", externalBrokerUrl
+      ));
+    } catch (IOException | InterruptedException | RuntimeException e) {
+      log.error("Compiling failed", e);
+      File folderToDelete = new File(destinationFolder);
+      FileSystemUtils.deleteRecursively(folderToDelete);
+      throw new RuntimeException(e);
+    }
+    byte[] compiledBinary;
+    try {
+      compiledBinary =
+          Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.bin"));
+    } catch (IOException e) {
+      log.error("Locating compiled binary failed", e);
+      File folderToDelete = new File(destinationFolder);
+      FileSystemUtils.deleteRecursively(folderToDelete);
+      throw new RuntimeException(e);
+    }
+
+    File folderToDelete = new File(destinationFolder);
+    FileSystemUtils.deleteRecursively(folderToDelete);
+
+    log.info("Base compile completed with id %s".formatted(id.toHexString()));
+    return compiledBinary;
   }
 
-
-  private static TargetFilesAndReaders extractTargetFilesAndReaders(GeneratedCodeMetadata metadata, DeviceTypeMetadata target) {
-    Set<String> targetFiles = new HashSet<>(List.of(
-        "shared_snem_library.c",
-        "shared_snem_library.h",
-        target.getName() + "_device_type.c",
-        target.getName() + "_device_type.h"
-        ));
-
-    Set<String> readers = new HashSet<>();
-    targetFiles.addAll(
-        target.getSensors().stream()
-            .map(SensorInstantiationMetadata::getSensor)
-            .map(
-                instance ->
-                    metadata.getSensors().stream()
-                        .filter(x -> x.getName().equals(instance))
-                        .findFirst())
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .flatMap(
-                x -> {
-                  readers.add(x.getReader());
-                  return Stream.of(
-                      x.getName() + "_sensor.c",
-                      x.getName() + "_sensor.h");
-                })
-            .toList());
-
-    return new TargetFilesAndReaders(targetFiles, readers);
-  }
-
-  private int extractFilesToFolder(byte[] codeGeneratedZipFile, List<String> fileNames, String destinationFolder) {
+  private int extractFilesToFolder(
+      byte[] codeGeneratedZipFile, List<String> fileNames, String destinationFolder) {
     try {
       ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(codeGeneratedZipFile);
       ZipInputStream zipInputStream = new ZipInputStream(byteArrayInputStream);
@@ -372,7 +472,6 @@ public class CompilerService {
     }
     return 0;
   }
-
 
   private GeneratedCodeMetadata getGeneratedCodeMetadata(byte[] codeGeneratedZipFile) {
     try {
@@ -413,7 +512,10 @@ public class CompilerService {
 
     ResponseEntity<byte[]> responseEntity =
         restTemplate.exchange(
-            "http://"+xtextHost+":8081/generate-code", HttpMethod.POST, requestEntity, byte[].class);
+            "http://" + xtextHost + ":8081/generate-code",
+            HttpMethod.POST,
+            requestEntity,
+            byte[].class);
 
     if (responseEntity.getStatusCode() == HttpStatus.OK) {
       return responseEntity.getBody();
@@ -423,27 +525,5 @@ public class CompilerService {
     }
   }
 
-  private static String bytesToSha256Hash(byte[] bytes){
-    MessageDigest digest;
-    try {
-      digest = MessageDigest.getInstance("SHA-256");
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
-
-    digest.update(bytes);
-    byte[] hash = digest.digest();
-
-    StringBuilder hexString = new StringBuilder();
-    for (byte b : hash) {
-      String hex = Integer.toHexString(0xff & b);
-      if (hex.length() == 1) hexString.append('0');
-      hexString.append(hex);
-    }
-
-    return hexString.toString();
-  }
-
   record TargetFilesAndReaders(Set<String> files, Set<String> readers) {}
-
 }

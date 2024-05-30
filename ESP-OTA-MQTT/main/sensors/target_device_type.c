@@ -6,15 +6,19 @@ SensorInstantiation HTL_DHT11_outside = {
     .pins = {1, 2},
     .pinCount = 2,
     .samplingRate = {1, SECOND},
-	.readings = (double[]) {0.0, 0.0}
+	.readings = (double[]) {0.0, 0.0},
+	.configured = 0,
+	.sensorConfig = NULL
 };
 SensorInstantiation HTL_light_top = {
     .sensor = &light_sensor,
     .name = "top",
-    .pins = {3},
+    .pins = {34},
     .pinCount = 1,
     .samplingRate = {2, SECOND},
-	.readings = (double[]) {0.0}
+	.readings = (double[]) {0.0},
+	.configured = 0,
+	.sensorConfig = NULL
 };
 
 DeviceType base_device_type = {

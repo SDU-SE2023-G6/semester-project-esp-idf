@@ -1,27 +1,30 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import LogItem from '@/components/LogItem.vue';
 import StatusCircle from '@/components/general/StatusCircle.vue';
 import { useDataStore } from '@/stores/dataStore';
-import type { LogType, SimplifiedLogType } from '@/types/Log';
+import type { Log, SimplifiedLogType } from '@/types/Log';
 import { simplifyLogType } from '@/types/Log';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 const dataStore = useDataStore();
-const logs = ref([]); // Use ref for reactivity
+const logs = ref<Log[]>([]);
 
-// Array of the existing log types generate from the type enum
 const logTypes: SimplifiedLogType[] = ["Heartbeat", "Debug", "Info", "Warning", "Error", "Success", "Update"]
 
-const selectedLogTypes = ref([...logTypes]); // Maintain the types you want to display
+const selectedLogTypes = ref([...logTypes]);
 
-const filteredLogs = computed(() => 
-  logs.value
-    .filter(log => selectedLogTypes.value.includes(simplifyLogType(log.type)))
-    .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-);
+const requesting = ref(false);
 
 async function fetchLogs() {
-  const newLogsValue = await dataStore.getLogs();
+  if(requesting.value) return;
+  requesting.value = true;
+  const newLogsValueRaw = await dataStore.getLogs();
+  let newLogsValue = newLogsValueRaw
+    .filter(log => selectedLogTypes.value.includes(simplifyLogType(log.type)))
+    .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
+    .slice(0, 50);
   if(logs.value) {
     if (JSON.stringify(logs.value) !== JSON.stringify(newLogsValue)) {
       logs.value = newLogsValue;
@@ -29,16 +32,21 @@ async function fetchLogs() {
   } else {
     logs.value = newLogsValue;
   }
+  requesting.value = false;
+  console.log("logs", logs.value)
 }
-fetchLogs();
-setInterval(() => fetchLogs(), 1000);
 
-const toggleType = (type: LogType) => {
+fetchLogs();
+setSafeInterval(() => fetchLogs(), 1000);
+
+
+const toggleType = (type: SimplifiedLogType) => {
   if (selectedLogTypes.value.includes(type)) {
     selectedLogTypes.value = selectedLogTypes.value.filter(logType => logType !== type);
   } else {
     selectedLogTypes.value.push(type);
   }
+  fetchLogs();
 };
 
 </script>
@@ -57,7 +65,7 @@ const toggleType = (type: LogType) => {
         <span>{{ logType }}</span>
       </div>
     </div>
-    <LogItem v-for="log in filteredLogs" :log="log" :key="log.timestamp" />
+    <LogItem v-for="log in logs" :log="log" :key="log.id" />
   </div>
 </template>
 

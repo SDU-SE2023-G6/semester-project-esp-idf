@@ -1,10 +1,9 @@
-// stores/dataStore.js
 import { defineStore } from 'pinia';
 import type { DataPoint } from '@/types/DataPoint';
 import { getLogMessage, type Log, type LogSource } from '@/types/Log';
 import type { Area, AreaId } from '@/types/Area';
 import type { Satellite, SatelliteId } from '@/types/Satellite';
-import { AreaApi, DataPointsApi, DeviceTypeApi, LogsApi, SatelliteApi, ProgramApi } from './api';
+import { AreaApi, DataPointsApi, DeviceTypeApi, LogsApi, SatelliteApi } from './api';
 import type { AreaMetadata, DataPointMetadata, DeviceTypeMetadata, LogMetadata, SatelliteMetadata } from '@/api';
 import type { SatelliteType } from '@/types/SatelliteType';
 
@@ -78,7 +77,7 @@ async function DataPointMetadataToDataPoint(dataPointMetadata: DataPointMetadata
   if(!dataPointMetadata.timestamp) {
     throw new Error(`DataPoint timestamp is required, got ${dataPointMetadata.timestamp} (${dataPointMetadata})`);
   }
-  if(!dataPointMetadata.measurement) {
+  if(dataPointMetadata.measurement === undefined) {
     throw new Error(`DataPoint value is required, got ${dataPointMetadata.measurement} (${dataPointMetadata})`);
   }
   if(!dataPointMetadata.sensor) {
@@ -111,6 +110,7 @@ function LogMetadataToLog(logMetadata: LogMetadata): Log {
 
 
   return {
+    id: logMetadata.id,
     source: logMetadata.source ? logMetadata.source : 'system',
     timestamp: logMetadata.timestamp,
     type: logMetadata.type,

@@ -1,5 +1,5 @@
 import ace from 'ace-builds/src-noconflict/ace';
-ace.define('ace/mode/my_custom_mode', ['require', 'exports', 'module', 'ace/lib/oop', 'ace/mode/text', 'ace/mode/my_custom_mode_highlight_rules'], function(require, exports, module) {
+ace.define('ace/mode/my_custom_mode', ['require', 'exports', 'module', 'ace/lib/oop', 'ace/mode/text', 'ace/mode/my_custom_mode_highlight_rules'], function(require, exports) {
   var oop = require("ace/lib/oop");
   var TextMode = require("ace/mode/text").Mode;
   var MyCustomModeHighlightRules = require("ace/mode/my_custom_mode_highlight_rules").MyCustomModeHighlightRules;
@@ -12,7 +12,7 @@ ace.define('ace/mode/my_custom_mode', ['require', 'exports', 'module', 'ace/lib/
   exports.Mode = Mode;
 });
 
-ace.define('ace/mode/my_custom_mode_highlight_rules', ['require', 'exports', 'module', 'ace/lib/oop', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
+ace.define('ace/mode/my_custom_mode_highlight_rules', ['require', 'exports', 'module', 'ace/lib/oop', 'ace/mode/text_highlight_rules'], function(require, exports) {
   var oop = require("ace/lib/oop");
   var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
 

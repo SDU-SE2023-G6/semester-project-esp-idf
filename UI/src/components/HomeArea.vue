@@ -56,6 +56,8 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faTrash, faPencil, faList } from '@fortawesome/free-solid-svg-icons'
 import { defineProps, defineEmits, ref } from 'vue';
 import type { Satellite } from '@/types/Satellite';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 const dataStore = useDataStore();
 
@@ -72,13 +74,13 @@ interface Emit {
 const props = defineProps<Props>();
 const emit = defineEmits<Emit>();
 
-let satellites:Satellite[] = ref([]);
+let satellites = ref<Satellite[]>([]);
 
 async function fetchSatellites() {
   satellites.value = await dataStore.getSatellitesByArea(props.area.id);
 }
 
-setInterval(() => {
+setSafeInterval(() => {
   fetchSatellites();
 }, 1000);
 

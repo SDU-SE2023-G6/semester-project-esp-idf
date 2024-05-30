@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faHouse, faCode, faFile, faMountainCity, faChartLine,faMicrochip, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faHouse, faCode, faFile, faMountainCity, faChartLine, faPlus } from '@fortawesome/free-solid-svg-icons'
 
 
 const route = useRoute();

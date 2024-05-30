@@ -592,6 +592,33 @@ export class ObservableProgramApi {
     }
 
     /**
+     */
+    public downloadInitialBinaryWithHttpInfo(_options?: Configuration): Observable<HttpInfo<Array<string>>> {
+        const requestContextPromise = this.requestFactory.downloadInitialBinary(_options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.downloadInitialBinaryWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     */
+    public downloadInitialBinary(_options?: Configuration): Observable<Array<string>> {
+        return this.downloadInitialBinaryWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Array<string>>) => apiResponse.data));
+    }
+
+    /**
      * Get program DSL definition
      */
     public getProgramDslContentWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ProgramDslContent>> {

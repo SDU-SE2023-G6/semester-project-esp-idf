@@ -2,6 +2,8 @@ package dk.sdu.snem.core;
 
 import dk.sdu.snem.core.model.*;
 import dk.sdu.snem.core.repo.*;
+import dk.sdu.snem.core.serialization.DataPointMetadata;
+import dk.sdu.snem.core.serialization.LogMetadata;
 import dk.sdu.snem.exceptions.ConflictException;
 import dk.sdu.snem.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,12 +15,12 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
-import org.apache.juli.logging.LogFactory;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -38,6 +40,8 @@ public class CoreController {
   private final ProgramRepository programRepo;
   private final CompilerService compilerService;
   private final BinaryRepository binaryRepo;
+  private final MongoTemplate template;
+  private final byte[] initialDeviceImage;
 
   public CoreController(
       SatelliteRepository deviceRepo,
@@ -47,7 +51,9 @@ public class CoreController {
       DeviceTypeRepository deviceTypeRepo,
       ProgramRepository programRepo,
       CompilerService compilerService,
-      BinaryRepository binaryRepo) {
+      BinaryRepository binaryRepo,
+      MongoTemplate template,
+      byte[] initialDeviceImage) {
     this.satelliteRepo = deviceRepo;
     this.areaRepo = areaRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -56,6 +62,8 @@ public class CoreController {
     this.programRepo = programRepo;
     this.compilerService = compilerService;
     this.binaryRepo = binaryRepo;
+    this.template = template;
+    this.initialDeviceImage = initialDeviceImage;
   }
 
   @NotNull
@@ -65,9 +73,25 @@ public class CoreController {
         log.getTimestamp(),
         log.getMessage(),
         (log.getSatellite() == null || log.getSatellite().getId() == null)
-            ? null
-            : log.getSatellite().getId().toHexString(),
+            ? "system"
+            : log.getSatellite().getName(),
         log.getType());
+  }
+
+  @NotNull
+  private static SatelliteMetadata mapSatelliteMetadata(Satellite satellite) {
+    return new SatelliteMetadata(
+        satellite.getId().toHexString(),
+        satellite.getDeviceMACAddress(),
+        satellite.getName(),
+        satellite.getStatus(),
+        satellite.getArea() == null ? null : satellite.getArea().getId().toHexString(),
+        satellite.getDeviceType() == null ? null : satellite.getDeviceType().getId().toHexString());
+  }
+
+  @NotNull
+  private static DeviceTypeMetadata mapDeviceType(DeviceType x) {
+    return new DeviceTypeMetadata(x.getId().toHexString(), x.getName(), x.isDeprecated());
   }
 
   @GetMapping("/areas")
@@ -126,29 +150,13 @@ public class CoreController {
   @Tag(name = "Area")
   @ResponseBody
   @Operation(summary = "Get all satellites in an area.")
-  public List<SatelliteMetadata> getSatellitesInArea(@RequestParam(required = false) @Nullable String areaId) {
+  public List<SatelliteMetadata> getSatellitesInArea(
+      @RequestParam(required = false) @Nullable String areaId) {
     List<Satellite> satellites =
         areaId == null
             ? satelliteRepo.findAllByAreaIsNull()
             : satelliteRepo.findAllByArea_Id(new ObjectId(areaId));
-    return satellites.stream()
-        .map(CoreController::mapSatelliteMetadata)
-        .toList();
-  }
-
-  @NotNull
-  private static SatelliteMetadata mapSatelliteMetadata(Satellite satellite) {
-    return new SatelliteMetadata(
-        satellite.getId().toHexString(),
-        satellite.getDeviceMACAddress(),
-        satellite.getName(),
-        satellite.getStatus(),
-        satellite.getArea() == null
-            ? null
-            : satellite.getArea().getId().toHexString(),
-        satellite.getDeviceType() == null
-            ? null
-            : satellite.getDeviceType().getId().toHexString());
+    return satellites.stream().map(CoreController::mapSatelliteMetadata).toList();
   }
 
   @RequestMapping(
@@ -159,9 +167,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get satellites")
   public List<SatelliteMetadata> getSatellites() {
-    return satelliteRepo.findAll().stream()
-        .map(CoreController::mapSatelliteMetadata)
-        .toList();
+    return satelliteRepo.findAll().stream().map(CoreController::mapSatelliteMetadata).toList();
   }
 
   @GetMapping("/satellite/{satelliteId}")
@@ -220,7 +226,9 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get all data points for a satellite.")
   public List<DataPointMetadata> getDataPointsBySatellite(@PathVariable String satelliteId) {
-    return dataPointsRepo.findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(satelliteId)).stream()
+    return dataPointsRepo
+        .findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(satelliteId))
+        .stream()
         .map(
             dataPoint ->
                 new DataPointMetadata(
@@ -292,19 +300,20 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get all Logs.")
   public List<LogMetadata> getLogs() {
-    return logsRepo.findAll().stream()
-        .map(CoreController::mapLogMetadata)
-        .toList();
+    return logsRepo.getAllProjectedMetadata(template);
   }
 
   @GetMapping("/logs/system")
   @Tag(name = "Logs")
   @ResponseBody
-  @Operation(summary = "Get all logs for a given source. Expects null or no input to get system logs.")
-  public List<LogMetadata> getLogsBySatellite(@RequestParam(required = false) @Nullable String source) {
-    List<Log> logs = source == null
-        ? logsRepo.findAllBySatelliteIsNullOrderByTimestampDesc()
-        : logsRepo.findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(source));
+  @Operation(
+      summary = "Get all logs for a given source. Expects null or no input to get system logs.")
+  public List<LogMetadata> getLogsBySatellite(
+      @RequestParam(required = false) @Nullable String source) {
+    List<Log> logs =
+        source == null
+            ? logsRepo.findAllBySatelliteIsNullOrderByTimestampDesc()
+            : logsRepo.findAllBySatellite_IdOrderByTimestampDesc(new ObjectId(source));
     return logs.stream()
         .map(
             log ->
@@ -322,11 +331,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get logs since some amount of hours ago.")
   public List<LogMetadata> getLogsFromSometimeAgo(@PathVariable Integer hoursAgo) {
-    return logsRepo
-        .findAllByTimestampAfterOrderByTimestampDesc(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
-        .stream()
-        .map(CoreController::mapLogMetadata)
-        .toList();
+    return logsRepo.getProjectedMetadataSomeHoursAgo(hoursAgo, template);
   }
 
   @GetMapping("/data-points")
@@ -334,17 +339,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get all Data points.")
   public List<DataPointMetadata> getDataPoints() {
-    return dataPointsRepo.findAll().stream()
-        .map(
-            dataPoint ->
-                new DataPointMetadata(
-                    dataPoint.getId().toHexString(),
-                    dataPoint.getTimestamp(),
-                    dataPoint.getUnit(),
-                    dataPoint.getMeasurement(),
-                    dataPoint.getSatellite().getId().toHexString(),
-                    dataPoint.getSensor()))
-        .toList();
+    return dataPointsRepo.getAllProjectedMetadata(template);
   }
 
   @GetMapping("/data-points/hours/{hoursAgo}")
@@ -352,19 +347,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get all Data points.")
   public List<DataPointMetadata> getDataPointsFromSometimeAgo(@PathVariable Integer hoursAgo) {
-    return dataPointsRepo
-        .findAllByTimestampAfterOrderByTimestampDesc(Instant.now().minus(hoursAgo, ChronoUnit.HOURS))
-        .stream()
-        .map(
-            dataPoint ->
-                new DataPointMetadata(
-                    dataPoint.getId().toHexString(),
-                    dataPoint.getTimestamp(),
-                    dataPoint.getUnit(),
-                    dataPoint.getMeasurement(),
-                    dataPoint.getSatellite().getId().toHexString(),
-                    dataPoint.getSensor()))
-        .toList();
+    return dataPointsRepo.getProjectedMetadataSomeHoursAgo(hoursAgo, template);
   }
 
   @GetMapping("/device-types")
@@ -372,14 +355,7 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get device types of satellites.")
   public List<DeviceTypeMetadata> getDeviceTypes() {
-    return deviceTypeRepo.findAll().stream()
-        .map(CoreController::mapDeviceType)
-        .toList();
-  }
-
-  @NotNull
-  private static DeviceTypeMetadata mapDeviceType(DeviceType x) {
-    return new DeviceTypeMetadata(x.getId().toHexString(), x.getName(), x.isDeprecated());
+    return deviceTypeRepo.findAll().stream().map(CoreController::mapDeviceType).toList();
   }
 
   @GetMapping("/device-type/{deviceTypeId}")
@@ -387,7 +363,8 @@ public class CoreController {
   @ResponseBody
   @Operation(summary = "Get device types of satellites by ID.")
   public DeviceTypeMetadata getDeviceTypeById(@PathVariable String deviceTypeId) {
-    return mapDeviceType(deviceTypeRepo.findById(new ObjectId(deviceTypeId)).orElseThrow(NotFoundException::new));
+    return mapDeviceType(
+        deviceTypeRepo.findById(new ObjectId(deviceTypeId)).orElseThrow(NotFoundException::new));
   }
 
   @GetMapping("/program/metadata")
@@ -459,12 +436,13 @@ public class CoreController {
   public ResponseEntity<BinaryVersion> provideBinaryVersion(@PathVariable String deviceMac) {
     Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(deviceMac);
     DeviceType currentDeviceType = currentSatellite.getDeviceType();
-      assert currentDeviceType != null;
-      Binary currentBinary = currentDeviceType.getBinary();
+    assert currentDeviceType != null;
+    Binary currentBinary = currentDeviceType.getBinary();
 
-   return ResponseEntity.ok()
-           .contentType(MediaType.APPLICATION_JSON)
-           .body(new BinaryVersion(currentBinary.getId().toHexString(), currentBinary.getBinaryHash()));
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+            new BinaryVersion(currentBinary.getId().toHexString(), currentBinary.getBinaryHash()));
   }
 
   @GetMapping("/program/binary/{binaryId}")
@@ -475,9 +453,21 @@ public class CoreController {
     Binary binary = binaryRepo.findById(new ObjectId(binaryId)).orElseThrow(NotFoundException::new);
 
     return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
-            .body(binary.getCompiledBinary());
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
+        .body(binary.getCompiledBinary());
+  }
+
+  @GetMapping("/program/binary/initial-image.bin")
+  @Tag(name = "Program")
+  @ResponseBody
+  @Operation
+  @Cacheable(value = "initialImageCache")
+  public ResponseEntity<byte[]> downloadInitialBinary() {
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"initial-image.bin\"")
+        .body(initialDeviceImage);
   }
 
   @NotNull
@@ -514,17 +504,6 @@ public class CoreController {
   public record BinaryVersion(String binaryId, String binaryHash) {}
 
   public record DeviceTypeMetadata(String id, String name, boolean deprecated) {}
-
-  public record DataPointMetadata(
-      String id,
-      Instant timestamp,
-      String unit,
-      Double measurement,
-      String satelliteId,
-      String sensor) {}
-
-  public record LogMetadata(
-      String id, Instant timestamp, String message, @Nullable String source, Log.LogType type) {}
 
   public record SatelliteRegisterResponseDTO(boolean success) {}
 

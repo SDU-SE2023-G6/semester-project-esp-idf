@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import LineChart from '@/components/general/LineChart.vue';
 import BarChart from '../components/general/BarChart.vue'
 import PieChart from '@/components/general/PieChart.vue';
-import { LogType, SimplifiedLogType, simplifyLogType } from '@/types/Log';
+import { SimplifiedLogType, simplifyLogType } from '@/types/Log';
 import { useDataStore } from '@/stores/dataStore';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useTime } from '@/composables/useTime';
 import type { Log } from '@/types/Log';
 import type { DataPoint } from '@/types/DataPoint';
-import { format } from 'path';
 import type {Satellite} from '@/types/Satellite';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 const { slidingWindow } = useTime() 
 
@@ -20,18 +20,26 @@ const dataStore = useDataStore();
 //const logs = ref(dataStore.getLogs);
  
 
-let logs: Log[] = ref([]);
+let logs = ref<Log[]>([]);
 const logData = ref();
 const groupedLogs = ref();
-const data: {dt:DataPoint,src:Satellite}[] = ref([]);
+const data = ref<{dt:DataPoint,src:Satellite}[]>([]);
+
+const requestingLogs = ref(false);
+const requestingData = ref(false);
 
 async function fetchLogs() {
+  if(requestingLogs.value) return;
+  requestingLogs.value = true;
   logs.value = await dataStore.getLogs();
   logData.value = logTypes.map(type => logs.value.filter(log => simplifyLogType(log.type) === type).length);
   groupedLogs.value = slidingWindow.value.map((hour: string) => logs.value.filter((log: Log) => log.timestamp.getHours() === parseInt(hour)).length);
+  requestingLogs.value = false;
 }
 
 async function fetchData() {
+  if(requestingData.value) return;
+  requestingData.value = true;
   let dataPoints = (await dataStore.getDataPoints()).slice(0, 20);
   let newData = [];
   for(let i = 0; i < dataPoints.length; i++){
@@ -43,6 +51,7 @@ async function fetchData() {
   } else if(JSON.stringify(data.value) !== JSON.stringify(newData)){
     data.value = newData;
   }
+  requestingData.value = false;
 }
 
 
@@ -50,8 +59,8 @@ fetchLogs();
 fetchData();
 
 
-setInterval(() => fetchLogs(), 3500);
-setInterval(() => fetchData(), 3500);
+setSafeInterval(() => fetchLogs(), 3500);
+setSafeInterval(() => fetchData(), 3500);
 
 
 const cols: ATableProps['cols'] = [
@@ -76,12 +85,7 @@ const logColors = ref([
     .getPropertyValue('--color-enabled'),
   getComputedStyle(document.documentElement)
     .getPropertyValue('--color-updating'),
-
- 
-  
 ]);
-
-
 </script>
 
 
@@ -95,14 +99,6 @@ const logColors = ref([
           <h3>Number of logs past 24h</h3>
           <BarChart :labels="slidingWindow" :data="groupedLogs" color="#fff"/>
         </div>
-      
-        <!--<div class="tile">
-          <h3>Temperature in Forest past 24h</h3>
-          <LineChart :labels="slidingWindow" :data="dummyLineData" color="#fff"/>
-        </div>-->
-
- 
-
           <div class="tile">
             <h3>Logs past 24h</h3>
             <PieChart :labels="logTypes" :data="logData" :colors="logColors" />
@@ -114,14 +110,7 @@ const logColors = ref([
           :cols="cols"
         />
       </div>
-    
-      
-
-      
-      
-    </div> 
-
-   
+    </div>
   </div>
 </template>
 

@@ -106,7 +106,7 @@ void app_main(void)
 
     xSemaphoreTake(init_lock, portMAX_DELAY);
     ESP_LOGI(TAG, "Starting MQTT");
-    mqtt5_app_start();
+    mqtt_app_start();
     ESP_LOGI(TAG, "RELASING LOCK");
     xSemaphoreGive(init_lock);
 

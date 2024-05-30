@@ -76,15 +76,6 @@
 </template>
 
 <script>
-    navigator.serial.addEventListener("connect", (e) => {
-    // Connect to `e.target` or add it to a list of available ports.
-        console.log('connected :'+e);
-    });
-
-    navigator.serial.addEventListener("disconnect", (e) => {
-    // Remove `e.target` from the list of available ports.
-        console.log(e);
-    });
 
     navigator.serial.getPorts().then((ports) => {
         console.log(ports);
@@ -105,7 +96,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useDataStore } from '@/stores/dataStore';
-
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 const dataStore = useDataStore();
 
 const isDeviceSelected = ref(false);
@@ -139,8 +131,7 @@ const pendingDevices = ref([]);
 
 const fetchPendingDevices = async () => pendingDevices.value = await dataStore.getDevicesPendingMetadata();
 fetchPendingDevices();
-setInterval(() => fetchPendingDevices(), 500);
-setInterval(() => console.log(pendingDevices.value), 1000);
+setSafeInterval(() => fetchPendingDevices(), 1000);
 
 let modalError = ref("");
 let modalErrorDisplayed = ref(false);

@@ -18,6 +18,7 @@ import org.example.helloweb.helloWeb.Sensor
 import org.example.helloweb.helloWeb.SensorConfig
 import org.example.helloweb.helloWeb.SensorInstantiation
 import org.example.helloweb.helloWeb.ValueRef
+import org.example.helloweb.helloWeb.TimeUnit
 
 /**
  * Generates code from your model files on save.
@@ -43,7 +44,6 @@ class HelloWebGenerator extends AbstractGenerator {
 		
 
     def void generateSensorCode(Sensor sensor, IFileSystemAccess2 fsa) {
-    // Generate code for the sensor here
     var sensorCode = '''
 	#include "«sensor.name»_sensor.h"
 	
@@ -85,7 +85,6 @@ class HelloWebGenerator extends AbstractGenerator {
 
 
     def void generateDeviceTypeCode(DeviceType deviceType, IFileSystemAccess2 fsa) {
-    // Generate code for the device type here
     var readingIncrement = 0;
     var deviceTypeCode = 
 
@@ -99,7 +98,9 @@ class HelloWebGenerator extends AbstractGenerator {
 	    .pins = {«instantiation.pins.join(', ')»},
 	    .pinCount = «instantiation.pins.size»,
 	    .samplingRate = «mapXTextTimeUnitToC(instantiation.samplingRate)»,
-		.readings = (double[]) {«FOR output : instantiation.sensor.out»0.0«IF output != instantiation.sensor.out.last», «ENDIF»«ENDFOR»}
+		.readings = (double[]) {«FOR output : instantiation.sensor.out»0.0«IF output != instantiation.sensor.out.last», «ENDIF»«ENDFOR»},
+		.configured = 0,
+		.sensorConfig = NULL
 	};
 	«ENDFOR»
 	
@@ -121,7 +122,7 @@ class HelloWebGenerator extends AbstractGenerator {
 		«FOR instantiation : deviceType.sensorInstantiations»
 		«FOR constraint : instantiation.constraints»
 		if («generateCondition(deviceType, instantiation, constraint.condition)») {
-			device_type->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.value = «extractXTextTimeUnitCount(constraint.samplingRate)»;
+			device_type->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.value = «constraint.samplingRate.value»;
 			device_type->sensorInstantiations[«deviceType.sensorInstantiations.indexOf(instantiation)»]->samplingRate.unit = «extractXTextTimeUnit(constraint.samplingRate)»;
 		}
 		«ENDFOR»
@@ -216,7 +217,6 @@ class HelloWebGenerator extends AbstractGenerator {
 
 	
 	def void generateSharedLibraryCode(IFileSystemAccess2 fsa) {
-    	// Generate the shared library header file
     	val headerFile = '''
 		#ifndef SHARED_SNEM_LIBRARY_H
 		#define SHARED_SNEM_LIBRARY_H
@@ -253,24 +253,26 @@ class HelloWebGenerator extends AbstractGenerator {
 		};
 		
 		struct Sensor {
-		    char name[100];
-		    char units[MAX_UNITS][100];
-		    int unitCount;
-		    char reader[150];
-		    double* (*readerFunction)(int*, int);
-		    char pins[MAX_PINS][100];
-		    int pinCount;
-		    char out[MAX_OUTPUTS][100];
-		    int outCount;
+			char name[100];
+			char units[MAX_UNITS][100];
+			int unitCount;
+			char reader[150];
+			void (*readerFunction)(SensorInstantiation*);
+			char pins[MAX_PINS][100];
+			int pinCount;
+			char out[MAX_OUTPUTS][100];
+			int outCount;
 		};
-		
+
 		struct SensorInstantiation {
-		    Sensor* sensor;
-		    char name[100];
-		    int pins[MAX_PINS];
-		    int pinCount;
-		    TimeDuration samplingRate;
+			Sensor* sensor;
+			char name[100];
+			int pins[MAX_PINS];
+			int pinCount;
+			TimeDuration samplingRate;
 			double* readings;
+			void* sensorConfig;
+			int configured;
 		};
 		
 		struct DeviceType {
@@ -338,23 +340,11 @@ class HelloWebGenerator extends AbstractGenerator {
     	fsa.generateFile("shared_snem_library.h", headerFile)
     	fsa.generateFile("shared_snem_library.c", sourceFile)
 	}
-	def String extractXTextTimeUnitCount(String timeDuration) {
-	 	if (timeDuration === null || timeDuration.isEmpty()) {
-        	return "1"
-    	}
-	    val count = timeDuration.replaceAll("\\D", "")
-	    val unit = timeDuration.replaceAll("\\d", "")
-		
-		count
-	}
-	def String extractXTextTimeUnit(String timeDuration) {
-	    if (timeDuration === null || timeDuration.isEmpty()) {
+	def String extractXTextTimeUnit(TimeUnit timeDuration) {
+	    if (timeDuration === null) {
 	        return "SECOND"
 	    }
-	    val count = timeDuration.replaceAll("\\D", "")
-	    val unit = timeDuration.replaceAll("\\d", "")
-	    
-	    switch (unit) {
+	    switch (timeDuration.getUnit) {
 	        case "s": return "SECOND"
 	        case "m": return "MINUTE"
 	        case "h": return "HOUR"
@@ -362,21 +352,13 @@ class HelloWebGenerator extends AbstractGenerator {
 	        default: return "SECOND"
 	    }
 	}
-	def String mapXTextTimeUnitToC(String timeDuration) {
-	    if (timeDuration === null || timeDuration.isEmpty()) {
-        	return "{1, SECOND}"; 
+	def String mapXTextTimeUnitToC(TimeUnit timeDuration) {
+	    if (timeDuration === null) {
+        	return "{1, SECOND}";
     	}
-		
-	    val count = timeDuration.replaceAll("\\D", "")
-	    val unit = timeDuration.replaceAll("\\d", "")
-	    
-	    switch (unit) {
-	        case "s": return "{" + count + ", SECOND}"
-	        case "m": return "{" + count + ", MINUTE}"
-	        case "h": return "{" + count + ", HOUR}"
-	        case "d": return "{" + count + ", DAY}"
-	        default: return "{1, SECOND}"
-	    }
+
+		return "{" + timeDuration.getValue + ", " + extractXTextTimeUnit(timeDuration) + "}";
+
 	}
 	
 	    def generateJsonLogs(EList<DeviceType> deviceTypes, EList<Sensor> sensors, IFileSystemAccess2 fsa) {

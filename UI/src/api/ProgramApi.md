@@ -7,6 +7,7 @@ Method | HTTP request | Description
 [**compileProgram**](ProgramApi.md#compileProgram) | **POST** /program/compile | Get program DSL definition
 [**compileProgramContinueDestructively**](ProgramApi.md#compileProgramContinueDestructively) | **POST** /program/compile/override | Continue compilation despite warnings
 [**downloadBinary**](ProgramApi.md#downloadBinary) | **GET** /program/binary/{binaryId} | 
+[**downloadInitialBinary**](ProgramApi.md#downloadInitialBinary) | **GET** /program/binary/initial-image.bin | 
 [**getProgramDslContent**](ProgramApi.md#getProgramDslContent) | **GET** /program/content | Get program DSL definition
 [**getProgramMetadata**](ProgramApi.md#getProgramMetadata) | **GET** /program/metadata | Get program metadata
 [**getProgramStatus**](ProgramApi.md#getProgramStatus) | **GET** /program/status | Get program status
@@ -140,6 +141,54 @@ apiInstance.downloadBinary(body).then((data:any) => {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **binaryId** | [**string**] |  | defaults to undefined
+
+
+### Return type
+
+**Array<string>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: */*
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | OK |  -  |
+**422** | Unprocessable Entity |  -  |
+
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
+
+# **downloadInitialBinary**
+> Array<string> downloadInitialBinary()
+
+
+### Example
+
+
+```typescript
+import {  } from '';
+import * as fs from 'fs';
+
+const configuration = .createConfiguration();
+const apiInstance = new .ProgramApi(configuration);
+
+let body:any = {};
+
+apiInstance.downloadInitialBinary(body).then((data:any) => {
+  console.log('API called successfully. Returned data: ' + data);
+}).catch((error:any) => console.error(error));
+```
+
+
+### Parameters
+This endpoint does not need any parameter.
 
 
 ### Return type

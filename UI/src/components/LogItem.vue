@@ -6,7 +6,6 @@
             <div class="timestamp">{{ timeStampToDate(log.timestamp) }}</div>
             <div class="name">{{ sourceName }}</div>
         </div>
-        <div class="class">{{ typeName }}</div>
       </div>
       <div class="message">{{ log.message }}</div>
     </div>
@@ -27,14 +26,11 @@
   </template>
   
 <script setup lang="ts">
-    import type { Log, LogSource } from '@/types/Log';
-    import {useDataStore} from '@/stores/dataStore';
+    import type { Log } from '@/types/Log';
     import { ref } from 'vue';
     import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
     import { faXmark } from '@fortawesome/free-solid-svg-icons'
     import StatusCircle from './general/StatusCircle.vue';
-
-    const dataStore = useDataStore();
 
     interface Props {
         log: Log;
@@ -48,15 +44,7 @@
     
     const isDialogShown = ref(false)
 
-    let sourceName = ref();
-    let typeName = ref();
-
-    async function fetchSourceAndType(){
-      sourceName.value = (await dataStore.getSatelliteById(props.log.source))?.name || 'System';
-      typeName.value = (await dataStore.getSatelliteById(props.log.source)).type?.name || '';
-    }
-
-    fetchSourceAndType();
+    let sourceName = ref(props.log.source);
   </script>
   
   <style scoped>

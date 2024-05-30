@@ -1,4 +1,3 @@
-import type { L } from "vitest/dist/reporters-xEmem8D4.js";
 import type { SatelliteId } from "./Satellite";
 
 export type LogSource = SatelliteId | 'system';
@@ -80,6 +79,7 @@ export function simplifyLogType(logType:LogType|SimplifiedLogType):SimplifiedLog
 
 
 export type Log = {
+    id?: string;
     type: LogType;
     timestamp: Date;
     source: LogSource;

@@ -384,6 +384,20 @@ export class PromiseProgramApi {
     }
 
     /**
+     */
+    public downloadInitialBinaryWithHttpInfo(_options?: Configuration): Promise<HttpInfo<Array<string>>> {
+        const result = this.api.downloadInitialBinaryWithHttpInfo(_options);
+        return result.toPromise();
+    }
+
+    /**
+     */
+    public downloadInitialBinary(_options?: Configuration): Promise<Array<string>> {
+        const result = this.api.downloadInitialBinary(_options);
+        return result.toPromise();
+    }
+
+    /**
      * Get program DSL definition
      */
     public getProgramDslContentWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ProgramDslContent>> {

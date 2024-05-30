@@ -2,6 +2,8 @@
 import { ProgramStatus } from '@/api';
 import { ProgramApi } from '@/stores/api';
 import { computed, ref } from 'vue';
+import { useInterval } from '@/composables/useInterval';
+const { setSafeInterval } = useInterval();
 
 
 //import XtextEditor from '@/components/XtextEditor.vue'
@@ -11,7 +13,7 @@ const pollProgramStatus = async () => {
     programStatus.value = status.status ?? ProgramStatus.ErrorUnexpected;
 };
 
-setInterval(pollProgramStatus, 1000);
+setSafeInterval(pollProgramStatus, 1000);
 pollProgramStatus();
 
 const actionInProgress = ref(false);
@@ -42,6 +44,17 @@ const statusClass = computed(() => {
         return '';
     }
 });
+const compilationDisabled = computed(() => {
+    const inProgress = actionInProgress.value;
+    const status = programStatus.value;
+    
+    return inProgress ||
+        status === ProgramStatus.Unchanged ||
+        status === ProgramStatus.GeneratingCode ||
+        status === ProgramStatus.CodeGenerated ||
+        status === ProgramStatus.CompilingBinaries ||
+        status === ProgramStatus.CompiledCompletely;
+});
 
 const compile = async () => {
     actionInProgress.value = true;
@@ -69,7 +82,7 @@ const overrideCompile = async () => {
     <div class="wrapper">
         <h1>DSL Editor</h1>
         <div class="top-bar">
-            <ABtn class="button" @click="compile" :disabled="actionInProgress">
+            <ABtn class="button" @click="compile" :disabled="compilationDisabled">
                 <i class="i-bx-code-block" />
                 Compile
             </ABtn>
@@ -104,6 +117,10 @@ const overrideCompile = async () => {
     color: white;
     padding: 0.5em 1em;
     border-radius: 4px;
+}
+.button:disabled{
+  cursor: not-allowed;
+  pointer-events: all; /* This line is optional depending on your needs */
 }
 .status {
     display: flex;

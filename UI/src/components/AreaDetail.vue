@@ -1,6 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue';
-  import Button from "primevue/button"
+  import { ref } from 'vue';
   import DataTable from "primevue/datatable"
   import InputText from "primevue/inputtext"
   import Column from "primevue/column"
@@ -9,17 +8,18 @@
   import { useRoute } from 'vue-router';
   import BackButton from '@/components/general/BackButton.vue';
   import { FilterMatchMode } from 'primevue/api';
-
+  import { useInterval } from '@/composables/useInterval';
 
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  import { faSearch, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+  import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
   import type { Satellite } from '@/types/Satellite';
   import StatusCircle from './general/StatusCircle.vue';
-  import MultiSelect from 'primevue/multiselect';
   import type { Area } from '@/types/Area';
 
 
   const dataStore = useDataStore();
+  const { setSafeInterval } = useInterval();
+
   const route = useRoute();
 
   const id = route.params.id as string;
@@ -36,6 +36,7 @@
   }
 
   fetchData();
+  setSafeInterval(() => fetchData(), 1000);
 
 
   const selectedSatellites = ref<Satellite[]>([]);
@@ -45,7 +46,7 @@
     let promises = [];
 
     for(let satellite of selectedSatellites.value) {
-      satellite.area = selectedArea.value;
+      satellite.area = selectedArea.value.id;
       promises.push(dataStore.editSatellite(satellite));
     }
 
@@ -76,7 +77,6 @@
   }
 
   const handleModal = (satellite = JSON.parse(JSON.stringify(helpSatellite))) => {
-    console.log("satellite", satellite)
     if(satellite.name === "") {
       return
     }

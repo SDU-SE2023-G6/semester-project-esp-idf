@@ -1,11 +1,11 @@
 <script setup lang="ts">
     import { defineProps } from 'vue'
-    import type { LogType } from '@/types/Log'
+    import type { LogType, SimplifiedLogType } from '@/types/Log'
     import { simplifyLogType } from '@/types/Log'
     import type { SatelliteStatus } from '@/types/Satellite'
     import { ref } from 'vue'
     interface Props {
-        type_log?: LogType;
+        type_log?: LogType | SimplifiedLogType;
         status_satellite?: SatelliteStatus;
     }
 

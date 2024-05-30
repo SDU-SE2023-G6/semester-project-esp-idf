@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +21,9 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -42,6 +46,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableAsync
 @EnableMongoAuditing
 @OpenAPIDefinition
+@EnableCaching
 public class ApplicationConfig implements WebMvcConfigurer {
   private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
 
@@ -61,40 +66,64 @@ public class ApplicationConfig implements WebMvcConfigurer {
     this.programRepo = programRepo;
   }
 
+
   @Bean
   CommandLineRunner defaultReaderSeeder() {
     return args -> {
-
       PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-      try {
-        logger.info("Finding default reader functions");
-        Resource[] directories = resolver.getResources("classpath:/sampleReaders/*");
-        if (directories.length == 0) {
-          logger.warn("Found no default reader functions");
-        }
-        for (Resource directory : directories) {
 
-          ReaderFunction readerFunction =
-              readerFunctionRepo
-                  .findByName(directory.getFilename())
-                  .orElseGet(
-                      () -> {
-                        var function = new ReaderFunction();
-                        function.setName(directory.getFilename());
-                        return readerFunctionRepo.save(function);
-                      });
-          logger.info("Saving reader function %s".formatted(readerFunction.getName()));
-          Resource[] files =
-              resolver.getResources("classpath:/sampleReaders/" + directory.getFilename() + "/*");
-          byte[] allFilesAsZip = zipFiles(files);
-          readerFunction.setSourceFiles(allFilesAsZip);
-          readerFunctionRepo.save(readerFunction);
-        }
-        logger.info("Done searching for reader functions");
-      } catch (IOException e) {
-        logger.error("Failure reading reader functions", e);
+      List<String> directories = new ArrayList<>();
+      Resource[] resources = resolver.getResources("classpath:sampleReaders/*/");
+      logger.info("Found %d resources".formatted(resources.length));
+      for (Resource resource : resources) {
+        logger.info("Found reader func directory %s.".formatted(resource.getURI()));
+        String path = resource.getURI().toString();
+        String[] parts = path.split("/");
+        String lastDirectoryName = parts[parts.length - 1];
+        directories.add(lastDirectoryName.replaceAll("/", ""));
       }
+
+      if (directories.isEmpty()) {
+        logger.warn("Found no default reader functions");
+      }
+      for (String directory : directories) {
+        logger.info("Found resource %s".formatted(directory));
+      }
+
+      logger.info("Resources found by reader seed is %d".formatted(directories.size()));
+      for (String directory : directories) {
+        logger.info("Found reader function directory %s".formatted(directory));
+
+        ReaderFunction readerFunction =
+                readerFunctionRepo
+                        .findByName(directory)
+                        .orElseGet(
+                                () -> {
+                                  var function = new ReaderFunction();
+                                  function.setName(directory);
+                                  return readerFunctionRepo.save(function);
+                                });
+
+        logger.info("Searching path classpath:sampleReaders/%s/**/*".formatted(directory));
+        Resource[] files =resolver.getResources("classpath:sampleReaders/%s/*".formatted(directory));
+        logger.info("Found %d resources".formatted(files.length));
+        for (Resource file : files) {
+          logger.info("Found reader func file %s.".formatted(file.getFilename()));
+          logger.info("Found reader func directory %s.".formatted(file.getURI()));
+        }
+
+        byte[] allFilesAsZip = zipFiles(files);
+        readerFunction.setSourceFiles(allFilesAsZip);
+        readerFunctionRepo.save(readerFunction);
+        logger.info("Saved reader function %s with id %s".formatted(readerFunction.getName(), readerFunction.getId()));
+      }
+      logger.info("Done searching for reader functions");
     };
+  }
+
+  @Bean
+  public CacheManager cacheManager() {
+    return new ConcurrentMapCacheManager("initialImageCache");
   }
 
   @Bean
