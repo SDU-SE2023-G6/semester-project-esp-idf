@@ -33,13 +33,18 @@ setSafeInterval(pollProgramStatus, 1000);
 pollProgramStatus();
 
 const actionInProgress = ref(false);
-const isDialogShown = ref(true);
+const isDialogShown = ref(false);
 const isDialogCloseButtonShown = ref(false);
 const isDialogOverrideButtonShown = ref(false);
 const isCompiling = ref(false);
 const isSuccessfullyCompiled = ref(false);
 const hasStateBeenInitialized = ref(false);
 const isInitialState = ref(true);
+const showIframe = ref(false);
+
+setSafeInterval(() => {
+    showIframe.value = true
+}, 200);
 
 const dataStore = useDataStore();
 
@@ -198,7 +203,7 @@ const overrideCompile = async () => {
                 <p :class="statusClass">{{ statusText }}</p>
             </div>
         </div>
-        <iframe src="http://localhost:8081"></iframe>
+        <iframe :class="[showIframe ? 'show-iframe' : 'hide-iframe']" src="http://localhost:8081"></iframe>
     </div>
 
     <ADialog v-model="isDialogShown" 
@@ -347,5 +352,11 @@ iframe {
 
 .error-unexpected {
     color: red;
+}
+.show-iframe {
+    opacity: 1;
+}
+.hide-iframe {
+    opacity: 0;
 }
 </style>
