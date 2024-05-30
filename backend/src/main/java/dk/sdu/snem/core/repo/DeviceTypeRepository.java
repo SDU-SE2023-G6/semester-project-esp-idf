@@ -2,6 +2,7 @@ package dk.sdu.snem.core.repo;
 
 import dk.sdu.snem.core.model.DeviceType;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Collection;
 import java.util.Optional;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
