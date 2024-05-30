@@ -6,6 +6,9 @@ import { useInterval } from '@/composables/useInterval';
 import type { Satellite } from '@/types/Satellite';
 import { useDataStore } from '@/stores/dataStore';
 import HomeSatellite from '@/components/HomeSatellite.vue';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
+
 
 const { setSafeInterval } = useInterval();
 
@@ -201,7 +204,10 @@ const overrideCompile = async () => {
     <ADialog v-model="isDialogShown" 
         :title="!isSuccessfullyCompiled ? 'Compiling' : 'Compilation successful'"
         :subtitle="!isSuccessfullyCompiled ? 'Follow your compilation request status here.'  : 'Monitoring satellite OTA updates.'"
-    persistent>
+    persistent class="popup">
+    <span class="closeBtn" @click="isDialogShown = false">        
+          <FontAwesomeIcon :icon="faXmark" @click="isDialogShown = true"/>
+    </span>
     <div class="a-card-body min-w-70 min-h-50 flex flex-col justify-center items-center">
         <ACard class="min-h=50 min-w=50"
             style="--a-loader-overlay-bg-opacity: 1; height: 100px; width: 200px;" v-if="!isSuccessfullyCompiled">
@@ -325,6 +331,18 @@ iframe {
 
 .compiled-completely {
     color: green;
+}
+
+.popup {
+    position:relative;
+}
+
+.closeBtn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.5em;
+    cursor: pointer;
 }
 
 .error-unexpected {
