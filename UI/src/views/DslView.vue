@@ -7,7 +7,7 @@ import type { Satellite } from '@/types/Satellite';
 import { useDataStore } from '@/stores/dataStore';
 import HomeSatellite from '@/components/HomeSatellite.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faExclamationTriangle, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 
 const { setSafeInterval } = useInterval();
@@ -15,10 +15,13 @@ const { setSafeInterval } = useInterval();
 
 //import XtextEditor from '@/components/XtextEditor.vue'
 const programStatus = ref<ProgramStatus>(ProgramStatus.Unchanged);
+const fullStatus = ref<any>({});
+const showStackTrace = ref(false);
+
 const pollProgramStatus = async () => {
     const oldStatus = programStatus.value;
-    const status = await ProgramApi.getProgramStatus();
-    programStatus.value = status.status ?? ProgramStatus.ErrorUnexpected;
+    fullStatus.value = await ProgramApi.getProgramStatus();
+    programStatus.value = fullStatus.value.status ?? ProgramStatus.ErrorUnexpected;
     if(oldStatus !== programStatus.value) {
         updateBasedOnStatus();
         if(!hasStateBeenInitialized.value) {
@@ -27,10 +30,17 @@ const pollProgramStatus = async () => {
             isInitialState.value = false;
         }
     }
+    console.log("Program status: ", fullStatus.value);
 };
 
 setSafeInterval(pollProgramStatus, 1000);
 pollProgramStatus();
+
+const compileResults = computed(() => {
+    return fullStatus.value.binaryCompileResults.filter((result: any) => result.compileFailed);
+});
+
+const selectedError = ref<any>({});
 
 const actionInProgress = ref(false);
 const isDialogShown = ref(false);
@@ -203,6 +213,17 @@ const overrideCompile = async () => {
                 <p :class="statusClass">{{ statusText }}</p>
             </div>
         </div>
+        <div class="compilation-errors">
+            <p v-for="(result, index) in compileResults" :key="index" @click="selectedError = result; showStackTrace = true"> <FontAwesomeIcon  :icon="faExclamationTriangle" />{{ result.compileErrors  }} </p>
+            <ADialog v-model="showStackTrace" title="Error stack trace" class="w-[80vw]">
+                <div class="a-card-body">
+                    <span class="closeBtn" @click="showStackTrace = false">        
+                        <FontAwesomeIcon :icon="faXmark" />
+                    </span>
+                    {{ selectedError.compileOutput }}    
+                </div>
+            </ADialog>
+        </div>
         <iframe :class="[showIframe ? 'show-iframe' : 'hide-iframe']" src="http://localhost:8081"></iframe>
     </div>
 
@@ -342,11 +363,29 @@ iframe {
     position:relative;
 }
 
+.compilation-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    color: red;
+}
+
+.compilation-errors svg {
+    margin-right: 0.5em;
+}
+
+.a-card-body {
+    width: 100%;
+    font-size: 0.8em;
+    max-height: 60vh;
+    overflow: auto;
+}
+
 .closeBtn {
     position: absolute;
     top: 0;
     right: 0;
-    padding: 0.5em;
+    padding: 0.75em;
     cursor: pointer;
 }
 
