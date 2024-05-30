@@ -1,5 +1,5 @@
 <template>
-  <div class="satellite-container">
+  <div class="satellite-container" v-if="isSatelliteInitialized"> 
     <div class="stat-name">
       <div :class="status + ' status'"><ATooltip :text="statusText" /></div>
       <div class="name">{{ props.satellite.name }}</div>
@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import type { Satellite } from '@/types/Satellite';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useInterval } from '@/composables/useInterval';
 const { setSafeInterval } = useInterval();
 
@@ -21,6 +21,7 @@ interface Props {
 
 
 const props = defineProps<Props>();
+const isSatelliteInitialized = computed(() => props.satellite.status !== 'PENDING_METADATA');
 
 const simplifiedStatusMap = {
   "ONLINE": 'online',
