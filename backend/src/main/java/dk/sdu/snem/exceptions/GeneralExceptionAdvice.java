@@ -56,6 +56,7 @@ public class GeneralExceptionAdvice {
       return ResponseEntity.status(wce.getStatusCode())
           .body(new ErrorDto(errorMsg, request, HttpStatus.valueOf(wce.getStatusCode().value())));
     }
+    e.printStackTrace();
     return generateResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, e, request);
   }
 
