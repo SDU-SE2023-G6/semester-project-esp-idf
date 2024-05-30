@@ -21,6 +21,7 @@ RUN mvn -B -Dmaven.test.skip clean package spring-boot:repackage
 # Runtime
 #
 FROM espressif/idf:release-v5.2
+RUN . /opt/esp/entrypoint.sh
 RUN apt update && apt install -y openjdk-21-jdk dos2unix 
 COPY --from=builder /build/target/*.jar /app.jar
 COPY ESP-OTA-MQTT /compiler/base

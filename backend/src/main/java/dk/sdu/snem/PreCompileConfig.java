@@ -14,6 +14,6 @@ public class PreCompileConfig {
 
   @Bean
   public byte[] initialDeviceImage(){
-    return compilerService.compileBaseProject();
+      return null;
   }
 }

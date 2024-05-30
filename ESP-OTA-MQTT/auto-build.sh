@@ -1,5 +1,6 @@
-#!/bin/sh
-folder_path="./main"
+#!/bin/bash
+base_src_path="./main"
+folder_path="$base_src_path/sensors"
 
 # Rename device type files
 rename_file() {
@@ -14,11 +15,13 @@ rename_file "h"
 
 
 # Modify CMakeLists.txt source files
-c_files=$(find "$folder_path" -maxdepth 1 -name "*.c" -exec basename {} \; | sed 's/.*/"&"/' | tr '\n' ' ')
-sed_command="/^idf_component_register/s/SRCS .*/SRCS $c_files/"
-sed -i "$sed_command" "$folder_path/CMakeLists.txt"
+c_files=$(find "$base_src_path" -maxdepth 2 -name "*.c" | sed 's/\.\/main\///' | sed 's/.*/"&"/' | tr '\n' ' ')
+c_files_escaped=$(echo "$c_files" | sed 's/"/\\"/g')
+sed_command="/^idf_component_register/s|SRCS .*|SRCS $c_files_escaped|"
+echo "Executing sed command: sed -i '$sed_command' \"$base_src_path/CMakeLists.txt\""
+eval "sed -i '$sed_command' \"$base_src_path/CMakeLists.txt\""
 
 # Build the project
-#source /opt/esp/entrypoint.sh 
-idf.py fullclean
+#export CCACHE_DIR=/compiler/ccache
+#idf.py --ccache build
 idf.py build

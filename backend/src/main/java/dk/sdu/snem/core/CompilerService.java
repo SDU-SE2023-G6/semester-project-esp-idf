@@ -41,7 +41,6 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -69,13 +68,13 @@ public class CompilerService {
   private final String baseCompilerProjectFolder;
 
   /** Where to insert generated files into the base compiler project. */
-  private final String baseCompilerProjectInsertLocation;
+  private final String codeInsertionLocation;
+  /** Where to store the first build at (used for fast later builds) */
+  private final String prebuildCompileFolder;
 
   private final String xtextHost;
   private final CompilerService asyncSelf;
-  private final String externalServerUrl;
-  private final String externalBrokerUrl;
-  private final String externalFirmwareUpgradeUrl;
+  private final Map<String, String> compilerEnvironmentVariables;
 
   public CompilerService(
       RestTemplate restTemplate,
@@ -86,7 +85,8 @@ public class CompilerService {
       ReaderFunctionRepository readerRepo,
       @Value("${compiler.folder}") String compilerFolder,
       @Value("${compiler.project.location}") String baseCompilerProjectFolder,
-      @Value("${compiler.project.insert}") String baseCompilerProjectInsertLocation,
+      @Value("${compiler.project.insert}") String codeInsertionLocation,
+      @Value("${compiler.project.prebuild.location}") String prebuildCompileFolder,
       @Value("${compiler.xtext.host}") String xtextHost,
       @Lazy CompilerService asyncSelf,
       @Value("${external.server.url}") String externalServerUrl,
@@ -99,13 +99,16 @@ public class CompilerService {
     this.objectMapper = objectMapper;
     this.readerRepo = readerRepo;
     this.compilerFolder = compilerFolder;
-    this.baseCompilerProjectFolder = baseCompilerProjectFolder;
-    this.baseCompilerProjectInsertLocation = baseCompilerProjectInsertLocation;
+    this.codeInsertionLocation = codeInsertionLocation;
     this.xtextHost = xtextHost;
     this.asyncSelf = asyncSelf;
-    this.externalServerUrl = externalServerUrl;
-    this.externalBrokerUrl = externalBrokerUrl;
-    this.externalFirmwareUpgradeUrl = externalFirmwareUpgradeUrl;
+    this.prebuildCompileFolder = prebuildCompileFolder;
+    this.baseCompilerProjectFolder = baseCompilerProjectFolder;
+    this.compilerEnvironmentVariables = Map.of(
+        "EXAMPLE_FIRMWARE_UPGRADE_URL", externalFirmwareUpgradeUrl,
+        "BROKER_URL", externalServerUrl,
+        "SERVER_URL", externalBrokerUrl
+    );
   }
 
   public static void compile(String directory, Map<String, String> environmentVariables) throws IOException, InterruptedException {
@@ -307,26 +310,30 @@ public class CompilerService {
     if (readers.size() != targets.readers().size()) {
       log.warn("Failed to find all readers");
       return CompletableFuture.failedFuture(new RuntimeException("Unable to find reader function"));
+    } else {
+      log.info("Writing %d readers: %s".formatted(
+        readers.size(),
+        readers.stream().map(ReaderFunction::getName).toList()
+        ));
     }
 
-    File baseCompilerProjectFolderFile = new File(baseCompilerProjectFolder);
+    File baseProjectFolder = new File(baseCompilerProjectFolder);
     boolean baseProjectExists =
-        baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
+        baseProjectFolder.exists() && baseProjectFolder.isDirectory();
     final String destinationFolder = compilerFolder + binary.getId().toHexString();
+    final File destFolder = new File(destinationFolder);
     final String generatedCodeInsertFolder =
         baseProjectExists
-            ? destinationFolder + baseCompilerProjectInsertLocation
+            ? destinationFolder + codeInsertionLocation
             : destinationFolder;
     if (baseProjectExists) {
       try {
-        copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
+        copyFolderAndContents(new File(baseCompilerProjectFolder), destFolder);
       } catch (IOException e) {
         log.warn(
             "Failed to copy base compiler project at %s destination is %s"
                 .formatted(baseCompilerProjectFolder, destinationFolder));
-        e.printStackTrace();
-        File folderToDelete = new File(destinationFolder);
-        FileSystemUtils.deleteRecursively(folderToDelete);
+        FileSystemUtils.deleteRecursively(destFolder);
         return CompletableFuture.failedFuture(e);
       }
     }
@@ -339,20 +346,25 @@ public class CompilerService {
       return CompletableFuture.failedFuture(
           new RuntimeException("Was unable to find all expected files"));
     }
-    readers.forEach(
-        x ->
+
+    int readersFound = readers.stream().map(x ->
             extractFilesToFolder(
                 x.getSourceFiles(),
                 List.of(x.getName() + "_reader.h", x.getName() + "_reader.c"),
-                generatedCodeInsertFolder));
+                generatedCodeInsertFolder))
+      .reduce(0, Integer::sum);
+    if (readersFound != readers.size() * 2) {
+      log.warn("Failed to find all reader files");
+      return CompletableFuture.failedFuture(
+          new RuntimeException("Was unable to find all reader files"));
+    }
 
     try {
       log.info("Starting compile of C code");
-      compile(destinationFolder, Map.of());
+      compile(destinationFolder, compilerEnvironmentVariables);
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      //FileSystemUtils.deleteRecursively(destFolder);
       return CompletableFuture.failedFuture(e);
     }
 
@@ -363,13 +375,11 @@ public class CompilerService {
       binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
     } catch (IOException e) {
       log.error("Locating compiled binary failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      FileSystemUtils.deleteRecursively(destFolder);
       return CompletableFuture.failedFuture(e);
     }
 
-    File folderToDelete = new File(destinationFolder);
-    FileSystemUtils.deleteRecursively(folderToDelete);
+    FileSystemUtils.deleteRecursively(destFolder);
 
     binary.setCompilationTime(Instant.now());
     binaryRepo.save(binary);
@@ -386,20 +396,17 @@ public class CompilerService {
     File baseCompilerProjectFolderFile = new File(baseCompilerProjectFolder);
     boolean baseProjectExists =
         baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
-    final String destinationFolder = compilerFolder + id.toHexString();
-    final String generatedCodeInsertFolder =
-        baseProjectExists
-            ? destinationFolder + baseCompilerProjectInsertLocation
-            : destinationFolder;
+    final File destFolder = new File(prebuildCompileFolder);
     if (baseProjectExists) {
       try {
-        copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
+
+        FileSystemUtils.deleteRecursively(destFolder);
+        copyFolderAndContents(new File(baseCompilerProjectFolder), destFolder);
       } catch (IOException e) {
         log.warn(
             "Failed to copy base compiler project at %s destination is %s"
-                .formatted(baseCompilerProjectFolder, destinationFolder));
-        File folderToDelete = new File(destinationFolder);
-        FileSystemUtils.deleteRecursively(folderToDelete);
+                .formatted(baseCompilerProjectFolder, prebuildCompileFolder));
+        FileSystemUtils.deleteRecursively(destFolder);
         throw new RuntimeException(e);
       }
     } else {
@@ -408,32 +415,25 @@ public class CompilerService {
 
     try {
       log.info("Starting compile of C code");
-      compile(destinationFolder, Map.of(
-        "EXAMPLE_FIRMWARE_UPGRADE_URL", externalFirmwareUpgradeUrl,
-        "BROKER_URL", externalServerUrl,
-        "SERVER_URL", externalBrokerUrl
-      ));
+      compile(prebuildCompileFolder, compilerEnvironmentVariables);
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      FileSystemUtils.deleteRecursively(destFolder);
       throw new RuntimeException(e);
     }
+
     byte[] compiledBinary;
     try {
       compiledBinary =
-          Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.bin"));
+          Files.readAllBytes(Paths.get(prebuildCompileFolder + "/build/ESP-OTA-MQTT.bin"));
     } catch (IOException e) {
       log.error("Locating compiled binary failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      FileSystemUtils.deleteRecursively(destFolder);
       throw new RuntimeException(e);
     }
 
-    File folderToDelete = new File(destinationFolder);
-    FileSystemUtils.deleteRecursively(folderToDelete);
 
-    log.info("Base compile completed with id %s".formatted(id.toHexString()));
+    log.info("Base compile completed");
     return compiledBinary;
   }
 
