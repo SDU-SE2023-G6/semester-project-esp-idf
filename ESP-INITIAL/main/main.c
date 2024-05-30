@@ -82,5 +82,10 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting MQTT WAITING FOR UPDATE");
     mqtt_app_start();
 
+    while (1)
+    {
+        check_for_ota_update();
+        sleep(5);
+    }
     return;
 }

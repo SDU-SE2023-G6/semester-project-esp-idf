@@ -11,6 +11,8 @@ extern esp_mqtt_client_handle_t client;
 
 esp_err_t register_device(esp_mqtt_client_handle_t client);
 
+void copy_mac_address(char *dest);
+
 void mqtt_app_start(void);
 
 void send_heartbeat();
