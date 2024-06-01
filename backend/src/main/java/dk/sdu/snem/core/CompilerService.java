@@ -26,6 +26,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -114,7 +115,8 @@ public class CompilerService {
             "BROKER_URL", externalServerUrl,
             "SERVER_URL", externalBrokerUrl,
             "WIFI_SSID", wifiSsid,
-            "WIFI_PASSWORD", wifiPassword);
+            "WIFI_PASSWORD", wifiPassword,
+            "ESP_INITIAL", "0");
   }
 
   public static CompileResult compile(String directory, Map<String, String> environmentVariables)
@@ -488,7 +490,9 @@ public class CompilerService {
 
     try {
       log.info("Starting compile of C code");
-      compile(prebuildCompileFolder, compilerEnvironmentVariables);
+      // copy base environment variables
+      var prebuildEnv = new HashMap<>(Map.copyOf(compilerEnvironmentVariables));
+      compile(prebuildCompileFolder, prebuildEnv);
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
       FileSystemUtils.deleteRecursively(destFolder);
