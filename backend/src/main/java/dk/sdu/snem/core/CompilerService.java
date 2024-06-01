@@ -93,7 +93,9 @@ public class CompilerService {
       @Lazy CompilerService asyncSelf,
       @Value("${external.server.url}") String externalServerUrl,
       @Value("${external.broker.url}") String externalBrokerUrl,
-      @Value("${external.firmware.upgrade.url}") String externalFirmwareUpgradeUrl) {
+      @Value("${external.firmware.upgrade.url}") String externalFirmwareUpgradeUrl,
+      @Value("${external.wifi.ssid}") String wifiSsid,
+      @Value("${external.wifi.password}") String wifiPassword) {
     this.restTemplate = restTemplate;
     this.programRepo = programRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -110,7 +112,9 @@ public class CompilerService {
         Map.of(
             "EXAMPLE_FIRMWARE_UPGRADE_URL", externalFirmwareUpgradeUrl,
             "BROKER_URL", externalServerUrl,
-            "SERVER_URL", externalBrokerUrl);
+            "SERVER_URL", externalBrokerUrl,
+            "WIFI_SSID", wifiSsid,
+            "WIFI_PASSWORD", wifiPassword);
   }
 
   public static CompileResult compile(String directory, Map<String, String> environmentVariables)
