@@ -99,7 +99,7 @@ void app_main(void)
     ESP_LOGI(TAG, "RELASING LOCK");
     xSemaphoreGive(init_lock);
 
-    #if true
+    #if ESP_INITIAL == 1
 
         image_info_t *image_info = malloc(sizeof(image_info_t));
         if (image_info == NULL) {
