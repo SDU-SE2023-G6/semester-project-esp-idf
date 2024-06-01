@@ -428,10 +428,11 @@ public class CompilerService {
     }
 
     try {
+      byte[] elfFile = Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.elf"));
       byte[] compiledBinary =
           Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.bin"));
       binary.setCompiledBinary(compiledBinary);
-      binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
+      binary.setBinaryHash(bytesToSha256Hash(elfFile));
     } catch (IOException e) {
       log.error("Locating compiled binary failed", e);
       FileSystemUtils.deleteRecursively(destFolder);

@@ -61,6 +61,12 @@ menu "Example Configuration"
         default "http://localhost:8080"
         help 
             URL of the backend server. Should not end in a backslash.
+
+    config ESP_INITIAL
+        bool "Initialize WiFi"
+        default y
+        help
+            Is it the initial image.
 endmenu
 
 

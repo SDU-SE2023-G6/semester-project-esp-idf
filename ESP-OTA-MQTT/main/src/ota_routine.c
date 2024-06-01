@@ -10,8 +10,41 @@
 #include "cJSON.h"
 
 #include "ota_routine.h"
+#include "http_routine.h"
+#include "mqtt_routine.h"
 
 static const char *T_OTA = "OTA_ROUTINE";
+
+/**
+ * Copy the sha of the app into provided buffer. Needs a char buffer of size 65.
+*/
+esp_err_t copy_app_description(char* buffer) {
+    const esp_app_desc_t *app_desc = esp_app_get_description(); 
+    // Print the SHA-256 hash
+    for (int i = 0; i < 32; ++i) {
+        sprintf(&buffer[i * 2], "%02x", app_desc->app_elf_sha256[i]);
+    }
+    buffer[64] = '\0'; // Null-terminate the string
+
+    return ESP_OK;
+}
+
+/*
+ * @brief Function to check if the hash of the binary is the same as the one in the app description
+*/
+bool is_same_firmware_hash(char *binary_hash)
+{
+    char app_sha256[65];
+    copy_app_description(app_sha256);
+
+
+    ESP_LOGI(T_OTA, "\n");
+    ESP_LOGI(T_OTA, "App SHA256: %s", app_sha256);
+    ESP_LOGI(T_OTA, "Binary SHA256: %s", binary_hash);
+    ESP_LOGI(T_OTA, "\n");
+    return strcmp(app_sha256, binary_hash) == 0;
+}
+
 
 /* Event handler for catching system events */
 void ota_event_handler(void* arg, esp_event_base_t event_base,
@@ -85,20 +118,19 @@ static esp_err_t validate_image_header(esp_app_desc_t *new_app_info)
     return ESP_OK;
 }
 
-static esp_err_t _http_client_init_cb(esp_http_client_handle_t http_client)
-{
-    esp_err_t err = ESP_OK;
-    /* Uncomment to add custom headers to HTTP request */
-    // err = esp_http_client_set_header(http_client, "Custom-Header", "Value");
-    return err;
-}
-
 /**
  * @brief Function to perform OTA using HTTP
 */
-int perform_ota(char *update_url)
+int perform_ota(char *binary_id)
 {
+
+    log_error("UPDATE_START", "OTA update started.");
+    char update_url[256];
+    sprintf(update_url,
+        "%s/program/binary/%s", CONFIG_SERVER_URL, binary_id);
+
     ESP_LOGI(T_OTA, "Starting Advanced OTA example");
+    ESP_LOGI(T_OTA, "Using url: %s", update_url);
 
     esp_err_t ota_finish_err = ESP_OK;
     esp_http_client_config_t config = {
@@ -113,11 +145,6 @@ int perform_ota(char *update_url)
 
     esp_https_ota_config_t ota_config = {
         .http_config = &config,
-        .http_client_init_cb = _http_client_init_cb, // Register a callback to be invoked after esp_http_client is initialized
-#ifdef CONFIG_EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
-        .partial_http_download = true,
-        .max_http_request_size = CONFIG_EXAMPLE_HTTP_REQUEST_SIZE,
-#endif
     };
 
     esp_https_ota_handle_t https_ota_handle = NULL;
@@ -139,6 +166,8 @@ int perform_ota(char *update_url)
         goto ota_end;
     }
 
+
+    log_error("UPDATE_DOWNLOAD_START", "Downloading OTA update.");
     while (1) {
         err = esp_https_ota_perform(https_ota_handle);
         if (err != ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
@@ -147,16 +176,20 @@ int perform_ota(char *update_url)
         ESP_LOGD(T_OTA, "Image bytes read: %d", esp_https_ota_get_image_len_read(https_ota_handle));
     }
 
+
     if (esp_https_ota_is_complete_data_received(https_ota_handle) != true) {
         // the OTA image was not completely received and user can customise the response to this situation.
+        log_error("UPDATE_FAIL", "Complete data was not received.");
         ESP_LOGE(T_OTA, "Complete data was not received.");
     } else {
         ota_finish_err = esp_https_ota_finish(https_ota_handle);
         if ((err == ESP_OK) && (ota_finish_err == ESP_OK)) {
+            log_error("UPDATE_COMPLETE", "Complete.");
             ESP_LOGI(T_OTA, "ESP_HTTPS_OTA upgrade successful. Rebooting ...");
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             esp_restart();
         } else {
+            log_error("UPDATE_FAIL", "Complete data was not received.");
             if (ota_finish_err == ESP_ERR_OTA_VALIDATE_FAILED) {
                 ESP_LOGE(T_OTA, "Image validation failed, image is corrupted");
             }
@@ -165,8 +198,37 @@ int perform_ota(char *update_url)
         }
     }
 
+
 ota_end:
     esp_https_ota_abort(https_ota_handle);
     ESP_LOGE(T_OTA, "ESP_HTTPS_OTA upgrade failed");
+    log_error("UPDATE_FAIL", "OTA upgrade failed.");
     return ESP_FAIL;
+}
+
+
+/*
+*   @brief Function to check for OTA updates and perform OTA if available
+*/
+void handle_ota_check(char *tag) {
+
+    image_info_t *image_info = malloc(sizeof(image_info_t));
+    esp_err_t ota_res = check_for_ota_update(image_info);
+    if(ota_res == ESP_OK) {
+
+        if (image_info == NULL) {
+            ESP_LOGE(tag, "Image info is NULL");
+            return;
+        }
+
+        if (is_same_firmware_hash(image_info->binary_hash)) {
+            ESP_LOGI("\n HANDLE_OTA_CHECK", "Binary up to date \n\n");
+            return;
+        }
+
+        perform_ota(image_info->binary_id);
+        ESP_LOGI(tag, "OTA update found. Rebooting...");
+    }
+
+    free(image_info);
 }

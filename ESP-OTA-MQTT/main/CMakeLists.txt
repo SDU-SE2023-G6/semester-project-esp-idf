@@ -1,4 +1,4 @@
-idf_component_register(SRCS "src/spiffs.c" "src/ota_routine.c" "src/ntp.c" "src/sensor_utils.c" "src/http_routine.c" "src/mqtt_routine.c" "sensors/dht11Reader_reader.c" "sensors/light_sensor.c" "sensors/lightResReader_reader.c" "sensors/target_device_type.c" "sensors/DHT11_sensor.c" "sensors/shared_snem_library.c" "main.c" "lmt86Reader_reader.c" 
+idf_component_register(SRCS "./main.c" "./sensors/DHT11_sensor.c" "./sensors/dht11Reader_reader.c" "./sensors/lightResReader_reader.c" "./sensors/light_sensor.c" "./sensors/shared_snem_library.c" "./sensors/target_device_type.c" "./src/http_routine.c" "./src/mqtt_routine.c" "./src/ntp.c" "./src/ota_routine.c" "./src/sensor_utils.c" "./src/spiffs.c" 
                     INCLUDE_DIRS "." "headers" "sensors"
                     # Embed the server root certificate into the final binary
                     EMBED_TXTFILES ${project_dir}/server_certs/ca_cert.pem

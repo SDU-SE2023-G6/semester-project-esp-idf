@@ -21,7 +21,6 @@ sed_command="/^idf_component_register/s|SRCS .*|SRCS $c_files_escaped|"
 echo "Executing sed command: sed -i '$sed_command' \"$base_src_path/CMakeLists.txt\""
 eval "sed -i '$sed_command' \"$base_src_path/CMakeLists.txt\""
 
-
 # Build the project
 #export CCACHE_DIR=/compiler/ccache
 #idf.py --ccache build

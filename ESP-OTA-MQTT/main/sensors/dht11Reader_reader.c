@@ -11,7 +11,6 @@ void dht11Reader_ReaderFunction(SensorInstantiation *instantiation) {
         printf("Error: Expected 2 inputs, received %d\n", instantiation->pinCount);
         return;
     }
-
     
     if (!instantiation->configured) {
         instantiation->configured = 1;

@@ -3,7 +3,7 @@
 
 #include "mqtt_client.h"
 
-extern esp_mqtt_client_handle_t client;
+extern esp_mqtt_client_handle_t MQTT_CLIENT;
 
 // const char *device_update_topic_template = "devices/%02X%02X%02X%02X%02X%02X/update";
 
@@ -11,8 +11,14 @@ extern esp_mqtt_client_handle_t client;
 
 esp_err_t register_device(esp_mqtt_client_handle_t client);
 
-void mqtt5_app_start(void);
+void copy_mac_address(char *dest);
 
 void send_heartbeat();
+
+void log_error(char* type, char* message);
+
+bool mqtt_app_start(void);
+
+bool mqtt_app_stop(void);
 
 #endif
