@@ -349,7 +349,7 @@ public class CompilerService {
     List<ReaderFunction> readers = readerRepo.findByNameIn(targets.readers());
     if (readers.size() != targets.readers().size()) {
       log.warn("Failed to find all readers");
-      saveFailedBinary(binary, "Unable to find required reader functions in database.", "");
+      saveFailedBinary(binary, "Unable to find required reader functions in database.");
       return CompletableFuture.failedFuture(
           new RuntimeException("Unable to find reader function in database"));
     } else {
@@ -372,7 +372,7 @@ public class CompilerService {
             "Failed to copy base compiler project at %s destination is %s"
                 .formatted(baseCompilerProjectFolder, destinationFolder));
         FileSystemUtils.deleteRecursively(destFolder);
-        saveFailedBinary(binary, e.getMessage(), "");
+        saveFailedBinary(binary, e.getMessage());
         return CompletableFuture.failedFuture(e);
       }
     }
@@ -382,7 +382,7 @@ public class CompilerService {
             codeGeneratedZipFile, targets.files.stream().toList(), generatedCodeInsertFolder);
     if (filesFound != targets.files().size()) {
       log.warn("Failed to find required files");
-      saveFailedBinary(binary, "Unable to find expected generated code files.", "");
+      saveFailedBinary(binary, "Unable to find expected generated code files.");
       return CompletableFuture.failedFuture(
           new RuntimeException("Was unable to find all expected files"));
     }
@@ -399,7 +399,7 @@ public class CompilerService {
     if (readersFound != readers.size() * 2) {
       log.warn("Failed to find all reader files");
       FileSystemUtils.deleteRecursively(destFolder);
-      saveFailedBinary(binary, "Unable to find expected reader files.", "");
+      saveFailedBinary(binary, "Unable to find expected reader files.");
       return CompletableFuture.failedFuture(
           new RuntimeException("Was unable to find all reader files"));
     }
@@ -411,14 +411,15 @@ public class CompilerService {
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
       FileSystemUtils.deleteRecursively(destFolder);
-      saveFailedBinary(binary, e.getMessage(), "");
+      saveFailedBinary(binary, e.getMessage());
       return CompletableFuture.failedFuture(e);
     }
 
+    binary.setCompileOutput(result.compileFailed() ? result.compileErrors() : result.compileOutput());
     if (result.compileFailed) {
       log.error("Compiling failed");
       FileSystemUtils.deleteRecursively(destFolder);
-      saveFailedBinary(binary, result.compileErrors(), result.compileOutput());
+      saveFailedBinary(binary, result.compileErrors());
       return CompletableFuture.failedFuture(new RuntimeException("Compile failed"));
     }
 
@@ -430,7 +431,7 @@ public class CompilerService {
     } catch (IOException e) {
       log.error("Locating compiled binary failed", e);
       FileSystemUtils.deleteRecursively(destFolder);
-      saveFailedBinary(binary, e.getMessage(), result.compileOutput());
+      saveFailedBinary(binary, e.getMessage());
       return CompletableFuture.failedFuture(e);
     }
 
@@ -447,11 +448,10 @@ public class CompilerService {
     return CompletableFuture.completedFuture(null);
   }
 
-  private void saveFailedBinary(Binary binary, String errorOutput, String compileOutput) {
+  private void saveFailedBinary(Binary binary, String errorOutput) {
     binary.setCompileFailed(true);
     binary.setWithdrawn(true);
     binary.setCompileErrors(errorOutput);
-    binary.setCompileOutput(compileOutput);
     binary.setCompilationTime(Instant.now());
     binaryRepo.save(binary);
   }
