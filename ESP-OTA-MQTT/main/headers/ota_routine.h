@@ -11,13 +11,19 @@ extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
 #define OTA_URL_SIZE 256
 
+
 // static esp_err_t validate_image_header(esp_app_desc_t *new_app_info);
 
 // static esp_err_t _http_client_init_cb(esp_http_client_handle_t http_client);
 
+esp_err_t copy_app_description(char* buffer);
+
 void ota_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
+bool is_same_firmware_hash(char* binary_hash);
 
-int perform_ota(char *update_url);
+int perform_ota(char* binary_id);
+
+void handle_ota_check(char *tag);
 
 #endif

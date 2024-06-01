@@ -26,7 +26,7 @@ DeviceType base_device_type = {
     .sensorInstantiations = {&HTL_DHT11_outside, &HTL_light_top},
     .sensorCount = 2,
     .batchRatePolicy = {1, SECOND},
-    .batchSizePolicy = 0,
+    .batchSizePolicy = 50,
     .heartBeatPolicy = {10, SECOND}
 };
 	
