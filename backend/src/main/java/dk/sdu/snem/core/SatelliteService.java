@@ -29,6 +29,10 @@ public class SatelliteService {
 
         for (Satellite satellite : satelliteRepo.findAll()) {
             if (satellite.getNextExpectedHeartbeat() != null && satellite.getNextExpectedHeartbeat().isBefore(now)) {
+
+                if(satellite.getStatus() == Satellite.SatelliteStatus.OFFLINE) {
+                    continue;
+                }
                 satellite.setStatus(Satellite.SatelliteStatus.OFFLINE);
                 satelliteRepo.save(satellite);
 

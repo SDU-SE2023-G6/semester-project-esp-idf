@@ -93,7 +93,7 @@ public class MqttService {
 
     try {
       switch (message.getType()) {
-        case ERROR, UPDATE_ROLLBACK_FAIL, UPDATE_FAIL, WARNING ->
+        case ERROR, UPDATE_ROLLBACK_FAIL, UPDATE_FAIL ->
                 satellite.setStatus(Satellite.SatelliteStatus.ERROR);
         case UPDATE_ROLLBACK_SUCCESS, UPDATE_SUCCESS ->
                 satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
