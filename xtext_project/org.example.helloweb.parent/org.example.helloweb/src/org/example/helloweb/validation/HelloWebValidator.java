@@ -231,8 +231,8 @@ public class HelloWebValidator extends AbstractHelloWebValidator {
 
 	@Check(CheckType.FAST)
 	public void checkValidTimeUnits(TimeUnit timeUnit) {
-		if (timeUnit.getValue() <= 0) {
-			error("Time value must be non-negative",
+		if (timeUnit.getValue() <= 1) {
+			error("Time value must be equal to or greater than 1",
 					HelloWebPackage.Literals.TIME_UNIT__VALUE);
 		}
 	}
@@ -245,6 +245,31 @@ public class HelloWebValidator extends AbstractHelloWebValidator {
 								pin,
 								validPinNumbers.stream().map(String::valueOf).collect(Collectors.joining(", "))
 						),
+						HelloWebPackage.Literals.SENSOR_INSTANTIATION__PINS);
+			}
+		}
+	}
+
+	@Check(CheckType.FAST)
+	public void uniquePinNumbers(SensorInstantiation sensorInstantiation) {
+		Set<Integer> pins = new HashSet<>();
+		// Find parent DeviceType container
+		EObject container = sensorInstantiation.eContainer();
+		// Query all sensor instantiations in device type
+		if (container instanceof DeviceType) {
+			DeviceType deviceTypeContainer = (DeviceType) container;
+			for (SensorInstantiation instantiation : deviceTypeContainer.getSensorInstantiations()) {
+				if (instantiation != sensorInstantiation) {
+					for (Integer pin : instantiation.getPins()) {
+						pins.add(pin);
+					}
+				}
+			}
+		}
+
+		for (Integer pin : sensorInstantiation.getPins()) {
+			if (!pins.add(pin)) {
+				error("Duplicate pin number: %s".formatted(pin),
 						HelloWebPackage.Literals.SENSOR_INSTANTIATION__PINS);
 			}
 		}
