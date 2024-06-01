@@ -26,6 +26,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -490,9 +491,8 @@ public class CompilerService {
     try {
       log.info("Starting compile of C code");
       // copy base environment variables
-      var prebuildEnv = Map.copyOf(compilerEnvironmentVariables);
-      prebuildEnv.put("ESP_INITIAL", "1");
-      compile(prebuildCompileFolder, compilerEnvironmentVariables);
+      var prebuildEnv = new HashMap<>(Map.copyOf(compilerEnvironmentVariables));
+      compile(prebuildCompileFolder, prebuildEnv);
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
       FileSystemUtils.deleteRecursively(destFolder);

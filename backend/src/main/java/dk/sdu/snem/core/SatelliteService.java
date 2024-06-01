@@ -30,7 +30,10 @@ public class SatelliteService {
         for (Satellite satellite : satelliteRepo.findAll()) {
             if (satellite.getNextExpectedHeartbeat() != null && satellite.getNextExpectedHeartbeat().isBefore(now)) {
 
-                if(satellite.getStatus() == Satellite.SatelliteStatus.OFFLINE) {
+                if(
+                    satellite.getStatus() == Satellite.SatelliteStatus.OFFLINE ||
+                    satellite.getStatus() == Satellite.SatelliteStatus.PENDING_METADATA
+                ) {
                     continue;
                 }
                 satellite.setStatus(Satellite.SatelliteStatus.OFFLINE);
