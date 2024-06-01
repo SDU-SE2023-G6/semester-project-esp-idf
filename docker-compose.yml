@@ -29,6 +29,8 @@ services:
       - EXTERNAL_SERVER_URL=http://localhost:8080
       - EXTERNAL_BROKER_URL=mqtt://localhost:1883
       - EXTERNAL_FIRMWARE_UPGRADE_URL=https://192.168.2.106:8080/program/binary/initial-image.bin
+      - EXTERNAL_WIFI_SSID=snem
+      - EXTERNAL_WIFI_PASSWORD=snem
     command: "java -jar /app.jar"
 
   xtext_backend:

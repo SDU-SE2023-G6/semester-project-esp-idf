@@ -1,5 +1,13 @@
 menu "Example Configuration"
 
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "ESP Friendly"
+    
+    config WIFI_PASS
+        string "WiFi Password"
+        default "alleskaldoe"
+
     config EXAMPLE_FIRMWARE_UPGRADE_URL
         string "Firmware Upgrade URL"
         default "https://192.168.2.106:8070/hello_world.bin"
@@ -54,3 +62,13 @@ menu "Example Configuration"
         help 
             URL of the backend server. Should not end in a backslash.
 endmenu
+
+
+
+config EXAMPLE_WIFI_SSID
+    string "Example WiFi SSID"
+    default WIFI_SSID
+
+config EXAMPLE_WIFI_PASSWORD
+    string "Example WiFi Password"
+    default WIFI_PASS

@@ -1,0 +1,52 @@
+{
+    "C_Cpp.intelliSenseEngine": "default",
+    "idf.adapterTargetName": "esp32",
+    "idf.customExtraPaths": "/home/henriko/.espressif/tools/xtensa-esp-elf-gdb/12.1_20231023/xtensa-esp-elf-gdb/bin:/home/henriko/.espressif/tools/riscv32-esp-elf-gdb/12.1_20231023/riscv32-esp-elf-gdb/bin:/home/henriko/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin:/home/henriko/.espressif/tools/riscv32-esp-elf/esp-13.2.0_20230928/riscv32-esp-elf/bin:/home/henriko/.espressif/tools/esp32ulp-elf/2.35_20220830/esp32ulp-elf/bin:/home/henriko/.espressif/tools/openocd-esp32/v0.12.0-esp32-20230921/openocd-esp32/bin:/home/henriko/.espressif/tools/esp-rom-elfs/20230320",
+    "idf.customExtraVars": {
+        "OPENOCD_SCRIPTS": "/home/henriko/.espressif/tools/openocd-esp32/v0.12.0-esp32-20230921/openocd-esp32/share/openocd/scripts",
+        "ESP_ROM_ELF_DIR": "/home/henriko/.espressif/tools/esp-rom-elfs/20230320/"
+    },
+    "idf.espIdfPath": "/home/henriko/esp/esp-idf",
+    "idf.openOcdConfigs": [
+        "interface/ftdi/esp32_devkitj_v1.cfg",
+        "target/esp32.cfg"
+    ],
+    "idf.port": "/dev/ttyUSB1",
+    "idf.pythonBinPath": "/home/henriko/.espressif/python_env/idf5.2_py3.12_env/bin/python",
+    "idf.toolsPath": "/home/henriko/.espressif",
+    "idf.flashType": "UART",
+    "files.associations": {
+        "mqtt_client.h": "c",
+        "esp_transport.h": "c",
+        "mqtt5_client.h": "c",
+        "esp_spiffs.h": "c",
+        "stdbool.h": "c",
+        "freertos.h": "c",
+        "cstdlib": "c",
+        "http_routine.h": "c",
+        "sdkconfig.h": "c",
+        "protocol_examples_common.h": "c",
+        "esp_wifi.h": "c",
+        "esp_err.h": "c",
+        "cjson.h": "c",
+        "esp_https_ota.h": "c",
+        "esp_http_client.h": "c",
+        "mqtt_routine.h": "c",
+        "compare": "cpp",
+        "cstdint": "cpp",
+        "sensor_utils.h": "c",
+        "target_device_type.h": "c",
+        "shared_snem_library.h": "c",
+        "esp_system.h": "c",
+        "esp_event.h": "c",
+        "ota_routine.h": "c",
+        "string.h": "c",
+        "*.tcc": "c",
+        "format": "c",
+        "semphr.h": "c",
+        "spiffs.h": "c",
+        "esp_wifi_types.h": "c",
+        "esp_log.h": "c",
+        "ntp.h": "c"
+    }
+}

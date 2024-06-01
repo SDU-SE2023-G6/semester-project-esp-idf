@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class LogMessage {
-  @Nullable
   private String message;
   private Log.LogType type;
   private long timestamp;

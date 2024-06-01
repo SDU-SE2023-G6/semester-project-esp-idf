@@ -28,6 +28,11 @@ public class SatelliteService {
         Instant now = Instant.now();
 
         for (Satellite satellite : satelliteRepo.findAll()) {
+            if (satellite.getNextExpectedHeartbeat() != null) {
+                logger.info("Inside at %s".formatted(satellite.getNextExpectedHeartbeat().toString()));
+                logger.info("Is before %s".formatted(satellite.getNextExpectedHeartbeat().isBefore(now)));
+                logger.info("Now is %s".formatted(now.toString()));
+            }
             if (satellite.getNextExpectedHeartbeat() != null && satellite.getNextExpectedHeartbeat().isBefore(now)) {
                 satellite.setStatus(Satellite.SatelliteStatus.OFFLINE);
                 satelliteRepo.save(satellite);

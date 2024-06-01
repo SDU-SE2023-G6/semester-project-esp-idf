@@ -10,16 +10,24 @@
  * Do not edit the class manually.
  */
 
+import { BinaryCompileResult } from '../models/BinaryCompileResult';
 import { ProgramStatus } from '../models/ProgramStatus';
 import { HttpFile } from '../http/http';
 
 export class ProgramStatusProjection {
+    'binaryCompileResults'?: Array<BinaryCompileResult>;
     'id'?: string;
     'status'?: ProgramStatus;
 
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
+        {
+            "name": "binaryCompileResults",
+            "baseName": "binaryCompileResults",
+            "type": "Array<BinaryCompileResult>",
+            "format": ""
+        },
         {
             "name": "id",
             "baseName": "id",

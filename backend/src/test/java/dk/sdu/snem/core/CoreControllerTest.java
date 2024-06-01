@@ -15,8 +15,6 @@ import dk.sdu.snem.core.model.*;
 import dk.sdu.snem.core.model.Log.LogType;
 import dk.sdu.snem.core.repo.*;
 
-import dk.sdu.snem.core.serialization.DataPointMetadata;
-import dk.sdu.snem.core.serialization.LogMetadata;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
