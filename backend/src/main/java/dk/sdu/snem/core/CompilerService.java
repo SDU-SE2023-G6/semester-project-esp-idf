@@ -114,7 +114,8 @@ public class CompilerService {
             "BROKER_URL", externalServerUrl,
             "SERVER_URL", externalBrokerUrl,
             "WIFI_SSID", wifiSsid,
-            "WIFI_PASSWORD", wifiPassword);
+            "WIFI_PASSWORD", wifiPassword,
+            "ESP_INITIAL", "0");
   }
 
   public static CompileResult compile(String directory, Map<String, String> environmentVariables)
@@ -488,6 +489,9 @@ public class CompilerService {
 
     try {
       log.info("Starting compile of C code");
+      // copy base environment variables
+      var prebuildEnv = Map.copyOf(compilerEnvironmentVariables);
+      prebuildEnv.put("ESP_INITIAL", "1");
       compile(prebuildCompileFolder, compilerEnvironmentVariables);
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
