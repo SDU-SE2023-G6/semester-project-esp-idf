@@ -81,34 +81,35 @@ void send_heartbeat(esp_mqtt_client_handle_t client) {
     cJSON_Delete(root);
 }
 
+
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{
+    ESP_LOGD(T_MQTT, "Event dispatched from event loop base=%s, event_id=%" PRIi32, base, event_id);
+    esp_mqtt_event_handle_t event = event_data;
+    esp_mqtt_client_handle_t client = event->client;
+    int msg_id;
+
+    char device_update_topic[50] = {0}; // Topic for receiving OTA updates
+    char device_heartbeat_topic[50] = {0};
+
+    ESP_LOGD(T_MQTT, "free heap size is %" PRIu32 ", minimum %" PRIu32, esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
+    switch ((esp_mqtt_event_id_t) event_id) {
+    case MQTT_EVENT_CONNECTED:
+        ESP_LOGI(T_MQTT, "MQTT_EVENT_CONNECTED");
+
         // subscribe to the device update topic
         msg_id = esp_mqtt_client_subscribe(client, device_update_topic, 0);
 
         send_heartbeat(client);
 
-        print_user_property(event->property->user_property);
-        esp_mqtt5_client_set_user_property(&publish_property.user_property, user_property_arr, USE_PROPERTY_ARR_SIZE);
-        esp_mqtt5_client_set_publish_property(client, &publish_property);
+        ESP_LOGI(T_MQTT, "sent publish successful, msg_id=%d", msg_id);
+        break;
 
-        // subscribe to the device update topic
-        msg_id = esp_mqtt_client_subscribe(client, device_update_topic, 0);
-        send_heartbeat(client);
-
-        // TODO: Consider using a enum here.
-        // Publish a i am alive message
-
-        esp_mqtt5_client_delete_user_property(publish_property.user_property);
-        publish_property.user_property = NULL;
+    case MQTT_EVENT_DISCONNECTED:
+        ESP_LOGI(T_MQTT, "MQTT_EVENT_DISCONNECTED");
         break;
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(T_MQTT, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        print_user_property(event->property->user_property);
-        break;
-    case MQTT_EVENT_SUBSCRIBED:
-        ESP_LOGI(T_MQTT, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        print_user_property(event->property->user_property);
-        esp_mqtt5_client_set_publish_property(client, &publish_property);
         ESP_LOGI(T_MQTT, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:

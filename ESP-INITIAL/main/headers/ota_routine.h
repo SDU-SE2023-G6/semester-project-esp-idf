@@ -19,7 +19,7 @@ esp_err_t copy_app_description(char* buffer);
 
 void ota_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
-bool check_ota_hash(char* binary_hash);
+bool is_same_firmware_hash(char* binary_hash);
 
 int perform_ota(char* binary_id);
 

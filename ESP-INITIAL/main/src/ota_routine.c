@@ -27,18 +27,15 @@ esp_err_t copy_app_description(char* buffer) {
     return ESP_OK;
 }
 
-bool check_ota_hash(char *binary_hash)
+/*
+ * @brief Function to check if the hash of the binary is the same as the one in the app description
+*/
+bool is_same_firmware_hash(char *binary_hash)
 {
     char app_sha256[65];
     copy_app_description(app_sha256);
 
-    if (strcmp(app_sha256, binary_hash) == 0)
-    {
-        ESP_LOGI(T_OTA, "Firmware is up to date");
-        return false;
-    }
-
-    return true;
+    return strcmp(app_sha256, binary_hash) == 0;
 }
 
 

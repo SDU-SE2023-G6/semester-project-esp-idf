@@ -100,14 +100,23 @@ void app_main(void)
         {
             ESP_LOGI(TAG, "OTA update available");
             if (image_info != NULL)
-            {
-                perform_ota(image_info->binary_id);
+            {   
+                ESP_LOGI("IMAGE_INFO", "OTA Image hash: %s", image_info->binary_hash);
+                ESP_LOGI("IMAGE_INFO", "App hash: %s", app_sha);
+
+                bool same_hash = is_same_firmware_hash(image_info->binary_hash);
+                if (!same_hash) {
+                    ESP_LOGI(TAG, "Performing OTA");
+                    perform_ota(image_info->binary_id);
+                } else {
+                    ESP_LOGE(TAG, "Hash check failed");
+                }
             } else {
                 ESP_LOGE(TAG, "Image info is NULL");
             }
         }
         sleep(5);
     }
-    free(image_info);
+
     return;
 }

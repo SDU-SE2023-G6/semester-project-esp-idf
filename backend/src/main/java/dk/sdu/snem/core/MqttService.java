@@ -60,6 +60,7 @@ public class MqttService {
 
   @ServiceActivator(inputChannel = "mqttInboundLogsChannel")
   public void handleLogMessage(String logPayload) {
+    logger.info("Received log message: {}", logPayload);
     LogMessage message;
     try {
       message = mapper.readValue(logPayload, LogMessage.class);
@@ -67,15 +68,11 @@ public class MqttService {
       logger.warn("Failed to deserialize log message", e);
       return;
     }
+    logger.info("Parsed log message: {}", message);
 
     Satellite satellite = satelliteRepo.findByDeviceMACAddress(message.getSatelliteMacAddress());
     if (satellite == null) {
       logger.warn("Received log message from unknown satellite: {}", message.getSatelliteMacAddress());
-      return;
-    }
-
-    if(Objects.equals(message.getMessage(), "") && message.getType() != ERROR) {
-      logger.warn("Received log message with null message");
       return;
     }
 
@@ -87,26 +84,35 @@ public class MqttService {
     log.setTimestamp(timestamp);
     log.setSatellite(satellite);
 
-    logRepo.save(log);
-    logger.info(message.toString());
-
-    switch (message.getType()) {
-      case ERROR, UPDATE_ROLLBACK_FAIL, UPDATE_FAIL, WARNING ->
-              satellite.setStatus(Satellite.SatelliteStatus.ERROR);
-      case UPDATE_ROLLBACK_SUCCESS, UPDATE_SUCCESS ->
-              satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
-      case UPDATE_DOWNLOAD_START, UPDATE_DOWNLOAD_COMPLETE, UPDATE_START, UPDATE_COMPLETE, UPDATE_ROLLBACK_START ->
-              satellite.setStatus(Satellite.SatelliteStatus.UPDATING);
-      case HEARTBEAT -> {
-        logger.info("Heartbeat");
-        if(message.getNextHeartbeat() != null) {satellite.setNextExpectedHeartbeat(Instant.ofEpochMilli(message.getNextHeartbeat() * 1000));}
-        satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
-      }
+    try {
+      logRepo.save(log);
+    } catch (Exception e) {
+      logger.error("Error saving log to repository", e);
+      return;
     }
 
-    logger.info(satellite.toString());
+    try {
+      switch (message.getType()) {
+        case ERROR, UPDATE_ROLLBACK_FAIL, UPDATE_FAIL, WARNING ->
+                satellite.setStatus(Satellite.SatelliteStatus.ERROR);
+        case UPDATE_ROLLBACK_SUCCESS, UPDATE_SUCCESS ->
+                satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
+        case UPDATE_DOWNLOAD_START, UPDATE_DOWNLOAD_COMPLETE, UPDATE_START, UPDATE_COMPLETE, UPDATE_ROLLBACK_START ->
+                satellite.setStatus(Satellite.SatelliteStatus.UPDATING);
+        case HEARTBEAT -> {
+          logger.info("Heartbeat of satellite {} received", satellite.getName());
+          if(message.getNextHeartbeat() != null) {
+            satellite.setNextExpectedHeartbeat(Instant.ofEpochMilli(message.getNextHeartbeat() * 1000));
+          }
+          satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
+        }
+      }
+      satelliteRepo.save(satellite);
+      logger.info("Updated satellite status to {}", satellite.getStatus());
+    } catch (Exception e) {
+      logger.error("Error updating satellite status", e);
+    }
 
-    satelliteRepo.save(satellite);
   }
 
   @ServiceActivator(inputChannel = "mqttInboundDataPointsChannel")
@@ -119,7 +125,8 @@ public class MqttService {
       return;
     }
 
-    Satellite satellite = satelliteRepo.findByDeviceMACAddress(message.getSatelliteMacAddress());
+    Satellite satellite = satelliteRepo.findIdByDeviceMACAddress(message.getSatelliteMacAddress());
+
     if (satellite == null) {
       logger.warn("Received data point message from unknown satellite: {}", message.getSatelliteMacAddress());
       return;
@@ -136,8 +143,6 @@ public class MqttService {
     dataPoint.setCreatedDate(Instant.now());
 
     dataPointRepo.save(dataPoint);
-
-    logger.info(dataPoint.toString());
   }
 
   @ServiceActivator(inputChannel = "mqttInboundRegistrationChannel")
@@ -151,7 +156,7 @@ public class MqttService {
     }
 
     if(satelliteRepo.findByDeviceMACAddress(registrationMessage.getSatelliteMacAddress()) != null) {
-      logger.warn("Device already exists");
+      // logger.warn("Device already exists");
       return;
     }
 

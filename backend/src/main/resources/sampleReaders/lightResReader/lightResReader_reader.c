@@ -4,16 +4,15 @@
 const int LIGHTRESREADER_READER_INPUT_SIZE = 1;
 const int LIGHTRESREADER_READER_OUTPUT_SIZE = 1;
 
-double* lightResReader_ReaderFunction(int *pin, int count) {
-    if (count != 1) {
-        printf("Error: Expected 1 inputs, received %d\n", count);
-        return NULL;
+void lightResReader_ReaderFunction(SensorInstantiation *instantiation) {
+    if (instantiation->pinCount != 1) {
+        printf("Error: Expected 1 inputs, received %d\n", instantiation->pinCount);
+        return;
     }
 
+    if (!instantiation->configured) {
+        instantiation->configured = 1;
+    }
 
-    static double result[1];
-
-    result[0] = 25.5;
-
-    return result;
+    instantiation->readings[0] = 13.3;
 }
