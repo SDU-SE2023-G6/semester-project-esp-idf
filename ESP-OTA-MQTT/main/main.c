@@ -93,7 +93,13 @@ void app_main(void)
 
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
-    #if ESP_INITIAL == 1 
+    xSemaphoreTake(init_lock, portMAX_DELAY);
+    ESP_LOGI(TAG, "Starting MQTT");
+    mqtt_app_start();
+    ESP_LOGI(TAG, "RELASING LOCK");
+    xSemaphoreGive(init_lock);
+
+    #if true
 
         image_info_t *image_info = malloc(sizeof(image_info_t));
         if (image_info == NULL) {
@@ -101,13 +107,15 @@ void app_main(void)
             ESP_ERROR_CHECK(ESP_FAIL);
         } 
 
+
         char app_sha[65];
         copy_app_description(app_sha);
         ESP_LOGI("SHA_CHECK", "Current APP SHA %s", app_sha);
 
 
         while (1)
-        {
+        {   
+            register_device(MQTT_CLIENT);
             esp_err_t ota_res = check_for_ota_update(image_info);
             if (ota_res == ESP_OK)
             {
@@ -138,11 +146,6 @@ void app_main(void)
     // Init file system
     init_spiffs(init_lock);
 
-    xSemaphoreTake(init_lock, portMAX_DELAY);
-    ESP_LOGI(TAG, "Starting MQTT");
-    mqtt_app_start();
-    ESP_LOGI(TAG, "RELASING LOCK");
-    xSemaphoreGive(init_lock);
 
     // Use semaphore to control the initialization
     xSemaphoreTake(init_lock, portMAX_DELAY);

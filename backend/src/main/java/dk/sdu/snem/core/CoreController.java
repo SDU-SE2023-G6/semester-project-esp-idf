@@ -26,10 +26,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.MongoId;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("")
@@ -457,16 +454,25 @@ public class CoreController {
   @Operation
   public ResponseEntity<BinaryVersion> provideBinaryVersion(@PathVariable String deviceMac) {
     Satellite currentSatellite = satelliteRepo.findByDeviceMACAddress(deviceMac);
+
+    if (currentSatellite == null || currentSatellite.getDeviceType() == null) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+              .contentType(MediaType.APPLICATION_JSON)
+              .body(new BinaryVersion("", ""));
+    }
+
     DeviceType currentDeviceType = currentSatellite.getDeviceType();
-    Binary currentBinary = null;
-    if (currentDeviceType != null) {
-      currentBinary = currentDeviceType.getBinary();
+    Binary currentBinary = currentDeviceType.getBinary();
+
+    if (currentBinary == null) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+              .contentType(MediaType.APPLICATION_JSON)
+              .body(new BinaryVersion("", ""));
     }
 
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_JSON)
-        .body( (currentDeviceType == null || currentBinary == null) ? null :
-            new BinaryVersion(currentBinary.getId().toHexString(), currentBinary.getBinaryHash()));
+        .body( (currentDeviceType == null || currentBinary == null) ? new BinaryVersion("", "") : new BinaryVersion(currentBinary.getId().toHexString(), currentBinary.getBinaryHash()));
   }
 
   @GetMapping("/program/binary/{binaryId}")

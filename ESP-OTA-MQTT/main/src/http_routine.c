@@ -61,9 +61,16 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         ESP_LOGI(T_HTTP, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
         break;
     case HTTP_EVENT_ON_DATA:
-
         http_data = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER+ 1);
+        if (http_data == NULL)
+        {
+            ESP_LOGE("HTTP", "Failed to allocate memory for data");
+            return ESP_FAIL;
+        }
+
         data_length = MAX_HTTP_RECV_BUFFER;
+        http_data[data_length] = '\0'; // Null terminate the string
+
         int received_data = 0;
 
         if (!esp_http_client_is_chunked_response(evt->client))
@@ -96,9 +103,12 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         }
         break;
     case HTTP_EVENT_ON_FINISH:
-        ESP_LOGI("HTTP", "Data finished: %s", http_data);
-        http_data[data_length] = '\0'; // Null terminate the string
-        ESP_LOGI(T_HTTP, "HTTP_EVENT_ON_FINISH");
+        if (http_data != NULL)
+        {
+            ESP_LOGI("HTTP", "Data finished: %s", http_data);
+            http_data[data_length] = '\0'; // Null terminate the string
+            ESP_LOGI(T_HTTP, "HTTP_EVENT_ON_FINISH");
+        }
         break;
     case HTTP_EVENT_DISCONNECTED:
         ESP_LOGI(T_HTTP, "HTTP_EVENT_DISCONNECTED");
@@ -165,6 +175,12 @@ esp_err_t check_for_ota_update(image_info_t* image_info)
             return ESP_FAIL;
         }
 
+        if (http_data == NULL)
+        {
+            ESP_LOGE(T_HTTP, "Failed to get data");
+            return ESP_FAIL;
+        }
+        
         // get response content
         cJSON *root = cJSON_Parse(http_data);
 
