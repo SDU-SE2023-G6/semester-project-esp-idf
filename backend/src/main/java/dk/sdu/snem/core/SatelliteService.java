@@ -31,8 +31,8 @@ public class SatelliteService {
             if (satellite.getNextExpectedHeartbeat() != null && satellite.getNextExpectedHeartbeat().isBefore(now)) {
 
                 if(
-                    satellite.getStatus() == Satellite.SatelliteStatus.OFFLINE ||
-                    satellite.getStatus() == Satellite.SatelliteStatus.PENDING_METADATA
+                    satellite.getStatus() == Satellite.SatelliteStatus.OFFLINE
+                        // || satellite.getStatus() == Satellite.SatelliteStatus.PENDING_METADATA
                 ) {
                     continue;
                 }
