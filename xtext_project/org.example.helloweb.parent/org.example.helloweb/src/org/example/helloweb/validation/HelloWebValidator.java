@@ -275,6 +275,13 @@ public class HelloWebValidator extends AbstractHelloWebValidator {
 		}
 	}
 
+	@Check(CheckType.FAST)
+	public void batchSizePolicyMustBeGreaterThanZero(DeviceType deviceType) {
+		if (deviceType.getBatchSizePolicy() > 0) {
+			error("Batch size policy must be greater than zero",
+					HelloWebPackage.Literals.DEVICE_TYPE__BATCH_SIZE_POLICY);
+		}
+	}
 
 
 }
