@@ -13,6 +13,35 @@
 
 static const char *T_OTA = "OTA_ROUTINE";
 
+/**
+ * Copy the sha of the app into provided buffer. Needs a char buffer of size 65.
+*/
+esp_err_t copy_app_description(char* buffer) {
+    const esp_app_desc_t *app_desc = esp_app_get_description(); 
+    // Print the SHA-256 hash
+    for (int i = 0; i < 32; ++i) {
+        sprintf(&buffer[i * 2], "%02x", app_desc->app_elf_sha256[i]);
+    }
+    buffer[64] = '\0'; // Null-terminate the string
+
+    return ESP_OK;
+}
+
+bool check_ota_hash(char *binary_hash)
+{
+    char app_sha256[65];
+    copy_app_description(app_sha256);
+
+    if (strcmp(app_sha256, binary_hash) == 0)
+    {
+        ESP_LOGI(T_OTA, "Firmware is up to date");
+        return false;
+    }
+
+    return true;
+}
+
+
 /* Event handler for catching system events */
 void ota_event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
@@ -85,20 +114,18 @@ static esp_err_t validate_image_header(esp_app_desc_t *new_app_info)
     return ESP_OK;
 }
 
-static esp_err_t _http_client_init_cb(esp_http_client_handle_t http_client)
-{
-    esp_err_t err = ESP_OK;
-    /* Uncomment to add custom headers to HTTP request */
-    // err = esp_http_client_set_header(http_client, "Custom-Header", "Value");
-    return err;
-}
-
 /**
  * @brief Function to perform OTA using HTTP
 */
-int perform_ota(char *update_url)
+int perform_ota(char *binary_id)
 {
+
+    char update_url[256];
+    sprintf(update_url,
+        "%s/program/binary/%s", CONFIG_SERVER_URL, binary_id);
+
     ESP_LOGI(T_OTA, "Starting Advanced OTA example");
+    ESP_LOGI(T_OTA, "Using url: %s", update_url);
 
     esp_err_t ota_finish_err = ESP_OK;
     esp_http_client_config_t config = {
@@ -113,11 +140,6 @@ int perform_ota(char *update_url)
 
     esp_https_ota_config_t ota_config = {
         .http_config = &config,
-        .http_client_init_cb = _http_client_init_cb, // Register a callback to be invoked after esp_http_client is initialized
-#ifdef CONFIG_EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
-        .partial_http_download = true,
-        .max_http_request_size = CONFIG_EXAMPLE_HTTP_REQUEST_SIZE,
-#endif
     };
 
     esp_https_ota_handle_t https_ota_handle = NULL;

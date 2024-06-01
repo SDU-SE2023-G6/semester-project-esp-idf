@@ -82,10 +82,32 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting MQTT WAITING FOR UPDATE");
     mqtt_app_start();
 
+    image_info_t *image_info = malloc(sizeof(image_info_t));
+    if (image_info == NULL) {
+        ESP_LOGI("OTA_IMAGE", "Failed to allocated image info");
+        ESP_ERROR_CHECK(ESP_FAIL);
+    } 
+
+    char app_sha[65];
+    copy_app_description(app_sha);
+    ESP_LOGI("SHA_CHECK", "Current APP SHA %s", app_sha);
+
+
     while (1)
     {
-        check_for_ota_update();
+        esp_err_t ota_res = check_for_ota_update(image_info);
+        if (ota_res == ESP_OK)
+        {
+            ESP_LOGI(TAG, "OTA update available");
+            if (image_info != NULL)
+            {
+                perform_ota(image_info->binary_id);
+            } else {
+                ESP_LOGE(TAG, "Image info is NULL");
+            }
+        }
         sleep(5);
     }
+    free(image_info);
     return;
 }

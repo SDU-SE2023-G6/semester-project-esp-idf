@@ -370,7 +370,7 @@ public class CompilerService {
 
     try {
       byte[] compiledBinary =
-          Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.bin"));
+          Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.elf"));
       binary.setCompiledBinary(compiledBinary);
       binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
     } catch (IOException e) {

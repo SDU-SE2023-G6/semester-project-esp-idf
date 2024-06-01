@@ -454,7 +454,7 @@ public class CoreController {
 
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\"")
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + binaryId + "\".bin")
         .body(binary.getCompiledBinary());
   }
 

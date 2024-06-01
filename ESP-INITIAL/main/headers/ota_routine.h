@@ -15,9 +15,12 @@ extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
 // static esp_err_t _http_client_init_cb(esp_http_client_handle_t http_client);
 
+esp_err_t copy_app_description(char* buffer);
+
 void ota_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
+bool check_ota_hash(char* binary_hash);
 
-int perform_ota(char *update_url);
+int perform_ota(char* binary_id);
 
 #endif

@@ -34,9 +34,11 @@ int data_length = 0;
 
 static void cleanup_http_data()
 {
-    free(http_data);
-    http_data = NULL;
-    data_length = 0;
+    if (http_data != NULL) {
+        free(http_data);
+        http_data = NULL;
+        data_length = 0;
+    }
 }
 
 /**
@@ -48,6 +50,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     {
     case HTTP_EVENT_ERROR:
         ESP_LOGI(T_HTTP, "HTTP_EVENT_ERROR");
+        cleanup_http_data();
         break;
     case HTTP_EVENT_ON_CONNECTED:
         ESP_LOGI(T_HTTP, "HTTP_EVENT_ON_CONNECTED");
@@ -59,7 +62,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         break;
     case HTTP_EVENT_ON_DATA:
 
-        http_data = (char *)malloc(+ 1);
+        http_data = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER+ 1);
         data_length = MAX_HTTP_RECV_BUFFER;
         int received_data = 0;
 
@@ -107,11 +110,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             ESP_LOGI(T_HTTP, "Last mbedtls failure: 0x%x", mbedtls_err);
         }
 
-        if (http_data != NULL)
-        {
-            cleanup_http_data();
-        }
-
         break;
     case HTTP_EVENT_REDIRECT:
         ESP_LOGI(T_HTTP, "HTTP_EVENT_REDIRECT");
@@ -132,7 +130,7 @@ void create_device_registration_payload(char *deviceName, char *deviceMACAddress
     cJSON_Delete(root);
 }
 
-esp_err_t check_for_ota_update(void)
+esp_err_t check_for_ota_update(image_info_t* image_info)
 {
     char device_mac[32] = {0};
     copy_mac_address(device_mac);
@@ -172,8 +170,6 @@ esp_err_t check_for_ota_update(void)
 
         ESP_LOGI(T_HTTP, "Response: %s", http_data);
 
-        cleanup_http_data();
-
         if (root == NULL)
         {
             ESP_LOGE(T_HTTP, "Failed to parse JSON");
@@ -186,6 +182,7 @@ esp_err_t check_for_ota_update(void)
         if (updateId == NULL || binaryHash == NULL)
         {
             ESP_LOGE(T_HTTP, "Failed to get updateId or binaryHash");
+            cleanup_http_data();
             return ESP_FAIL;
         }
 
@@ -193,11 +190,13 @@ esp_err_t check_for_ota_update(void)
         ESP_LOGI(T_HTTP, "Binary hash: %s", binaryHash->valuestring);
 
         // TODO: do check here
-        char update_url[256];
-        sprintf(update_url,
-                "%s/program/binary/%s", CONFIG_SERVER_URL, updateId->valuestring);
-        // perform_ota(update_url);
-        sleep(1000);
+        image_info->binary_id = updateId->valuestring;
+        image_info->binary_hash = binaryHash->valuestring;
+
+        // CLeanup the sockets
+        esp_http_client_cleanup(client);
+        cleanup_http_data();
+        return ESP_OK;
     }
     else
     {
