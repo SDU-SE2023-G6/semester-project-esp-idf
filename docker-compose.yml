@@ -140,9 +140,6 @@ services:
       - EMU_ID=7
     depends_on:
       - mqtt_broker
-    deploy:
-      mode: replicated
-      replicas: 7
 
 volumes:
   mongodb_data_container:
