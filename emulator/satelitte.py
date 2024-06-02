@@ -3,7 +3,7 @@ import json
 import uuid
 import time
 import requests
-
+import os
 import random
 
 def random_mac_address():
@@ -15,12 +15,16 @@ def random_mac_address():
 # Check for a MAC_ADRESS file and read the MAC address from it
 # If the file does not exist, generate a random MAC address and write it to the file
 ESP_mac_address = None
+
+emu_id = os.getenv('EMU_ID', 'default')
+ESP_mac_address_file = f"EMU_MAC_ADDRESS_{emu_id}"
+
 try:
-    with open("EMU_MAC_ADDRESS", "r") as f:
+    with open(ESP_mac_address_file, "r") as f:
         ESP_mac_address = f.read()
         print("ESP MAC address: ", ESP_mac_address)
 except FileNotFoundError:
-    with open("EMU_MAC_ADDRESS", "w") as f:
+    with open(ESP_mac_address_file, "w") as f:
         ESP_mac_address = random_mac_address()
         f.write(ESP_mac_address)
         print("ESP MAC address: ", ESP_mac_address)

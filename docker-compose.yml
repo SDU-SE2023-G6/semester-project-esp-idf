@@ -61,11 +61,80 @@ services:
     volumes:
       - mongodb_data_container:/data/db
 
-  satelitte_emulator:
+  satelitte_emulator_1:
+    container_name: emulator_1
     build: ./emulator
     restart: always
     volumes:
       - ./emulator:/usr/src/app
+    environment:
+      - EMU_ID=1
+    depends_on:
+      - mqtt_broker
+
+  satelitte_emulator_2:
+    container_name: emulator_2
+    build: ./emulator
+    restart: always
+    volumes:
+      - ./emulator:/usr/src/app
+    environment:
+      - EMU_ID=2
+    depends_on:
+      - mqtt_broker
+
+  satelitte_emulator_3:
+    container_name: emulator_3
+    build: ./emulator
+    restart: always
+    volumes:
+      - ./emulator:/usr/src/app
+    environment:
+      - EMU_ID=3
+    depends_on:
+      - mqtt_broker
+
+  satelitte_emulator_4:
+    container_name: emulator_4
+    build: ./emulator
+    restart: always
+    volumes:
+      - ./emulator:/usr/src/app
+    environment:
+      - EMU_ID=4
+    depends_on:
+      - mqtt_broker
+    
+  satelitte_emulator_5:
+    container_name: emulator_5
+    build: ./emulator
+    restart: always
+    volumes:
+      - ./emulator:/usr/src/app
+    environment:
+      - EMU_ID=5
+    depends_on:
+      - mqtt_broker
+
+  satelitte_emulator_6:
+    container_name: emulator_6
+    build: ./emulator
+    restart: always
+    volumes:
+      - ./emulator:/usr/src/app
+    environment:
+      - EMU_ID=6
+    depends_on:
+      - mqtt_broker
+
+  satelitte_emulator_7:
+    container_name: emulator_7
+    build: ./emulator
+    restart: always
+    volumes:
+      - ./emulator:/usr/src/app
+    environment:
+      - EMU_ID=7
     depends_on:
       - mqtt_broker
 
