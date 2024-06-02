@@ -26,6 +26,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -41,7 +43,6 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -69,13 +70,14 @@ public class CompilerService {
   private final String baseCompilerProjectFolder;
 
   /** Where to insert generated files into the base compiler project. */
-  private final String baseCompilerProjectInsertLocation;
+  private final String codeInsertionLocation;
+
+  /** Where to store the first build at (used for fast later builds) */
+  private final String prebuildCompileFolder;
 
   private final String xtextHost;
   private final CompilerService asyncSelf;
-  private final String externalServerUrl;
-  private final String externalBrokerUrl;
-  private final String externalFirmwareUpgradeUrl;
+  private final Map<String, String> compilerEnvironmentVariables;
 
   public CompilerService(
       RestTemplate restTemplate,
@@ -86,12 +88,15 @@ public class CompilerService {
       ReaderFunctionRepository readerRepo,
       @Value("${compiler.folder}") String compilerFolder,
       @Value("${compiler.project.location}") String baseCompilerProjectFolder,
-      @Value("${compiler.project.insert}") String baseCompilerProjectInsertLocation,
+      @Value("${compiler.project.insert}") String codeInsertionLocation,
+      @Value("${compiler.project.prebuild.location}") String prebuildCompileFolder,
       @Value("${compiler.xtext.host}") String xtextHost,
       @Lazy CompilerService asyncSelf,
       @Value("${external.server.url}") String externalServerUrl,
       @Value("${external.broker.url}") String externalBrokerUrl,
-      @Value("${external.firmware.upgrade.url}") String externalFirmwareUpgradeUrl) {
+      @Value("${external.firmware.upgrade.url}") String externalFirmwareUpgradeUrl,
+      @Value("${external.wifi.ssid}") String wifiSsid,
+      @Value("${external.wifi.password}") String wifiPassword) {
     this.restTemplate = restTemplate;
     this.programRepo = programRepo;
     this.deviceTypeRepo = deviceTypeRepo;
@@ -99,16 +104,23 @@ public class CompilerService {
     this.objectMapper = objectMapper;
     this.readerRepo = readerRepo;
     this.compilerFolder = compilerFolder;
-    this.baseCompilerProjectFolder = baseCompilerProjectFolder;
-    this.baseCompilerProjectInsertLocation = baseCompilerProjectInsertLocation;
+    this.codeInsertionLocation = codeInsertionLocation;
     this.xtextHost = xtextHost;
     this.asyncSelf = asyncSelf;
-    this.externalServerUrl = externalServerUrl;
-    this.externalBrokerUrl = externalBrokerUrl;
-    this.externalFirmwareUpgradeUrl = externalFirmwareUpgradeUrl;
+    this.prebuildCompileFolder = prebuildCompileFolder;
+    this.baseCompilerProjectFolder = baseCompilerProjectFolder;
+    this.compilerEnvironmentVariables =
+        Map.of(
+            "EXAMPLE_FIRMWARE_UPGRADE_URL", externalFirmwareUpgradeUrl,
+            "BROKER_URL", externalServerUrl,
+            "SERVER_URL", externalBrokerUrl,
+            "WIFI_SSID", wifiSsid,
+            "WIFI_PASSWORD", wifiPassword,
+            "ESP_INITIAL", "0");
   }
 
-  public static void compile(String directory, Map<String, String> environmentVariables) throws IOException, InterruptedException {
+  public static CompileResult compile(String directory, Map<String, String> environmentVariables)
+      throws IOException, InterruptedException {
     ProcessBuilder processBuilder = new ProcessBuilder(List.of("./auto-build.sh"));
     processBuilder.environment().putAll(environmentVariables);
     processBuilder.directory(new File(directory));
@@ -119,26 +131,27 @@ public class CompilerService {
       e.printStackTrace();
       throw e;
     }
+    final StringBuilder outputBuilder = new StringBuilder();
 
     BufferedReader outputReader =
         new BufferedReader(new InputStreamReader(process.getInputStream()));
     String line;
     while ((line = outputReader.readLine()) != null) {
       log.info(line);
+      outputBuilder.append(line).append(System.lineSeparator());
     }
-
+    final StringBuilder errorBuilder = new StringBuilder();
     BufferedReader errorReader =
         new BufferedReader(new InputStreamReader(process.getErrorStream()));
     while ((line = errorReader.readLine()) != null) {
       log.info(line);
+      errorBuilder.append(line).append(System.lineSeparator());
     }
 
     int exitCode = process.waitFor();
     log.info("Compiling completed");
 
-    if (exitCode != 0) {
-      throw new RuntimeException("Program failed unexpectedly");
-    }
+    return new CompileResult(outputBuilder.toString(), errorBuilder.toString(), exitCode != 0);
   }
 
   private static void copyFolderAndContents(File source, File destination) throws IOException {
@@ -216,8 +229,7 @@ public class CompilerService {
     return hexString.toString();
   }
 
-  @Async
-  public void compileProgramSafely(Program programInput) {
+  public Map<ObjectId, ObjectId> beginCompile(Program programInput) {
     Program program = new Program();
     program.setDslCode(programInput.getDslCode());
     program.setIteration(program.getIteration() + 1);
@@ -230,29 +242,80 @@ public class CompilerService {
     } catch (Exception e) {
       program.setStatus(ERROR_GENERATING_CODE);
       programRepo.save(program);
-      return;
+      throw new RuntimeException(
+          "Compile failed during code generation: %s".formatted(e.getMessage()), e);
     }
     program.setGeneratedCodeAsZipFile(generatedZipFile);
 
     final GeneratedCodeMetadata metadata = getGeneratedCodeMetadata(generatedZipFile);
     program.setGeneratedCodeMetadata(metadata);
-    // TODO: 5/9/24 Depending on generated code metadata require manual override
 
     if (metadata == null || metadata.getDeviceTypes() == null) {
       program.setStatus(ERROR_GENERATING_CODE);
       programRepo.save(program);
-      return;
+      throw new RuntimeException("Generated code return empty or no device types were found");
+    }
+
+    Map<DeviceTypeInfo, Binary> deviceTypeToBinaryMap =
+        metadata.getDeviceTypes().stream()
+            .map(
+                x ->
+                    new DeviceTypeInfo(
+                        deviceTypeRepo
+                            .findByName(x.getName())
+                            .orElseGet(
+                                () -> {
+                                  var newDeviceType = new DeviceType();
+                                  newDeviceType.setName(x.getName());
+                                  deviceTypeRepo.save(newDeviceType);
+                                  return newDeviceType;
+                                }),
+                        x))
+            .collect(
+                Collectors.toMap(
+                    deviceType -> deviceType,
+                    x -> {
+                      Binary binary = new Binary();
+                      binary.setProgram(program);
+                      binary.setDeviceType(x.deviceType());
+                      return binary;
+                    }));
+
+    try {
+      binaryRepo.saveAll(deviceTypeToBinaryMap.values());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
 
     program.setStatus(CODE_GENERATED);
+    Map<ObjectId, ObjectId> currentlyCompiling = deviceTypeToBinaryMap.entrySet().stream()
+        .collect(Collectors.toMap(
+            entry -> entry.getKey().deviceType().getId(),
+            entry -> entry.getValue().getId()
+        ));
+    program.setCurrentlyCompiling(currentlyCompiling);
     programRepo.save(program);
+    asyncSelf.asyncCompileBinaries(program, deviceTypeToBinaryMap, generatedZipFile, metadata);
 
+    return currentlyCompiling;
+  }
+
+  @Async
+  public void asyncCompileBinaries(
+      Program program,
+      Map<DeviceTypeInfo, Binary> deviceTypeToBinaryIdMap,
+      byte[] generatedZipFile,
+      GeneratedCodeMetadata metadata) {
     program.setStatus(COMPILING_BINARIES);
     programRepo.save(program);
+
     List<CompletableFuture<Void>> compileFutures =
-        metadata.getDeviceTypes().stream()
-            .map(x -> asyncSelf.compileBinary(program, generatedZipFile, metadata, x))
+        deviceTypeToBinaryIdMap.entrySet().stream()
+            .map(entry ->
+                    asyncSelf.compileBinary(
+                        entry.getValue(), entry.getKey(), program, generatedZipFile, metadata))
             .toList();
+
 
     try {
       CompletableFuture.allOf(compileFutures.toArray(new CompletableFuture[0])).get();
@@ -277,56 +340,45 @@ public class CompilerService {
 
   @Async
   public CompletableFuture<Void> compileBinary(
+      Binary binary,
+      DeviceTypeInfo deviceType,
       Program program,
       byte[] codeGeneratedZipFile,
-      GeneratedCodeMetadata metadata,
-      DeviceTypeMetadata target) {
-    final DeviceType deviceType =
-        deviceTypeRepo
-            .findByName(target.getName())
-            .orElseGet(
-                () -> {
-                  var newDeviceType = new DeviceType();
-                  newDeviceType.setName(target.getName());
-                  deviceTypeRepo.save(newDeviceType);
-                  return newDeviceType;
-                });
-
-    final Binary binary = new Binary();
-    binary.setId(ObjectId.get());
-    binary.setProgram(program);
-    binary.setDeviceType(deviceType);
+      GeneratedCodeMetadata metadata) {
     log.info("Starting compile with id %s".formatted(binary.getId().toHexString()));
 
     Optional<Binary> oldBinary =
-        binaryRepo.findFirstByDeviceTypeAndWithdrawnOrderByCompilationTimeDesc(deviceType, false);
+        binaryRepo.findFirstByDeviceTypeAndWithdrawnOrderByCompilationTimeDesc(deviceType.deviceType(), false);
     oldBinary.ifPresent(value -> binary.setVersion(value.getVersion() + 1));
 
-    TargetFilesAndReaders targets = extractTargetFilesAndReaders(metadata, target);
+    TargetFilesAndReaders targets = extractTargetFilesAndReaders(metadata, deviceType.metadata());
     List<ReaderFunction> readers = readerRepo.findByNameIn(targets.readers());
     if (readers.size() != targets.readers().size()) {
       log.warn("Failed to find all readers");
-      return CompletableFuture.failedFuture(new RuntimeException("Unable to find reader function"));
+      saveFailedBinary(binary, "Unable to find required reader functions in database.");
+      return CompletableFuture.failedFuture(
+          new RuntimeException("Unable to find reader function in database"));
+    } else {
+      log.info(
+          "Writing %d readers: %s"
+              .formatted(readers.size(), readers.stream().map(ReaderFunction::getName).toList()));
     }
 
-    File baseCompilerProjectFolderFile = new File(baseCompilerProjectFolder);
-    boolean baseProjectExists =
-        baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
+    File baseProjectFolder = new File(baseCompilerProjectFolder);
+    boolean baseProjectExists = baseProjectFolder.exists() && baseProjectFolder.isDirectory();
     final String destinationFolder = compilerFolder + binary.getId().toHexString();
+    final File destFolder = new File(destinationFolder);
     final String generatedCodeInsertFolder =
-        baseProjectExists
-            ? destinationFolder + baseCompilerProjectInsertLocation
-            : destinationFolder;
+        baseProjectExists ? destinationFolder + codeInsertionLocation : destinationFolder;
     if (baseProjectExists) {
       try {
-        copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
+        copyFolderAndContents(new File(baseCompilerProjectFolder), destFolder);
       } catch (IOException e) {
         log.warn(
             "Failed to copy base compiler project at %s destination is %s"
                 .formatted(baseCompilerProjectFolder, destinationFolder));
-        e.printStackTrace();
-        File folderToDelete = new File(destinationFolder);
-        FileSystemUtils.deleteRecursively(folderToDelete);
+        FileSystemUtils.deleteRecursively(destFolder);
+        saveFailedBinary(binary, e.getMessage());
         return CompletableFuture.failedFuture(e);
       }
     }
@@ -336,47 +388,79 @@ public class CompilerService {
             codeGeneratedZipFile, targets.files.stream().toList(), generatedCodeInsertFolder);
     if (filesFound != targets.files().size()) {
       log.warn("Failed to find required files");
+      saveFailedBinary(binary, "Unable to find expected generated code files.");
       return CompletableFuture.failedFuture(
           new RuntimeException("Was unable to find all expected files"));
     }
-    readers.forEach(
-        x ->
-            extractFilesToFolder(
-                x.getSourceFiles(),
-                List.of(x.getName() + "_reader.h", x.getName() + "_reader.c"),
-                generatedCodeInsertFolder));
 
+    int readersFound =
+        readers.stream()
+            .map(
+                x ->
+                    extractFilesToFolder(
+                        x.getSourceFiles(),
+                        List.of(x.getName() + "_reader.h", x.getName() + "_reader.c"),
+                        generatedCodeInsertFolder))
+            .reduce(0, Integer::sum);
+    if (readersFound != readers.size() * 2) {
+      log.warn("Failed to find all reader files");
+      FileSystemUtils.deleteRecursively(destFolder);
+      saveFailedBinary(binary, "Unable to find expected reader files.");
+      return CompletableFuture.failedFuture(
+          new RuntimeException("Was unable to find all reader files"));
+    }
+
+    CompileResult result;
     try {
       log.info("Starting compile of C code");
-      compile(destinationFolder, Map.of());
+      result = compile(destinationFolder, compilerEnvironmentVariables);
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      FileSystemUtils.deleteRecursively(destFolder);
+      saveFailedBinary(binary, e.getMessage());
       return CompletableFuture.failedFuture(e);
     }
 
+    binary.setCompileOutput(result.compileFailed() ? result.compileErrors() : result.compileOutput());
+    if (result.compileFailed) {
+      log.error("Compiling failed");
+      FileSystemUtils.deleteRecursively(destFolder);
+      saveFailedBinary(binary, result.compileErrors());
+      return CompletableFuture.failedFuture(new RuntimeException("Compile failed"));
+    }
+
     try {
+      byte[] elfFile = Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.elf"));
       byte[] compiledBinary =
           Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.bin"));
       binary.setCompiledBinary(compiledBinary);
-      binary.setBinaryHash(bytesToSha256Hash(compiledBinary));
+      binary.setBinaryHash(bytesToSha256Hash(elfFile));
     } catch (IOException e) {
       log.error("Locating compiled binary failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      FileSystemUtils.deleteRecursively(destFolder);
+      saveFailedBinary(binary, e.getMessage());
       return CompletableFuture.failedFuture(e);
     }
 
-    File folderToDelete = new File(destinationFolder);
-    FileSystemUtils.deleteRecursively(folderToDelete);
+    FileSystemUtils.deleteRecursively(destFolder);
 
     binary.setCompilationTime(Instant.now());
+    binary.setCompileFailed(false);
+    binary.setCompileErrors(result.compileErrors());
+    binary.setCompileOutput(result.compileOutput());
     binaryRepo.save(binary);
-    deviceType.setBinary(binary);
-    deviceTypeRepo.save(deviceType);
+    deviceType.deviceType().setBinary(binary);
+    deviceTypeRepo.save(deviceType.deviceType());
 
     return CompletableFuture.completedFuture(null);
+  }
+
+  private void saveFailedBinary(Binary binary, String errorOutput) {
+    binary.setCompileFailed(true);
+    binary.setWithdrawn(true);
+    binary.setCompileErrors(errorOutput);
+    binary.setCompilationTime(Instant.now());
+    binaryRepo.save(binary);
   }
 
   public byte[] compileBaseProject() {
@@ -386,54 +470,46 @@ public class CompilerService {
     File baseCompilerProjectFolderFile = new File(baseCompilerProjectFolder);
     boolean baseProjectExists =
         baseCompilerProjectFolderFile.exists() && baseCompilerProjectFolderFile.isDirectory();
-    final String destinationFolder = compilerFolder + id.toHexString();
-    final String generatedCodeInsertFolder =
-        baseProjectExists
-            ? destinationFolder + baseCompilerProjectInsertLocation
-            : destinationFolder;
+    final File destFolder = new File(prebuildCompileFolder);
     if (baseProjectExists) {
       try {
-        copyFolderAndContents(new File(baseCompilerProjectFolder), new File(destinationFolder));
+
+        FileSystemUtils.deleteRecursively(destFolder);
+        copyFolderAndContents(new File(baseCompilerProjectFolder), destFolder);
       } catch (IOException e) {
         log.warn(
             "Failed to copy base compiler project at %s destination is %s"
-                .formatted(baseCompilerProjectFolder, destinationFolder));
-        File folderToDelete = new File(destinationFolder);
-        FileSystemUtils.deleteRecursively(folderToDelete);
+                .formatted(baseCompilerProjectFolder, prebuildCompileFolder));
+        FileSystemUtils.deleteRecursively(destFolder);
         throw new RuntimeException(e);
       }
     } else {
-      throw new RuntimeException("Base compiler project does not exist");
+      log.warn("Base compile project is unset, initial device image shall not be built.");
+      return new byte[] {};
     }
 
     try {
       log.info("Starting compile of C code");
-      compile(destinationFolder, Map.of(
-        "EXAMPLE_FIRMWARE_UPGRADE_URL", externalFirmwareUpgradeUrl,
-        "BROKER_URL", externalServerUrl,
-        "SERVER_URL", externalBrokerUrl
-      ));
+      // copy base environment variables
+      var prebuildEnv = new HashMap<>(Map.copyOf(compilerEnvironmentVariables));
+      compile(prebuildCompileFolder, prebuildEnv);
     } catch (IOException | InterruptedException | RuntimeException e) {
       log.error("Compiling failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      FileSystemUtils.deleteRecursively(destFolder);
       throw new RuntimeException(e);
     }
+
     byte[] compiledBinary;
     try {
       compiledBinary =
-          Files.readAllBytes(Paths.get(destinationFolder + "/build/ESP-OTA-MQTT.bin"));
+          Files.readAllBytes(Paths.get(prebuildCompileFolder + "/build/ESP-OTA-MQTT.bin"));
     } catch (IOException e) {
       log.error("Locating compiled binary failed", e);
-      File folderToDelete = new File(destinationFolder);
-      FileSystemUtils.deleteRecursively(folderToDelete);
+      FileSystemUtils.deleteRecursively(destFolder);
       throw new RuntimeException(e);
     }
 
-    File folderToDelete = new File(destinationFolder);
-    FileSystemUtils.deleteRecursively(folderToDelete);
-
-    log.info("Base compile completed with id %s".formatted(id.toHexString()));
+    log.info("Base compile completed");
     return compiledBinary;
   }
 
@@ -524,6 +600,10 @@ public class CompilerService {
       return null;
     }
   }
+
+  public record CompileResult(String compileOutput, String compileErrors, Boolean compileFailed) {}
+
+  public record DeviceTypeInfo(DeviceType deviceType, DeviceTypeMetadata metadata) {}
 
   record TargetFilesAndReaders(Set<String> files, Set<String> readers) {}
 }

@@ -19,12 +19,17 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
-#include "mqtt_routine.c"
+#include "esp_wifi_types.h"
 #include "http_routine.h"
-#include "files/spiffs.c"
-#include "sensors/sensor_utils.c"
-#include "ntp.c"
+
 #include "freertos/semphr.h"
+
+// Project imports
+#include "sensor_utils.h"
+#include "spiffs.h"
+#include "mqtt_routine.h"
+#include "ota_routine.h"
+#include "ntp.h"
 
 #if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 #include "esp_efuse.h"
@@ -37,7 +42,8 @@
 SemaphoreHandle_t init_lock;
 
 TaskHandle_t gatherData = NULL;
-TaskHandle_t send_data = NULL;
+// TaskHandle_t send_data = NULL;
+
 
 static const char *TAG = "MAIN_ROUTINE";
 
@@ -45,6 +51,7 @@ static const char *TAG = "MAIN_ROUTINE";
 
 void app_main(void)
 {
+
     // Create a initial lock for better control of the initialization
     init_lock = xSemaphoreCreateMutex();
 
@@ -79,33 +86,77 @@ void app_main(void)
         printf("Failed to find running partition\n");
     }
 
+    // TODO: replace with custom wifi init
     ESP_ERROR_CHECK(example_connect());
 
     esp_wifi_set_ps(WIFI_PS_NONE);
 
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
+    xSemaphoreTake(init_lock, portMAX_DELAY);
+    ESP_LOGI(TAG, "Starting MQTT");
+    mqtt_app_start();
+    ESP_LOGI(TAG, "RELASING LOCK");
+    xSemaphoreGive(init_lock);
+
+    #if ESP_INITIAL == 1
+
+        image_info_t *image_info = malloc(sizeof(image_info_t));
+        if (image_info == NULL) {
+            ESP_LOGI("OTA_IMAGE", "Failed to allocated image info");
+            ESP_ERROR_CHECK(ESP_FAIL);
+        } 
+
+
+        char app_sha[65];
+        copy_app_description(app_sha);
+        ESP_LOGI("SHA_CHECK", "Current APP SHA %s", app_sha);
+
+
+        while (1)
+        {   
+            register_device(MQTT_CLIENT);
+            esp_err_t ota_res = check_for_ota_update(image_info);
+            if (ota_res == ESP_OK)
+            {
+                ESP_LOGI(TAG, "OTA update available");
+                if (image_info != NULL)
+                {   
+                    ESP_LOGI("IMAGE_INFO", "OTA Image hash: %s", image_info->binary_hash);
+                    ESP_LOGI("IMAGE_INFO", "App hash: %s", app_sha);
+
+                    bool same_hash = is_same_firmware_hash(image_info->binary_hash);
+                    if (!same_hash) {
+                        ESP_LOGI(TAG, "Performing OTA");
+                        perform_ota(image_info->binary_id);
+                    } else {
+                        ESP_LOGE(TAG, "Binary up to date.");
+                    }
+                } else {
+                    ESP_LOGE(TAG, "Image info is NULL");
+                }
+            }
+            sleep(5);
+        }
+
+        return;
+
+    #else
+
     // Init file system
     init_spiffs(init_lock);
 
+
+    // Use semaphore to control the initialization
     xSemaphoreTake(init_lock, portMAX_DELAY);
     // check for OTA update
-    if (check_for_ota_update() == ESP_OK) {
-        ESP_LOGI(TAG, "OTA update available");
-    }
+    //ESP_LOGI("OTA", "\n\n SKIPPING BUT REMEMBER TO ENABLE \n\n");
+    handle_ota_check("MAIN_OTA_CHECK"); 
+    
     xSemaphoreGive(init_lock);
 
     // xTaskCreate(&satellite_register_device, "register_device", 8192, NULL, 5, NULL);
 
-    xSemaphoreTake(init_lock, portMAX_DELAY);
-    ESP_LOGI(TAG, "Starting MQTT");
-    mqtt5_app_start();
-    ESP_LOGI(TAG, "RELASING LOCK");
-    xSemaphoreGive(init_lock);
-
-    ESP_LOGI(TAG, "Registering device");
-    register_device();
-    ESP_LOGI(TAG, "Done registering");
 
     /* CODE FOR MAIN LOOP */
     // Initialize SNTP and go to the sensor routine
@@ -117,4 +168,7 @@ void app_main(void)
         ESP_LOGE(TAG, "SNTP initialization failed");
         // TODO: Log error and reboot
     }
+    return;
+
+    #endif
 }

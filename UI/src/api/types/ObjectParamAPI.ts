@@ -2,6 +2,7 @@ import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/htt
 import { Configuration} from '../configuration'
 
 import { AreaMetadata } from '../models/AreaMetadata';
+import { BinaryCompileResult } from '../models/BinaryCompileResult';
 import { BinaryVersion } from '../models/BinaryVersion';
 import { DataPointMetadata } from '../models/DataPointMetadata';
 import { DeviceTypeMetadata } from '../models/DeviceTypeMetadata';

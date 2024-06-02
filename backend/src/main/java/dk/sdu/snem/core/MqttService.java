@@ -92,19 +92,24 @@ public class MqttService {
     }
 
     try {
+
       switch (message.getType()) {
-        case ERROR, UPDATE_ROLLBACK_FAIL, UPDATE_FAIL, WARNING ->
+        case ERROR, UPDATE_ROLLBACK_FAIL, UPDATE_FAIL ->
                 satellite.setStatus(Satellite.SatelliteStatus.ERROR);
         case UPDATE_ROLLBACK_SUCCESS, UPDATE_SUCCESS ->
                 satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
         case UPDATE_DOWNLOAD_START, UPDATE_DOWNLOAD_COMPLETE, UPDATE_START, UPDATE_COMPLETE, UPDATE_ROLLBACK_START ->
                 satellite.setStatus(Satellite.SatelliteStatus.UPDATING);
         case HEARTBEAT -> {
+
           logger.info("Heartbeat of satellite {} received", satellite.getName());
           if(message.getNextHeartbeat() != null) {
             satellite.setNextExpectedHeartbeat(Instant.ofEpochMilli(message.getNextHeartbeat() * 1000));
           }
-          satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
+
+         // if (satellite.getStatus() != Satellite.SatelliteStatus.PENDING_METADATA) {
+         //   satellite.setStatus(Satellite.SatelliteStatus.ONLINE);
+         // }
         }
       }
       satelliteRepo.save(satellite);
