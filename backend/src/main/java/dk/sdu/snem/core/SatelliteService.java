@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -28,14 +29,12 @@ public class SatelliteService {
         Instant now = Instant.now();
 
         for (Satellite satellite : satelliteRepo.findAll()) {
-            if (satellite.getNextExpectedHeartbeat() != null && satellite.getNextExpectedHeartbeat().isBefore(now)) {
-
-                if(
-                    satellite.getStatus() == Satellite.SatelliteStatus.OFFLINE
-                        // || satellite.getStatus() == Satellite.SatelliteStatus.PENDING_METADATA
-                ) {
-                    continue;
-                }
+            if (satellite.getNextExpectedHeartbeat() != null) {
+                logger.info("Inside at %s".formatted(satellite.getNextExpectedHeartbeat().toString()));
+                logger.info("Is before %s".formatted(satellite.getNextExpectedHeartbeat().isBefore(now)));
+                logger.info("Now is %s".formatted(now.toString()));
+            }
+            if (satellite.getNextExpectedHeartbeat() != null && satellite.getNextExpectedHeartbeat().isBefore(now.minus(Duration.ofMinutes(2)))) {
                 satellite.setStatus(Satellite.SatelliteStatus.OFFLINE);
                 satelliteRepo.save(satellite);
 
