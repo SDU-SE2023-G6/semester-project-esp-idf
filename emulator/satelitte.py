@@ -10,7 +10,7 @@ def random_mac_address():
     # Generate first byte with the local admin and unicast bits set
     first_byte = random.choice([0x02, 0x06, 0x0A, 0x0E])  # Locally administered and unicast
     mac = [first_byte] + [random.randint(0x00, 0xFF) for _ in range(5)]
-    return ':'.join(f'{octet:02x}' for octet in mac)
+    return ''.join(f'{octet:02x}' for octet in mac)
 
 # Check for a MAC_ADRESS file and read the MAC address from it
 # If the file does not exist, generate a random MAC address and write it to the file
