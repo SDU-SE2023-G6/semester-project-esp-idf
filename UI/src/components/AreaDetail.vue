@@ -35,8 +35,14 @@
     types.value = await dataStore.getSatelliteTypes();
   }
 
+  async function conditionalFetchData() {
+    if (!isEditing.value) { // Fetch data only if not editing
+      await fetchData();
+    }
+  }
+
   fetchData();
-  setSafeInterval(() => fetchData(), 1000);
+  setSafeInterval(() => conditionalFetchData(), 2000);
 
 
   const selectedSatellites = ref<Satellite[]>([]);
@@ -101,6 +107,7 @@ const onRowEditSave = (event) => {
 
     dataStore.editSatellite(products.value[index]);
     fetchData();
+    isEditing.value = false;
 };
 
 
@@ -111,6 +118,8 @@ const filters = ref({
     status: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
 
+
+const isEditing = ref(false);
 
 
 
@@ -162,6 +171,8 @@ const filters = ref({
         :currentPageReportTemplate="'Showing {first} to {last} of {totalRecords}'"
         :rowsPerPageOptions="[5, 10, 20]"
         @row-edit-save="onRowEditSave"
+        @row-edit-init="isEditing = true"
+        @row-edit-cancel="isEditing = false"
       >
 
       <template #empty> No satellites found. </template>
